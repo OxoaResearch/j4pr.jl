@@ -101,6 +101,7 @@ module j4pr
 		mds,										# MDS
 		lda, ldasub,									# Multiclass LDA, Subspace LDA
 		lr,										# Linear regression (Linear+Ridge)
+		fa, far,									# Factor Analysis and reconstruction
 		kmeans, kmeans!,								# K-means clustering 
 		kmedoids, kmedoids!,								# K-medoids clustering 
 		affinityprop,									# Affinity propagation clustering
@@ -165,6 +166,7 @@ module j4pr
 		include("lib/ext/mds.jl")							# MDS (MultivariateStats.jl)
 		include("lib/ext/lda.jl")							# Multiclass LDA, Subspace LDA (MultivariateStats.jl)
 		include("lib/ext/lr.jl")							# Linear regression (MultivariateStats.jl)
+		include("lib/ext/fa.jl")							# Factor Analysis (MultivariateStats.jl)
 		include("lib/ext/kmeans.jl")							# K-means clustering (Clustering.jl)
 		include("lib/ext/kmedoids.jl")							# K-medoids clustering (Clustering.jl)
 		include("lib/ext/affinityprop.jl")						# Affinity propagation clustering (Clustering.jl)

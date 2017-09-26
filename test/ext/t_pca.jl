@@ -1,4 +1,4 @@
-# Tests for distances
+# Tests for PCA
 function t_pca()
 
 
