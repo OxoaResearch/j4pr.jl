@@ -11,12 +11,12 @@ to the class-wise mean vectors of the transformed reference space) or the transf
 space of the test objects (distances can be subsequently calculated using this data
 and the model).
 
-# Keyword arguments (same as in `Distributions`)
+# Keyword arguments (same as in `MultivariateStats`)
   * `method` can be `:gevd` e.g. generalized eigenvalue decomp or `:whiten` e.g. whiten first (default `:gevd`)
   * `outdim` output dimension e.g. of the transformed space (default `min(<number of variables>, <number_of_classes>-1)`
   * `regcoef` regularization coefficient, improves numerical stability (default `1e-6`)
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 lda(distances::Bool=true; kwargs...) = FunctionCell(lda, (distances,), Dict(), kwtitle(distances ? "LDA (distance)" : "LDA (transform)", kwargs); kwargs...) 
 
@@ -90,10 +90,10 @@ to the class-wise mean vectors of the transformed reference space) or the transf
 space of the test objects (distances can be subsequently calculated using this data
 and the model).
 
-# Keyword arguments (same as in `Distributions`)
+# Keyword arguments (same as in `MultivariateStats`)
   * `normalize` regularization coefficient, improves numerical stability (default `false`)
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 ldasub(distances::Bool=true; kwargs...) = FunctionCell(ldasub, (distances,), Dict(), 
 					 kwtitle(distances ? "LDA-Subspace (distance)" : "LDA-Subspace (transform)", kwargs); 

@@ -7,7 +7,7 @@
 Constructs an untrained cell that when piped data inside, calculates the ICA
 projection matrix of the input data.
 
-# Keyword arguments (same as in `Distributions`)
+# Keyword arguments (same as in `MultivariateStats`)
   * `alg` must be `:fastica` (as of June 2017 at least) 
   * `fun` is the approx neg-entripy functor. `icafun(:tanh)`, `icafun(:tanh,a)`, `icafun(:gaus)` (default `icafun(:tanh)`)
   * `do_whiten` whether to perform pre-whitening (default `true)`
@@ -17,7 +17,7 @@ projection matrix of the input data.
   * `winit` initial guess of `W` (default `zeros(0,0)`)
   * `verbose` whether to display iteration information (default `false`)
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 ica(k::Int; kwargs...) = FunctionCell(ica, (k,), Dict(), kwtitle("ICA", kwargs); kwargs...) 
 

@@ -8,14 +8,14 @@ Constructs an untrained cell that when piped data inside, calculates the PCA
 projection matrix of the input data. We assume that `d` is the dimesionality
 of the input dataset, `n` the number of samples
 
-# Keyword arguments (same as in `Distributions`)
+# Keyword arguments (same as in `MultivariateStats`)
   * `method` is the PCA method used `:auto`, `:cov`, `:svd` (default `:auto` e.g. use `:cov` when the number of dimensions
   smaller than the number of samples, `svd` otherwise)
   * `maxoutdim` is the number of output dimensions, default `<number of variables>`
   * `pratio` is the ratio of variaces preserved in the principal subspace (default `0.99`)
   * `mean` is the mean vector, can be `nothing`, `0` or precomputed mean vector (default `nothing`)
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 pca(;kwargs...) = FunctionCell(pca, (), Dict(), kwtitle("PCA", kwargs);kwargs...) 
 
@@ -67,7 +67,7 @@ the returned output will be the reconstruction of the observations in the origin
 space. Obviously, the input data (e.g. data to be reconstructed) is expected to be
 principal components extracted with `M`.
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 
 # Examples
 ```

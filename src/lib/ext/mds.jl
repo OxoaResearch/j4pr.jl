@@ -9,7 +9,7 @@ into a lower dimensional space which tries to keep the inter-sample distances as
 well as possible. To obstain the dissimilarity matrix, the distance `d` can 
 also be provided.
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 mds(p::Int, d::Distances.PreMetric=Distances.Euclidean(); kwargs...) = FunctionCell(mds, (p,d), kwtitle("MDS", kwargs); kwargs...) 
 

@@ -8,14 +8,14 @@ Constructs an untrained cell that when piped data inside, calculates the
 probabilistic PCA projection matrix of the input data. We assume that `d` 
 is the dimesionality of the input dataset, `n` the number of samples
 
-# Keyword arguments (same as in `Distributions`)
+# Keyword arguments (same as in `MultivariateStats`)
   * `method` is the core algorithm used: `:ml`, `:em` and `:bayes` (default `:ml`)
   * `maxoutdim` is the number of output dimensions (default `<number of variables>-1`)
   * `mean` is the mean vector; can be `nothing`, `0` or precomputed mean (default `nothing`)
   * `tol` convergence tolerance (default `1.0e-6`)
   * `tot` maximum number of iterations (default `1000`)
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 ppca(;kwargs...) = FunctionCell(ppca, (), Dict(), kwtitle("PPCA", kwargs);kwargs...) 
 
@@ -66,7 +66,7 @@ the returned output will be the reconstruction of the observations in the origin
 space. Obviously, the input data (e.g. data to be reconstructed) is expected to be
 principal components extracted with `M`.
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 # Training for the reconstruction tranform (fixed cell)
 ppcar(x::T where T<:CellFunT{<:Model{<:MultivariateStats.PPCA}}) = begin

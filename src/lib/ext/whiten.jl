@@ -7,11 +7,11 @@
 Constructs an untrained cell that when piped data inside, calculates a transform `W`
 of the input data `X` so that `Wᵀcov(X)W=I`.
 
-# Keyword arguments (same as in `Distributions`)
+# Keyword arguments (same as in `MultivariateStats`)
   * `regcoef::Real` is the ratio of variaces preserved in the principal subspace 
   * `mean` is the mean vector, can be `nothing`, `0` or precomputed mean vector (default `nothing`)
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 whiten(;kwargs...) = FunctionCell(whiten, (), Dict(), kwtitle("Whitening", kwargs); kwargs...) 
 

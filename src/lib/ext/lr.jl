@@ -11,11 +11,11 @@ coefficients of the data based on the responses and regularization parameter
 
 The parameter `r` can be a real scalar, a vector or symetric matrix.
 
-# Keyword arguments (same as in `Distributions`)
+# Keyword arguments (same as in `MultivariateStats`)
   * `trans` whether to use the trasposed form, (default `true` e.g. rows arevariables, columns are observations) 
   * `bias` whether to include a bias term (default `true`)
 
-Read the `Distributions.jl` documentation for more information.  
+Read the `MultivariateStats.jl` documentation for more information.  
 """
 lr(r=0; trans::Bool=true, bias::Bool=true) = FunctionCell(lr, (r,), Dict(), kwtitle("Linear regressor", [(:trans,trans),(:bias,bias)]); trans=trans, bias=bias) 
 
