@@ -1,0 +1,61 @@
+##########################
+# FunctionCell Interface #	
+##########################
+"""
+	dist(d=Distances.Euclidean())
+
+Constructs an untrained function cell using a `d::Distances.PreMetric` function cell. `d` defaults to `Distances.Euclidean()` if not specified.
+
+For more information on the distances allowed, see ?Distances.
+"""
+dist(d::Distances.PreMetric=Distances.Euclidean()) = FunctionCell(dist, (d,), Dict(), "Distance ($d))") 
+
+
+
+############################
+# DataCell/Array Interface #	
+############################
+"""
+	dist(x, d=Distances.Euclidean())
+
+Trains the function cell using a `d::Distances.PreMetric` function and storing the `x` matrix
+for future distance calculations.
+"""
+# Training
+dist(x::T where T<:CellData, d::Distances.PreMetric=Distances.Euclidean()) = dist(getx!(x), d)
+dist(x::T where T<:AbstractVector, d::Distances.PreMetric=Distances.Euclidean()) = dist(mat(x, LearnBase.ObsDim.Constant{2}()), d)
+dist(x::T where T<:AbstractMatrix, d::Distances.PreMetric=Distances.Euclidean()) = begin
+	
+	# Build name
+	namedist = "Distance ($d)"
+	
+	# Build model properties
+	modelprops = Dict("size_in" => nvars(x), 					# Size of the input data
+			"size_out" => nobs(x), 						# Size of the output data (number of observations of reference dataset)
+	)
+	
+	# Returned trained cell
+	FunctionCell(dist, Model((d,getobs(x))), modelprops, namedist)	 
+end
+
+
+
+# Execution
+dist(x::T where T<:CellData, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}, modelprops::Dict) = datacell(dist(getx!(x), model, modelprops), gety(x)) 	
+dist(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}, modelprops::Dict) = dist(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
+dist(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}, modelprops::Dict) = begin
+	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
+	Distances.pairwise(model.data[1], model.data[2], getobs(x))
+end
+
+# Wrapper for dist(X,Y)
+"""
+	dist(x, y, d=Distances.Euclidean())
+
+Calculates the pairwise distances between the data contained in the data `x` and `y` using the distance `d`. Here, 
+`x` is the reference dataset, `y` is the test dataset. Implemented as `dist(x,y,d) = y |> dist(x,d)` 
+"""
+dist(x::T where T, y::S where S, d::Distances.PreMetric=Distances.Euclidean()) = begin
+	w = dist(x,d)
+	dist(y,w.x,w.y)
+end

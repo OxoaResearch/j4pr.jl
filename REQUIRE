@@ -1,0 +1,21 @@
+julia 0.6
+LearnBase
+MLLabelUtils
+MLDataPattern
+MLDataUtils
+Images
+ImageInTerminal
+StatsBase
+StatsFuns
+UnicodePlots
+LossFunctions
+Distances
+MultivariateStats
+Clustering
+DecisionTree
+LIBSVM
+Reexport
+Compat
+RDatasets
+DataArrays
+DataStructures
