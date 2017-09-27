@@ -9,109 +9,201 @@ extensively cover a specific topic, like most Julia packages,
 but rather to provide some practical consistency and ease of
 use for existing algorithms as well as providing new ones.*
 
-## First glance and philosophy
+## Philosophy and a first glance
 
-j4pr provides either natively or by means of wrapping around, 
-algorithms for clustering, classification, regression, 
-data manipulation, error assessment and terminal-based plotting.
-While type stability is not enforced, it still is pretty speedy, 
-due to the nature of Julia itself. So far, it has some basic 
-capabilities for parallelization and provides a few generic 
-frameworks for combining various learning algorithms. It is 
-currently under heavy development and some bugs are expected 
-to be around.
+j4pr is designed to increase the efficiency in combining 
+algorithms present in various Julia packages while not 
+sacrificing a lot of speed. It exposes either natively 
+or by means of wrapping around, algorithms for clustering, 
+classification, regression, data manipulation as well as some
+functionality for paralellization, error assessment and 
+terminal-based plotting. Type stability is not enforced 
+however it still is pretty speedy, mostly due to the nature 
+of Julia itself. It is currently under heavy development 
+bugs are expected to be around.
 
 A simple example:
 ```julia
-julia> using j4pr; j4pr.version() # use j4pr and print the version string
-#
+julia> using j4pr; j4pr.version() # print nice ASCII art, we dwell in text mode
+# 
 #  _  _
 # (_\/_)                  |  This is a small library and package wrapper written at 0x0α Research.
-# (_/\_)                  |  Type "?j4pr" for general documentation. 
+# (_/\_)                  |  Type "?j4pr" for general documentation.
 #    _ _   _  _____ _ _   |  Look inside src/j4pr.jl for a list of available algorithms.
-#   | | | | |/____ / ` |  |  
-#   | | |_| | |  | | /-/  |  Version 0.1.0 "The Monolith" revision: 165 (2017-09-24)
-#  _/ |\__  | |  | | |    |  
+#   | | | | |/____ / ` |  |
+#   | | |_| | |  | | /-/  |  Version 0.1.1-alpha "The Monolith" commit: 24286cb (2017-09-26)
+#  _/ |\__  | |  | | |    |
 # |__/    |_|_|  |_|_|    |  License: MIT, view ./LICENSE.md for details.
-
 
 
 julia> data = DataGenerator.iris() # get the iris dataset
 # Iris Dataset, 150 obs, 4 vars, 1 target(s)/obs, 3 distinct values: "virginica"(50),"setosa"(50),"versicolor"(50)
 
-julia> (tr,ts)=splitobs(shuffleobs(data),0.3); # split dataset
+julia> (tr,ts)=splitobs(shuffleobs(data),0.3) # split dataset
+# 2-element PTuple{j4pr.DataCell{SubArray{Float64,2,Array{Float64,2},Tuple{Base.Slice{Base.OneTo{Int64}},Array{Int64,1}},false},SubArray{String,1,Array{String,1},Tuple{Array{Int64,1}},false},Void}}:
+# `- [*]DataCell, 45 obs, 4 vars, 1 target(s)/obs, 3 distinct values: "virginica"(15),"versicolor"(18),"setosa"(12)
+# `- [*]DataCell, 105 obs, 4 vars, 1 target(s)/obs, 3 distinct values: "virginica"(35),"versicolor"(32),"setosa"(38)
 
-julia> tr
-# [*]DataCell, 45 obs, 4 vars, 1 target(s)/obs, 3 distinct values: "virginica"(15),"versicolor"(12),"setosa"(18)
 
 julia> clf = knn(5, smooth=:ml) # 5-nn classifier, max-likelihood posterior smoothing
 # 5-NN classifier: smooth=ml, no I/O size information, untrained
 
-julia> clf_trained = clf(tr)
+julia> tclf = clf(tr) # train using 'tr'
 # 5-NN classifier: smooth=ml, 4->3, trained
 
-julia> +ts |> clf_trained # get output probs for test data
-# 3×105 Array{Float64,2}:
-#  0.0  1.0  0.0  1.0  0.0  1.0  0.0  0.0  0.0  1.0  0.0  0.0  1.0  0.0  0.0  0.0  0.0  1.0  …  1.0  0.0  1.0  1.0  0.0  0.0  1.0  0.0  0.0  1.0  1.0  0.0  0.0  1.0  0.0  0.0  0.0  1.0
-#  0.8  0.0  0.6  0.0  0.0  0.0  0.0  1.0  1.0  0.0  0.0  0.0  0.0  1.0  0.4  0.0  0.0  0.0     0.0  1.0  0.0  0.0  0.0  0.0  0.0  0.2  1.0  0.0  0.0  0.8  1.0  0.0  1.0  0.0  0.0  0.0
-#  0.2  0.0  0.4  0.0  1.0  0.0  1.0  0.0  0.0  0.0  1.0  1.0  0.0  0.0  0.6  1.0  1.0  0.0     0.0  0.0  0.0  0.0  1.0  1.0  0.0  0.8  0.0  0.0  0.0  0.2  0.0  0.0  0.0  1.0  1.0  0.0
+julia> result = ts |> tclf # test on 'ts'
+# DataCell, 105 obs, 3 vars, 1 target(s)/obs, 3 distinct values: "virginica"(35),"versicolor"(32),"setosa"(38)
 
-julia> +data |> clf_trained + lineplot(2,width=100) # print output probs for whole dataset, second class
-     ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐ 
-   1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣷⣿⠉⠉⢹⣾⢸⣿⣿⡇⡏⡇⡏⠉⢹⠀⠀⡏⢹⡏⠉⠉⠉⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⠀⠀⢸⣿⢸⣿⣿⡇⡇⡇⡇⠀⢸⠀⠀⡇⢸⡇⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⠀⠀⢸⣿⢸⣿⣿⡇⡇⡇⡇⠀⢸⠀⠀⡇⢸⡇⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡎⠉⠈⣿⠀⠀⢸⡏⠉⣿⣿⣷⠁⠉⠁⠀⢸⡏⠉⠁⠈⠁⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⢸⡇⠀⣿⣿⣿⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⢸⡇⠀⣿⣿⣿⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠁⠀⠀⠈⠁⠀⣿⣿⣿⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠉⣿⠉⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⢰⡇⣾⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⢸⡇⣿⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⢸⡇⣿⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠀⠀⠀⠀⠀⠈⠁⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⢸⡇⠀⠀⢸⡇⢸⡇⣿⢰⡇⢸⢸⠀⣾⠀⠀⠀⣾⠀⠀⠀ │ 
-     │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⢸⡇⠀⠀⢸⡇⢸⡇⣿⢸⡇⢸⢸⠀⣿⠀⠀⠀⣿⠀⠀⠀ | 
-   0 │⢀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣇⣀⣀⣿⣀⣸⣇⣀⣀⣸⣇⣸⣇⣿⣸⣇⣸⢸⣀⣿⣀⣀⣀⣿⣀⡀⠀ | 
-     └────────────────────────────────────────────────────────────────────────────────────────────────────┘ 
-     0                                                                                                  200
+julia> using MLLabelUtils; ENC = MLLabelUtils.LabelEnc.OneOfK; # to shorten code below
+
+julia> loss(result,                                                                 # calculate classification error for result
+           x->convertlabel(ENC, x, tclf.y["labels"]),                               # function to encode original labels
+           x->convertlabel(ENC, targets(indmax,x))                                  # function to encode the predicted labels
+           )
+# 0.025396825396825393
+
+julia> +data |> tclf+lineplot(2, width=100) # pipe 'iris' in classifier and plot the 2'nd class posteriors
+#      ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐
+#    1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡏⠉⠉⣿⠉⠉⢹⡎⠉⣿⣷⡇⡏⡇⡏⠉⢹⣿⡏⠉⠉⠉⠉⠉⠉⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⢸⡇⠀⣿⣿⡇⡇⡇⡇⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⢸⡇⠀⣿⣿⡇⡇⡇⡇⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠁⠀⠀⢸⡇⠀⠉⣿⣷⠁⢹⡇⠀⢸⡏⠁⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⢸⡇⠀⠀⣿⣿⠀⢸⡇⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⢸⡇⠀⠀⣿⣿⠀⢸⡇⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠈⠁⠀⠀⠈⣿⠀⢸⡇⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⢸⡇⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⢸⡇⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠀⠀⠁⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⢰⡇⠀⠀⡎⡇⠀⢸⡇⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⢸⡇⠀⠀⡇⡇⠀⢸⡇⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣿⠀⠀⠀⠀⠀⢸⡇⠀⠀⡇⡇⠀⢸⡇⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠁⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⣿⠀⡏⣿⡆⠀⢸⣿⣿⡇⡇⣷⡇⢸⡇⠀⣿⠀⣾⠀⡎⣷⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⣿⠀⡇⣿⡇⠀⢸⣿⣿⡇⡇⣿⡇⢸⡇⠀⣿⠀⣿⠀⡇⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#    0 │⢀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣇⣀⣿⣀⡇⣿⣇⣀⣸⣿⣿⣇⡇⣿⣇⣸⣇⣀⣿⣀⣿⣀⡇⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#      └────────────────────────────────────────────────────────────────────────────────────────────────────┘
+#      0                                                                                                  200
 ```
 
 A slightly more complex example:
 ```julia
-julia> data = DataGenerator.iris()
-       (tr,ts)=splitobs(shuffleobs(data),0.3); # split dataset
-       clf = knn(1);  # base classifier
-       L = 5          # ensemble size
-       C = 3          # 3 classes
-       ensemble = pipestack(        # stacked classifier ensemble
-                            Tuple(  # 'pipestack' works with Tuples
-                                  clf(f[1]) for f in kfolds(tr,5) # ~36 observations for training
-                                 )
-                           ) + meancombiner(L,C;α=1.0) # generalized mean combiner, averages individual classifier predictions
+julia> data = DataGenerator.iris();
+       (tr,ts) = splitobs(shuffleobs(data),0.3) # split 30% training, 70 %test
+       clf = knn(10,smooth=:dist) # 10-NN is the base classifier, distance based posterior smoothing
+       L = 20       # ensemble size
+       C = 3        # the 'iris' dataset has 3 classes
 
+       # Create stacked classifer ensemble with result combiner
+       ensemble = pipestack(
+                           Tuple( # the stack creation function needs a Tuple
+                                 clf(d) for d in RandomBatches(tr, 10, L) # train L classifiers using 10 (!) random samples from 'tr'
+                                )
+                   ) + meancombiner(L,C;α=1.0) # generalized mean combiner, in this case average classifer outputs
 # Serial Pipe, 2 element(s), 2 layer(s), generic
 
-julia> +ensemble
+julia> +ensemble # look inside the pipe
 # 2-element PTuple{j4pr.AbstractCell}:
-# `- Stacked Pipe, 5 element(s), 1 layer(s), trained
-# `- Generalized mean combiner: α=1.0, 15->3, trained
+# `- Stacked Pipe, 20 element(s), 1 layer(s), trained
+# `- Generalized mean combiner: α=1.0, 60->3, trained
 
-julia> +data |> ensemble
-# 3×150 Array{Float64,2}:
-#  1.0          1.0          1.0          1.0          1.0          1.0          1.0          …  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16
-#  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16     2.22045e-16  2.22045e-16  2.22045e-16  0.2          2.22045e-16  2.22045e-16  2.22045e-16
-#  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16     1.0          1.0          1.0          0.8          1.0          1.0          1.0        
+
+julia> result = ensemble(ts); # apply ensemble on test data
+
+julia> using MLLabelUtils; ENC = MLLabelUtils.LabelEnc.OneOfK; # to shorten code below
+
+julia> loss(result,                                                                        # calculate classification error for result
+                  x->convertlabel(ENC, x, sort(unique(-tr))),                              # function to encode original labels
+                  x->convertlabel(ENC, targets(indmax,x))                                  # function to encode the predicted labels
+                  )
+# 0.031746031746031744
+
+julia> Pt=pca(maxoutdim=2); result |> Pt(result) |> scatterplot(1,2) # plot PCA transform of the esenmble output
+#        ┌────────────────────────────────────────┐
+#    0.3 │⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⢰⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⢀⣋⠱⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⠉⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⡎⠅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⡋⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⣀⣀⠀⠀│
+#        │⠒⠒⠒⠒⠚⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⡗⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠖⠒⠒⠒⠓⠛⠛⠛⠓⠓⠒⠂│
+#        │⠀⠀⠀⠀⠈⠀⠠⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⠀⠈⡄⡁⠂⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⠀⢑⣂⠀⠀⠀⠀⠀⠀⠀⡀⠐⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⠀⠀⠙⣄⠀⠀⠄⠀⠀⠐⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⠀⠀⣈⠄⠈⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⠀⠀⠀⠁⠐⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        │⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#   -0.4 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│
+#        └────────────────────────────────────────┘
+#        -0.4                                   0.6
 ```
 
+One can also combine operations in a single processing pipe:
+```julia
+julia> # Create a partially trained pipe ('generic')
+       up = begin 
+           pipestack( Tuple( clf(d) for d in RandomBatches(tr, 15, L) ) ) + # classifier ensemble  
+           meancombiner(L,C;α=1.0)                                        + # combiner 
+           pca(maxoutdim=2)                                               + # PCA (2 outputs) 
+           scatterplot()                                                    # unicode plot because we dwell in text mode
+       end
+# Serial Pipe, 4 element(s), 2 layer(s), generic
+
+julia> +up
+# 4-element PTuple{j4pr.AbstractCell}:
+# `- Stacked Pipe, 20 element(s), 1 layer(s), trained
+# `- Generalized mean combiner: α=1.0, 60->3, trained
+# `- PCA: maxoutdim=2, no I/O size information, untrained
+# `- Scatter Plot (xidx=1, yidx=2), no I/O size information, fixed
+
+
+julia> p = up(ts) # train the PCA transform (using test data)
+# INFO: [operators] Pipe was partially processed (3/4 elements).
+# Serial Pipe, 4 element(s), 2 layer(s), generic
+
+julia> +p
+# 4-element PTuple{j4pr.AbstractCell}:
+# `- Stacked Pipe, 20 element(s), 1 layer(s), trained
+# `- Generalized mean combiner: α=1.0, 60->3, trained
+# `- PCA: maxoutdim=2, 3->2, trained
+# `- Scatter Plot (xidx=1, yidx=2), no I/O size information, fixed
+
+julia> ts |> p # plot!
+#        ┌────────────────────────────────────────┐ 
+#    0.4 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡄⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣄⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢐⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠂⠀⠀⠀⠀⠀│ 
+#        │⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⢼⠤⠤⠤⠤⠤⠤⠤⡧⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠮⠥⠤⠤⠤⠤⠤⠄│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠆⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠅⠂⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ 
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣨⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│                                                                                                                                        
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢄⠀⠄⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│                                                                                                                                        
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠨⠗⠂⠅⠀⠄⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│                                                                                                                                        
+#        │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⡇⠄⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│                                                                                                                                        
+#   -0.4 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│                                                                                                                                        
+#        └────────────────────────────────────────┘                                                                                                                                        
+#        -1                                       1              
+```
+
+Performance is still pretty decent for kNN (with distance based posterior smoothing) but could be better:
+```
+julia> bigdata = sample(data,100_000)[1];       # sample data and discard indices
+       @time bigdata |> p; 			# Intel Core i7-3720QM, 2.6Ghz, single thread
+#  6.352802 seconds (62.00 M allocations: 3.734 GiB, 44.36% gc time)
+```
+
+Hopefully, the small examples above provide a bit of insight into 
+how j4pr could be effectively used in a REPL workflow.
 
 
 ## Overview
 
 The package provides three main constructs or types designed to describe data 
-``DataCell``, functions ``FunctionCell`` i.e. data transforms, training 
+`DataCell`, functions `FunctionCell` i.e. data transforms, training 
 and execution methods for classification, regression etc. and processing pipelines 
-``PipeCell`` i.e. successions of arbitrary operations. Aside from the 
+`PipeCell` i.e. successions of arbitrary operations. Aside from the 
 objects themselves, several operators, conversion methods and iteration interfaces
 are provided that allow combining and working with the objects, with the aim 
 of obtaining arbitrarily complex structures.
@@ -119,9 +211,9 @@ of obtaining arbitrarily complex structures.
 The data container is integrated
 with the [MLDataPattern.jl API](https://github.com/JuliaML/MLDataPattern.jl)
 allowing for ellegant and efficient operations. An unrelated example of the concept
-behind the function container i.e. ``FunctionCell`` can be found in 
-[this](https://julialang.org/blog/2017/08/dsl) post. ``PipeCell`` is a container
-for ``FunctionCell`` objects as well as some information specifying  how data is processed
+behind the function container i.e. `FunctionCell` can be found in 
+[this](https://julialang.org/blog/2017/08/dsl) post. `PipeCell` is a container
+for `FunctionCell` objects as well as some information specifying  how data is processed
 by these i.e. passed sequentially through each, sent to each in parallel etc.
 
 - **Data container** 
@@ -472,12 +564,14 @@ by these i.e. passed sequentially through each, sent to each in parallel etc.
 
     Although it is difficult to provide a detailed roadmap, 
     future releases will include, among other, some integration with JuliaDB, 
+    a cross-validation framework, variable selection, 
     implementations of radial basis function classification and regression, 
     network classification, online learning mechanisms, extensions of the parallel
     framework i.e. parallel pipeline execution and hopefully, 
     some online data collection and processing methods.
     Be sure to check doc/roadmap.md for details.
     Suggestions are always welcomed ;)
+
 
 
 ## Documentation
