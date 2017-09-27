@@ -17,10 +17,10 @@ sacrificing a lot of speed. It exposes either natively
 or by means of wrapping around, algorithms for clustering, 
 classification, regression, data manipulation as well as some
 functionality for paralellization, error assessment and 
-terminal-based plotting. Type stability is not enforced 
-however it still is pretty speedy, mostly due to the nature 
-of Julia itself. It is currently under heavy development 
-bugs are expected to be around.
+terminal-based plotting. While type stability is most desired,
+it is not enforced; still j4pr is pretty speedy mostly due 
+to Julia. Currently the code is under heavy development 
+and some bugs are expected to be around, although not that many.
 
 A simple example:
 ```julia
