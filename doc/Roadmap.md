@@ -62,7 +62,7 @@
 	* Evaluation 
 		- cross-validation --> MLBase.jl				[TO DO][v.0.1.2?] 
 		- loss-functions --> MLLabelUtils.jl, LossFunctions.jl		[OK][v.0.1.0]
-		- ROC Analysis --> ROCAnalysis.jli/MLBase.jl			[TODO][v.0.1.2?]
+		- ROC Analysis --> ROCAnalysis.jl/MLBase.jl			[TODO][v.0.1.2?]
 	* Feature Selection
 		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.3?]
 

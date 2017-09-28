@@ -33,7 +33,7 @@ module LinDiscClassifier
 		
 	       	cv = (1-r1-r2)*cv + r1*diagm(diag(cv)) + r2*trace(cv)*eye(m)
 	
-		return LinDiscModel(mv, pinv(cv), priors, classes, r1, r2)
+		return LinDiscModel(mv, inv(cv), priors, classes, r1, r2)
 	end
 	
 	

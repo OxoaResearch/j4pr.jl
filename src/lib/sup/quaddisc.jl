@@ -35,11 +35,12 @@ module QuadDiscClassifier
 			# Calculate class covariance
 			cv[i,:,:] = cov(x[:,y.==yi],2)
 			
-			# Regularize and invert the covariance matrices
-			cv[i,:,:] = pinv( (1-r1-r2)*cv[i,:,:] + r1*diagm(diag(cv[i,:,:])) + r2*trace(cv[i,:,:])*eye(m) )
-			
 			# Calculate the log of the determinant of the cov matrix (for the fixed term)
 			dcm[i] = -1/2*log(det(cv[i,:,:]))
+			
+			# Regularize and invert the covariance matrices
+			cv[i,:,:] = inv( (1-r1-r2)*cv[i,:,:] + r1*diagm(diag(cv[i,:,:])) + r2*trace(cv[i,:,:])*eye(m) )
+			
 		end
 		
 		return QuadDiscModel(mv, cv, dcm, priors, classes, r1, r2)
