@@ -1,4 +1,4 @@
-# j4pr Features Roadmap 
+# j4pr Feature Roadmap 
 
 ## Unsupervised Learning
 	* Transforms:	 
@@ -13,7 +13,6 @@
 		- Sammon transform --> ?					[Unknown version]
 		- tSNE --> TSne.jl 						[Unknown version] 
 	 	- Chernoff --> ?						[Unknown version]
-		- Other (e.g. sigmoid,etc.) --> NumericFuns.jl, NumericExtensions.jl [Unknown version] 
 
 	* Clustering:
 		- hierarchical clustering --> Clustering.jl 			[Unknown version] 
@@ -46,26 +45,31 @@
 		- RBF classification/regression/density estimation		[Unknown version]
 
 	* Meta classifiers:
-		- Combiners (voting, averaging, NaiveByes)--> j4pr.jl		[OK][v.0.1.0]
-		- BKS, DT combiners -->j4pr.jl					[TODO][v.0.1.1]
-		- Ada-Boosting --> j4pr.jl					[OK][v.0.1.0]
+		- Combiners
+			- voting -->j4pr.jl					[OK][v.0.1.0]
+			- averaging -->j4pr.jl					[OK][v.0.1.0]
+			- NaiveByes --> j4pr.jl					[OK][v.0.1.0]
+			- BKS, DT -->j4pr.jl					[TODO][v.0.1.1]
+		- Boosting 
+			- Adaboost M1 --> j4pr.jl				[OK][v.0.1.0]
+			- Adaboost M2 --> j4pr.jl				[OK][v.0.1.0]
+			- Arc-x4 --> j4pr.jl					[TODO][v.0.1.1]
 		- Gradient Boosting --> ?					[Unknown version]
 		- Random subspace --> j4pr.jl					[OK][v.0.1.0]
-		- Network classifiers --> j4pr.jl				[Unknown version]
+		- Network classifiers --> j4pr.jl				[v.0.1.3?]
 		- Rotation Forest --> j4pr.jl					[Unknown version]	
 
 	* Evaluation 
-		- cross-validation --> j4pr.jl					[Unknwon version]
+		- cross-validation --> MLBase.jl				[TO DO][v.0.1.2?] 
 		- loss-functions --> MLLabelUtils.jl, LossFunctions.jl		[OK][v.0.1.0]
-
+		- ROC Analysis --> ROCAnalysis.jli/MLBase.jl			[TODO][v.0.1.2?]
 	* Feature Selection
-		- forward, backward, nested ,etc. --> j4pr.jl			[Unknown version]
+		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.3?]
 
 ## Regression
 	* Basic Regression:
 		- Linear --> MultivariateStats.jl				[OK][v.0.1.0]
 		- Ridge --> MultivariateStats.jl				[OK][v.0.1.0]
-		- Partial LS --> MultivariateStats.jl (future proposal)		[Unknown version]
 		- LASSO --> Lasso.jl (builds on GLM.jl)				[Unknown version]
 	 	- SVM --> LIBSVM.jl						[OK][v.0.1.0]
 	 	- kNN --> NearestNeighbors.jl + j4pr.jl				[OK][v.0.1.0]	

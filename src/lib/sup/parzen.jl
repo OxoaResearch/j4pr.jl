@@ -101,7 +101,7 @@ function cell based on the input data and labels if the case.
 
 For more information:
 	[1] S. Theodoridis, K. Koutroumbas, "Pattern Recognition 4'th Ed." 2009, ISBN 978-1-59749-272-0 
-	[2] R. Douda, P. Hart, D. Stork, "Pattern Classification 2'nd Ed." 2001, ISBN 978-1-59749-272-0 
+	[2] R. Douda, P. Hart, D. Stork, "Pattern Classification 2'nd Ed." 2001, ISBN 978-0-471-05669-0
 """
 parzen(h::Float64=1.0; kwargs...) = FunctionCell(parzen, (h,), Dict(), kwtitle("Parzen classifier/density estimator (h=$h)", kwargs); kwargs...) 
 
