@@ -205,7 +205,7 @@ For more information on posterior smoothing:
 
 Read the `NearestNeighbours.jl` and `Distances.jl` documentation for more information.
 """
-knn(k::Real=1; kwargs...) = FunctionCell(knn, (k,), Dict(), kwtitle(k isa Int ? "$k-NN classifier" : "$k-range-NN classifier", kwargs); kwargs...) 
+knn(k::Real=1; kwargs...) = FunctionCell(knn, (k,), ModelProperties(), kwtitle(k isa Int ? "$k-NN classifier" : "$k-range-NN classifier", kwargs); kwargs...) 
 
 
 
@@ -223,35 +223,32 @@ knn(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, k::Real=1; kw
 knn(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, k::Real=1; kwargs...) = begin
 	
 	@assert nobs(x[1]) == nobs(x[2]) "[knn] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
-	
-	# Transform labels first
-	yu = sort(unique(x[2]))
-	yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
 
+	# Transform labels first
+	enc = labelencn(x[2])
+	yenc = label2ind.(x[2],enc)
+	
 	# Train model
 	knndata = kNNClassifier.kNN_train(getobs(x[1]), yenc, k; kwargs...)
 
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x[1]),
-		   	  "size_out" => length(yu),
-			  "labels" => yu 
-	)
+	modelprops = ModelProperties(nvars(x[1]), length(enc.label), enc)
 	
-	FunctionCell(knn, Model(knndata), modelprops, kwtitle(k isa Int ? "$k-NN classifier" : "$k-range-NN classifier", kwargs)) 
+	FunctionCell(knn, Model(knndata, modelprops), kwtitle(k isa Int ? "$k-NN classifier" : "$k-range-NN classifier", kwargs)) 
 
 end
 
 
 
 # Execution
-knn(x::T where T<:CellData, model::Model{<:kNNClassifier.kNNModel}, modelprops::Dict) = datacell(knn(getx!(x), model, modelprops), gety(x)) 	
-knn(x::T where T<:AbstractVector, model::Model{<:kNNClassifier.kNNModel}, modelprops::Dict) = knn(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-knn(x::T where T<:AbstractMatrix, model::Model{<:kNNClassifier.kNNModel}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
-	# Return the transformed observations   
-	kNNClassifier.kNN_exec(model.data, getobs(x), collect(1:modelprops["size_out"]))
-end
+knn(x::T where T<:CellData, model::Model{<:kNNClassifier.kNNModel}) = 
+	datacell(knn(getx!(x), model), gety(x)) 	
+
+knn(x::T where T<:AbstractVector, model::Model{<:kNNClassifier.kNNModel}) = 
+	knn(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+
+knn(x::T where T<:AbstractMatrix, model::Model{<:kNNClassifier.kNNModel}) =
+	kNNClassifier.kNN_exec(model.data, getobs(x), collect(1:model.properties.odim))
 
 
 
@@ -278,7 +275,7 @@ function cell based on the input data and labels.
   
 Read the `NearestNeighbours.jl` and `Distances.jl` documentation for more information.  
 """
-knnr(k::Real=1; kwargs...) = FunctionCell(knnr, (k,), Dict(), kwtitle(k isa Int ? "$k-NN regressor" : "$k-range-NN regressor", kwargs); kwargs...) 
+knnr(k::Real=1; kwargs...) = FunctionCell(knnr, (k,), ModelProperties(), kwtitle(k isa Int ? "$k-NN regressor" : "$k-range-NN regressor", kwargs); kwargs...) 
 
 
 
@@ -292,31 +289,22 @@ Trains a knn regression model that using the data `x` and `k` neighbors.
 """
 # Training
 knnr(x::T where T<:CellDataL, k::Real=1; kwargs...) = knnr((getx!(x), gety(x)), k; kwargs...)
-knnr(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, k::Real=1; kwargs...) = knnr((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), k; kwargs...)
+knnr(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, k::Real=1; kwargs...) =
+	knnr((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), k; kwargs...)
 knnr(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, k::Real=1; kwargs...) = begin
 	
 	@assert nobs(x[1]) == nobs(x[2]) "[knnr] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 	
 	# Train model
 	knndata = kNNClassifier.kNN_train(getobs(x[1]), getobs(x[2]), k; kwargs...)
-
-	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x[1]),
-		   	  "size_out" => 1,
-	)
 	
-	FunctionCell(knnr, Model(knndata), modelprops, kwtitle(k isa Int ? "$k-NN regressor" : "$k-range-NN regressor", kwargs)) 
+	FunctionCell(knnr, Model(knndata, ModelProperties(nvars(x[1]),1)), kwtitle(k isa Int ? "$k-NN regressor" : "$k-range-NN regressor", kwargs)) 
 
 end
 
 
 
 # Execution
-knnr(x::T where T<:CellData, model::Model{<:kNNClassifier.kNNModel}, modelprops::Dict) = datacell(knnr(getx!(x), model, modelprops), gety(x)) 	
-knnr(x::T where T<:AbstractVector, model::Model{<:kNNClassifier.kNNModel}, modelprops::Dict) = knnr(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-knnr(x::T where T<:AbstractMatrix, model::Model{<:kNNClassifier.kNNModel}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
-	# Return the transformed observations   
-	kNNClassifier.kNN_exec(model.data, getobs(x))
-end
+knnr(x::T where T<:CellData, model::Model{<:kNNClassifier.kNNModel}) = datacell(knnr(getx!(x), model), gety(x)) 	
+knnr(x::T where T<:AbstractVector, model::Model{<:kNNClassifier.kNNModel}) = knnr(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+knnr(x::T where T<:AbstractMatrix, model::Model{<:kNNClassifier.kNNModel}) = kNNClassifier.kNN_exec(model.data, getobs(x))

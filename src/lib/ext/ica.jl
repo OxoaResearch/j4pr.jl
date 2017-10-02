@@ -19,7 +19,7 @@ projection matrix of the input data.
 
 Read the `MultivariateStats.jl` documentation for more information.  
 """
-ica(k::Int; kwargs...) = FunctionCell(ica, (k,), Dict(), kwtitle("ICA", kwargs); kwargs...) 
+ica(k::Int; kwargs...) = FunctionCell(ica, (k,), ModelProperties(), kwtitle("ICA", kwargs); kwargs...) 
 
 
 
@@ -40,20 +40,20 @@ ica(x::T where T<:AbstractMatrix, k::Int; kwargs...) = begin
 	icadata = fit(MultivariateStats.ICA, getobs(x), k; kwargs...)
 
 	# Build model properties 
-	modelprops = Dict("size_in" => size(icadata.W,1), 					# Wᵀx = y so size(x,1) == size(Wᵀ,2) == size(W,1)
-		          "size_out" => size(icadata.W,2)					# also, size(y e.g. out,1) == size(Wᵀ,1) == size(W,w)
+	modelprops = ModelProperties(size(icadata.W,1), 					# Wᵀx = y so size(x,1) == size(Wᵀ,2) == size(W,1)
+		 		     size(icadata.W,2)						# also, size(y e.g. out,1) == size(Wᵀ,1) == size(W,w)
 	)
 	
 	# Returned trained cell
-	FunctionCell(ica, Model(icadata), modelprops, kwtitle("ICA",kwargs))	 
+	FunctionCell(ica, Model(icadata, modelprops), kwtitle("ICA",kwargs))	 
 end
 
 
 
 # Execution
-ica(x::T where T<:CellData, model::Model{<:MultivariateStats.ICA}, modelprops::Dict) = datacell(ica(getx!(x), model, modelprops), gety(x)) 	
-ica(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.ICA}, modelprops::Dict) = ica(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-ica(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.ICA}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
+ica(x::T where T<:CellData, model::Model{<:MultivariateStats.ICA}) =
+	datacell(ica(getx!(x), model), gety(x)) 	
+ica(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.ICA}) =
+	ica(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+ica(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.ICA}) =
 	MultivariateStats.transform(model.data, getobs(x))
-end

@@ -21,7 +21,7 @@ done with `targets(indmin, ...)`.
 
 Read the `Clustering.jl` documentation for more information.  
 """
-dbscan(eps::Real, minpts::Int, f::Function) = FunctionCell(dbscan, (eps,minpts,f), Dict(), "DBSCAN (ɛ=$eps, minpts=$minpts)")
+dbscan(eps::Real, minpts::Int, f::Function) = FunctionCell(dbscan, (eps,minpts,f), ModelProperties(), "DBSCAN (ɛ=$eps, minpts=$minpts)")
 
 
 
@@ -44,22 +44,20 @@ dbscan(x::T where T<:AbstractMatrix, eps::Real, minpts::Int, f::Function) = begi
 	dbscandata = Clustering.dbscan(x, eps, minpts) 
 	
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x),
-		   	  "size_out" => length(dbscandata.seeds),	 
-	)
+	modelprops = ModelProperties(nvars(x),length(dbscandata.seeds))
 	
-	FunctionCell(dbscan, Model((f, x[:,sort(dbscandata.seeds)], dbscandata)), modelprops, "DBSCAN (ɛ=$eps, minpts=$minpts)");	 
+	FunctionCell(dbscan, Model((f, x[:,sort(dbscandata.seeds)], dbscandata), modelprops), "DBSCAN (ɛ=$eps, minpts=$minpts)");	 
 end
 
 
 
 # Execution
-dbscan(x::T where T<:CellData, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.DbscanResult}}, modelprops::Dict) = datacell(dbscan(getx!(x), model, modelprops), gety(x)) 	
-dbscan(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.DbscanResult}}, modelprops::Dict) = dbscan(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-dbscan(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.DbscanResult}}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
+dbscan(x::T where T<:CellData, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.DbscanResult}}) =
+	datacell(dbscan(getx!(x), model), gety(x)) 	
+dbscan(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.DbscanResult}}) =
+	dbscan(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+dbscan(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.DbscanResult}}) =
 	model.data[1](model.data[2],x) # f(seeds,x)	
-end
 
 
 
@@ -86,7 +84,7 @@ aggregation function that processes all distances between point and cluster.
 
 Read the `Clustering.jl` documentation for more information.  
 """
-dbscan(radius::Real, f::Function; kwargs...) = FunctionCell(dbscan, (radius,f), Dict(), kwtitle("DBSCAN (radius=$radius)",kwargs); kwargs...)
+dbscan(radius::Real, f::Function; kwargs...) = FunctionCell(dbscan, (radius,f), ModelProperties(), kwtitle("DBSCAN (radius=$radius)",kwargs); kwargs...)
 
 
 
@@ -109,25 +107,23 @@ dbscan(x::T where T<:AbstractMatrix, radius::Real, f::Function; kwargs...) = beg
 	dbscandata = Clustering.dbscan(x, radius; kwargs...) 
 	
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x),
-		   	  "size_out" => length(dbscandata)	 
-	)
+	modelprops = ModelProperties(nvars(x), length(dbscandata))
 	core_data = [x[:,dbscandata[i].core_indices] for i in 1:length(dbscandata)]
-	FunctionCell(dbscan, Model((f,core_data)), modelprops, kwtitle("DBSCAN (radius=$radius)",kwargs)); # model is not stored, all information needed is in modelprops	 
+	FunctionCell(dbscan, Model((f,core_data), modelprops), kwtitle("DBSCAN (radius=$radius)",kwargs)); # model is not stored, all information needed is in modelprops	 
 end
 
 
 
 # Execution
-dbscan(x::T where T<:CellData, model::Model{<:Tuple{<:Function, <:AbstractArray}}, modelprops::Dict) = datacell(dbscan(getx!(x), model, modelprops), gety(x)) 	
-dbscan(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Function, <:AbstractArray}}, modelprops::Dict) = dbscan(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-dbscan(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function, <:AbstractArray}},  modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
+dbscan(x::T where T<:CellData, model::Model{<:Tuple{<:Function, <:AbstractArray}}) =
+	datacell(dbscan(getx!(x), model), gety(x)) 	
+dbscan(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Function, <:AbstractArray}}) =
+	dbscan(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+dbscan(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function, <:AbstractArray}}) = begin
 	# Pre-allocate
-	R = zeros(Float64, modelprops["size_out"], nobs(x))
+	R = zeros(Float64, model.properties.odim, nobs(x))
 	f = model.data[1] 
-	for k in 1:modelprops["size_out"]
+	for k in 1:model.properties.odim
 		cluster_data = model.data[2][k]
 		for i in 1:nobs(x)
 			@inbounds @fastmath R[k,i] = f(getobs(x,i), cluster_data)

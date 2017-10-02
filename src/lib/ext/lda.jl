@@ -18,7 +18,7 @@ and the model).
 
 Read the `MultivariateStats.jl` documentation for more information.  
 """
-lda(distances::Bool=true; kwargs...) = FunctionCell(lda, (distances,), Dict(), kwtitle(distances ? "LDA (distance)" : "LDA (transform)", kwargs); kwargs...) 
+lda(distances::Bool=true; kwargs...) = FunctionCell(lda, (distances,), ModelProperties(), kwtitle(distances ? "LDA (distance)" : "LDA (transform)", kwargs); kwargs...) 
 
 
 
@@ -41,28 +41,26 @@ lda(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, distances::Bo
 	@assert nobs(x[1]) == nobs(x[2]) "[lda] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 	
 	# Transform labels first
-	yu = sort(unique(x[2]))
-	yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
-
+	enc = labelencn(x[2])
+	yenc = label2ind.(x[2],enc)
+	
 	# Train model
-	ldadata = fit(MultivariateStats.MulticlassLDA, length(yu), getobs(x[1]), yenc; kwargs...)
+	ldadata = fit(MultivariateStats.MulticlassLDA, length(enc.label), getobs(x[1]), yenc; kwargs...)
 
 	# Build model properties 
-	modelprops = Dict("size_in" => ldadata.stats.dim,
-		   	  "size_out" => distances ? length(yu) : size(ldadata.proj,2),
-			  "labels" => yu 
-	)
+	modelprops = ModelProperties(ldadata.stats.dim, distances ? length(enc.label) : size(ldadata.proj,2), enc) 
 	
-	FunctionCell(lda, Model((distances,ldadata)), modelprops, kwtitle(distances ? "LDA (distance)" : "LDA (transform)", kwargs))	 
+	FunctionCell(lda, Model((distances,ldadata), modelprops), kwtitle(distances ? "LDA (distance)" : "LDA (transform)", kwargs))	 
 end
 
 
 
 # Execution
-lda(x::T where T<:CellData, model::Model{<:Tuple{<:Bool,<:MultivariateStats.MulticlassLDA}}, modelprops::Dict) = datacell(lda(getx!(x), model, modelprops), gety(x)) 	
-lda(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Bool,<:MultivariateStats.MulticlassLDA}}, modelprops::Dict) = lda(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-lda(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Bool,<:MultivariateStats.MulticlassLDA}}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
+lda(x::T where T<:CellData, model::Model{<:Tuple{<:Bool,<:MultivariateStats.MulticlassLDA}}) =
+	datacell(lda(getx!(x), model), gety(x)) 	
+lda(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Bool,<:MultivariateStats.MulticlassLDA}}) =
+	lda(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+lda(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Bool,<:MultivariateStats.MulticlassLDA}}) = begin
 	
 	if model.data[1] == true 
 		# Return distances between the mean class vectors and each sample in x 
@@ -95,7 +93,7 @@ and the model).
 
 Read the `MultivariateStats.jl` documentation for more information.  
 """
-ldasub(distances::Bool=true; kwargs...) = FunctionCell(ldasub, (distances,), Dict(), 
+ldasub(distances::Bool=true; kwargs...) = FunctionCell(ldasub, (distances,), ModelProperties(), 
 					 kwtitle(distances ? "LDA-Subspace (distance)" : "LDA-Subspace (transform)", kwargs); 
 					 kwargs...) 
 
@@ -118,30 +116,28 @@ ldasub(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, distances:
 ldasub(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, distances::Bool=true; kwargs...) = begin
 	
 	@assert nobs(x[1]) == nobs(x[2])
-
+	
 	# Transform labels first
-	yu = sort(unique(x[2]))
-	yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
-
+	enc = labelencn(x[2])
+	yenc = label2ind.(x[2],enc)
+	
 	# Train model
-	ldadata = fit(MultivariateStats.SubspaceLDA, getobs(x[1]), yenc, length(yu); kwargs...)
+	ldadata = fit(MultivariateStats.SubspaceLDA, getobs(x[1]), yenc, length(enc.label); kwargs...)
 
 	# Build model properties 
-	modelprops = Dict("size_in" => size(ldadata.cmeans,1),
-		   	  "size_out" => distances ? length(yu) : size(ldadata.projLDA,2),
-			  "labels" => yu 
-	)
+	modelprops = ModelProperties(size(ldadata.cmeans,1), distances ? length(enc.label) : size(ldadata.projLDA,2), enc)
 	
-	FunctionCell(ldasub, Model((distances,ldadata)), modelprops, kwtitle(distances ? "LDA-Subspace (distance)" : "LDA-subspace (transform)", kwargs))	 
+	FunctionCell(ldasub, Model((distances,ldadata), modelprops), kwtitle(distances ? "LDA-Subspace (distance)" : "LDA-subspace (transform)", kwargs))	 
 end
 
 
 
 # Execution
-ldasub(x::T where T<:CellData, model::Model{<:Tuple{<:Bool,<:MultivariateStats.SubspaceLDA}}, modelprops::Dict) = datacell(ldasub(getx!(x), model, modelprops), gety(x)) 	
-ldasub(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Bool,<:MultivariateStats.SubspaceLDA}}, modelprops::Dict) = ldasub(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-ldasub(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Bool,<:MultivariateStats.SubspaceLDA}}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
+ldasub(x::T where T<:CellData, model::Model{<:Tuple{<:Bool,<:MultivariateStats.SubspaceLDA}}) =
+	datacell(ldasub(getx!(x), model), gety(x)) 	
+ldasub(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Bool,<:MultivariateStats.SubspaceLDA}}) =
+	ldasub(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+ldasub(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Bool,<:MultivariateStats.SubspaceLDA}}) = begin
 	
 	if model.data[1] == true 
 		# Return distances between the mean class vectors and each sample in x 

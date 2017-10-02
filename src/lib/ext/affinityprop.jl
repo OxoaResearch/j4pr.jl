@@ -23,7 +23,7 @@ slower and probably more stable updates
 Read the `Clustering.jl` documentation for more information.  
 """
 affinityprop(fs::Function=(x,y)->1-Distances.pairwise(Distances.CosineDist(),x,y); kwargs...) = 
-	FunctionCell(affinityprop, (fs,), Dict(), kwtitle("Affinity propagation", kwargs); kwargs...) 
+	FunctionCell(affinityprop, (fs,), ModelProperties(), kwtitle("Affinity propagation", kwargs); kwargs...) 
 
 
 
@@ -49,21 +49,17 @@ begin
 	affpdata = Clustering.affinityprop(fs(x,x); kwargs...) 
 	
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x),
-		   	  "size_out" => length(affpdata.exemplars) 
-	)
+	modelprops = ModelProperties(nvars(x),length(affpdata.exemplars))
 	
-	FunctionCell(affinityprop, Model((fs,x[:,sort(affpdata.exemplars)],affpdata)), modelprops, kwtitle("Affinity propagation", kwargs));	 
+	FunctionCell(affinityprop, Model((fs,x[:,sort(affpdata.exemplars)],affpdata), modelprops), kwtitle("Affinity propagation", kwargs));	 
 end
 
 
 
 # Execution
-affinityprop(x::T where T<:CellData, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.AffinityPropResult}}, modelprops::Dict) = datacell(affinityprop(getx!(x), model, modelprops), gety(x)) 	
-affinityprop(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.AffinityPropResult}}, modelprops::Dict) = affinityprop(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-affinityprop(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.AffinityPropResult}}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
-	# Calculate similarities 
+affinityprop(x::T where T<:CellData, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.AffinityPropResult}}) =
+	datacell(affinityprop(getx!(x), model), gety(x)) 	
+affinityprop(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.AffinityPropResult}}) =
+	affinityprop(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+affinityprop(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function, <:AbstractArray, <:Clustering.AffinityPropResult}}) = 
 	model.data[1](model.data[2], x) #fs(exemplars,x)	
-end

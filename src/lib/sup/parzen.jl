@@ -103,7 +103,7 @@ For more information:
 	[1] S. Theodoridis, K. Koutroumbas, "Pattern Recognition 4'th Ed." 2009, ISBN 978-1-59749-272-0 
 	[2] R. Douda, P. Hart, D. Stork, "Pattern Classification 2'nd Ed." 2001, ISBN 978-0-471-05669-0
 """
-parzen(h::Float64=1.0; kwargs...) = FunctionCell(parzen, (h,), Dict(), kwtitle("Parzen classifier/density estimator (h=$h)", kwargs); kwargs...) 
+parzen(h::Float64=1.0; kwargs...) = FunctionCell(parzen, (h,), ModelProperties(), kwtitle("Parzen classifier/density estimator (h=$h)", kwargs); kwargs...) 
 
 
 
@@ -124,54 +124,40 @@ parzen(x::T where T<:AbstractMatrix, h::Float64=1.0; kwargs...) = begin
 	
 	# Train model
 	parzendata = ParzenClassifier.Parzen_train(getobs(x), nothing, h; kwargs...)
-
-	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x),
-		   	  "size_out" => 1,
-			  "labels" => Int[] 
-	)
 	
-	FunctionCell(parzen, Model(parzendata), modelprops, kwtitle("Parzen density estimator (h=$h)",kwargs)) 
+	FunctionCell(parzen, Model(parzendata, ModelProperties(nvars(x), 1)), kwtitle("Parzen density estimator (h=$h)",kwargs)) 
 end
 
 
 
 # Training (classification)
 parzen(x::T where T<:CellDataL, h::Float64=1; kwargs...) = parzen((getx!(x), gety(x)), h; kwargs...)
-parzen(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, h::Float64=1.0; kwargs...) = parzen((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), h; kwargs...)
+parzen(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, h::Float64=1.0; kwargs...) = 
+	parzen((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), h; kwargs...)
 parzen(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, h::Float64=1.0; kwargs...) = begin
 	
 	@assert nobs(x[1]) == nobs(x[2]) "[parzen] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 	
 	# Transform labels first
-	yu = sort(unique(x[2]))
-	yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
+	enc = labelencn(x[2])
+	yenc = label2ind.(x[2],enc)
 
 	# Train model
 	parzendata = ParzenClassifier.Parzen_train(getobs(x[1]), yenc, h; kwargs...)
 
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x[1]),
-		   	  "size_out" => length(yu),
-			  "labels" => yu 
-	)
+	modelprops = ModelProperties(nvars(x[1]), length(enc.label), enc)
 	
-	FunctionCell(parzen, Model(parzendata), modelprops, kwtitle("Parzen classifier (h=$h)",kwargs)) 
+	FunctionCell(parzen, Model(parzendata, modelprops), kwtitle("Parzen classifier (h=$h)",kwargs)) 
 
 end
 
 
 
 # Execution
-parzen(x::T where T<:CellData, model::Model{<:ParzenClassifier.ParzenModel}, modelprops::Dict) = datacell(parzen(getx!(x), model, modelprops), gety(x)) 	
-parzen(x::T where T<:AbstractVector, model::Model{<:ParzenClassifier.ParzenModel}, modelprops::Dict) = parzen(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-parzen(x::T where T<:AbstractMatrix, model::Model{<:ParzenClassifier.ParzenModel}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
-	# Execute the classifier/density estimator  
-	ParzenClassifier.Parzen_exec(model.data, getobs(x), collect(1:modelprops["size_out"]))
-end
-
-
-
-
+parzen(x::T where T<:CellData, model::Model{<:ParzenClassifier.ParzenModel}) = 
+	datacell(parzen(getx!(x), model), gety(x)) 	
+parzen(x::T where T<:AbstractVector, model::Model{<:ParzenClassifier.ParzenModel}) = 
+	parzen(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+parzen(x::T where T<:AbstractMatrix, model::Model{<:ParzenClassifier.ParzenModel}) = 
+	ParzenClassifier.Parzen_exec(model.data, getobs(x), collect(1:model.properties.odim))

@@ -17,7 +17,7 @@ of the input dataset, `n` the number of samples
 
 Read the `MultivariateStats.jl` documentation for more information.  
 """
-pca(;kwargs...) = FunctionCell(pca, (), Dict(), kwtitle("PCA", kwargs);kwargs...) 
+pca(;kwargs...) = FunctionCell(pca, (), ModelProperties(), kwtitle("PCA", kwargs);kwargs...) 
 
 
 
@@ -38,24 +38,23 @@ pca(x::T where T<:AbstractMatrix; kwargs...)  = begin
 	ppadata = fit(MultivariateStats.PCA, getobs(x); kwargs...)
 
 	# Build model properties
-	modelprops = Dict("size_in" => size(ppadata.proj,1), 					# Size of the input data
-		   	  "size_out" => size(ppadata.proj,2),
-	)
+	modelprops = ModelProperties(size(ppadata.proj,1), size(ppadata.proj,2))
 	
 	# Returned trained cell
-	FunctionCell(pca, Model(ppadata), modelprops, kwtitle("PCA",kwargs))	 
+	FunctionCell(pca, Model(ppadata, modelprops), kwtitle("PCA",kwargs))	 
 end
 
 
 
 # Execution
-pca(x::T where T<:CellData, model::Model{<:MultivariateStats.PCA}, modelprops::Dict) = datacell(pca(getx!(x), model, modelprops), gety(x)) 	
-pca(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.PCA}, modelprops::Dict) = pca(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-pca(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.PCA}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
+pca(x::T where T<:CellData, model::Model{<:MultivariateStats.PCA}) =
+	datacell(pca(getx!(x), model), gety(x)) 	
+pca(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.PCA}) =
+	pca(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+pca(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.PCA}) =
 	MultivariateStats.transform(model.data, getobs(x))
-end
+
+
 
 
 
@@ -90,15 +89,14 @@ julia> ([1.0 2 3 4 5]' |> P ) |> pcar(P)
 pcar(x::T where T<:CellFunT{<:Model{<:MultivariateStats.PCA}}) = begin
 	
 	# Build model properties
-	modelprops = Dict("size_in" => gety(x)["size_out"],
-		   	  "size_out"=> gety(x)["size_in"]
-	)
-	FunctionCell(pcar, getx(x), modelprops,"PCA: reconstruct")
+	modelprops = ModelProperties(getx(x).properties.odim, getx(x).properties.idim)
+
+	FunctionCell(pcar, Model(getx(x).data, modelprops),"PCA: reconstruct")
 end
 
 
 
 # Execution
-pcar(x::T where T<:CellData, model::Model{<:MultivariateStats.PCA}, modelprops::Dict) = datacell(pcar(getx!(x), model, modelprops), gety(x)) 	
-pcar(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.PCA}, modelprops::Dict) = pcar(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-pcar(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.PCA}, modelprops::Dict)::Matrix{Float64} = MultivariateStats.reconstruct(model.data, getobs(x))
+pcar(x::T where T<:CellData, model::Model{<:MultivariateStats.PCA}) = datacell(pcar(getx!(x), model), gety(x)) 	
+pcar(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.PCA}) = pcar(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+pcar(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.PCA})::Matrix{Float64} = MultivariateStats.reconstruct(model.data, getobs(x))

@@ -13,7 +13,7 @@ of the input data `X` so that `Wᵀcov(X)W=I`.
 
 Read the `MultivariateStats.jl` documentation for more information.  
 """
-whiten(;kwargs...) = FunctionCell(whiten, (), Dict(), kwtitle("Whitening", kwargs); kwargs...) 
+whiten(;kwargs...) = FunctionCell(whiten, (), ModelProperties(), kwtitle("Whitening", kwargs); kwargs...) 
 
 
 
@@ -34,20 +34,18 @@ whiten(x::T where T<:AbstractMatrix; kwargs...) = begin
 	whdata = fit(MultivariateStats.Whitening, getobs(x); kwargs...)
 
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x),
-		   	  "size_out" => nvars(x)
-	)
+	modelprops = ModelProperties(nvars(x), nvars(x))
 	
 	# Returned trained cell
-	FunctionCell(whiten, Model(whdata), modelprops, kwtitle("Whitening",kwargs))	 
+	FunctionCell(whiten, Model(whdata, modelprops), kwtitle("Whitening",kwargs))	 
 end
 
 
 
 # Execution
-whiten(x::T where T<:CellData, model::Model{<:MultivariateStats.Whitening}, modelprops::Dict) = datacell(whiten(getx!(x), model, modelprops), gety(x)) 	
-whiten(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.Whitening}, modelprops::Dict) = whiten(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-whiten(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.Whitening}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
+whiten(x::T where T<:CellData, model::Model{<:MultivariateStats.Whitening}) =
+	datacell(whiten(getx!(x), model), gety(x)) 	
+whiten(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.Whitening}) =
+	whiten(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+whiten(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.Whitening}) =
 	MultivariateStats.transform(model.data, getobs(x))
-end

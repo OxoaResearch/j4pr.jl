@@ -94,28 +94,29 @@ module AdaBoost
 		while k <= L
 			it += 1
 			sample!(idx, weights(w), idxs)						# get sampling indices
-			members[k] = f_train(getobs(datasubset((X,y), idxs)));			# train classifier
 		 	
 			# Check for missing labels, if any don't go further, resample 
 			if isempty(setdiff(yu, unique(y[idxs])))
-			
+				
+				members[k] = f_train(getobs(datasubset((X,y), idxs)));		# train classifier
+				
 				# Split execution between the cases where the execution function is implicit (for FunctionCells) or specified (generic)
 				if f_exec isa Void
 					mismatches = float(yu[targets(indmax, members[k](X))] .!= y)	# find mismatches (FunctionCell classifier)
 				else
-					mismatches = float(f_exec(members[k],X) .!= y)			# find mismatches 
+					mismatches = float(f_exec(members[k],X) .!= y)		# find mismatches 
 				end
 				
-				err = sum(mismatches .* w)						# calculate error for member 'k'	
+				err = sum(mismatches .* w)					# calculate error for member 'k'	
 				if err == 0.0
-					fill!(w, 1.0/n)							# re-initialize weights
+					fill!(w, 1.0/n)						# re-initialize weights
 					k += 1
 				elseif err >= (1.0-1/C)
-					fill!(w,1.0/n)							# reinitialize weights but do not change iteration
+					fill!(w,1.0/n)						# reinitialize weights but do not change iteration
 				else
-					beta[k] = err/(1-err)						# beta is directly proportional with the error
-					w = w .* (beta[k].^(1.0-mismatches)) 				# if mismatch keep weight, if not, decrease weight 
-					w = w./sum(w)							# normalize
+					beta[k] = err/(1-err)					# beta is directly proportional with the error
+					w = w .* (beta[k].^(1.0-mismatches)) 			# if mismatch keep weight, if not, decrease weight 
+					w = w./sum(w)						# normalize
 					k+=1
 				end
 			end
@@ -168,11 +169,12 @@ module AdaBoost
 		while k <= L
 			it += 1
 			sample!(idx, weights(w), idxs)						# get sampling indices
-			members[k] = f_train(getobs(datasubset((X,yenc), idxs)));		# train classifier
 
 			# Check for missing labels, if any don't go further, resample 
 			if isempty(setdiff(yu, unique(yenc[idxs])))
 				
+				members[k] = f_train(getobs(datasubset((X,yenc), idxs)));	# train classifier
+
 				# Split execution between the cases where the execution function is implicit (for FunctionCells) or specified (generic)
 				if f_exec isa Void
 					p = members[k](X)
@@ -191,7 +193,7 @@ module AdaBoost
 					fill!(w, 1.0/n)
 					k += 1
 				elseif err >= (1-1/C)
-					#_init_weights_!(w,yenc)					# reinitialize weights but do not change iteration
+					#_init_weights_!(w,yenc)				# reinitialize weights but do not change iteration
 					fill!(w, 1.0/n)
 				else
 					beta[k] = err/(1-err)					# beta is directly proportional with the error
@@ -286,7 +288,7 @@ julia> using j4pr
 ```
 """
 adaboost(f::F where F<:CellFunU, L::Int; boost_type::AdaBoost.BoostType=AdaBoost.AdaBoostM2()) = 
-	FunctionCell(adaboost, (f, L), Dict(), "Adaboost ensemble ($(f.tinfo), $L members)"; boost_type=boost_type) # untrained function cell
+	FunctionCell(adaboost, (f, L), ModelProperties(), "Adaboost ensemble ($(f.tinfo), $L members)"; boost_type=boost_type) # untrained function cell
 
 
 
@@ -299,7 +301,8 @@ adaboost(f::F where F<:CellFunU, L::Int; boost_type::AdaBoost.BoostType=AdaBoost
 Trains an AdaBoost ensemble using the data `x`.
 """
 # Training
-adaboost(x::T where T<:CellDataL, f::F where F<:CellFunU, L::Int; boost_type::AdaBoost.BoostType=AdaBoost.AdaBoostM2()) = adaboost((getx!(x), gety(x)), f, L; boost_type=boost_type)
+adaboost(x::T where T<:CellDataL, f::F where F<:CellFunU, L::Int; boost_type::AdaBoost.BoostType=AdaBoost.AdaBoostM2()) =
+	adaboost((getx!(x), gety(x)), f, L; boost_type=boost_type)
 
 adaboost(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, f::F where F<:CellFunU, L::Int; boost_type::AdaBoost.BoostType=AdaBoost.AdaBoostM2()) = 
 	adaboost((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), f, L; boost_type=boost_type)
@@ -310,26 +313,23 @@ begin
 	@assert nobs(x[1]) == nobs(x[2]) "[adaboost] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 
 	# Transform labels first
-	yu = sort(unique(x[2]))
-	yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
-
+	enc = labelencn(x[2])
+	yenc = label2ind.(x[2],enc)
+	
 	# Train model
 	ensembledata = AdaBoost.adaboost_train(x[1], yenc, L, f.f, nothing, boost_type)
 	
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x[1]),
-		   	  "size_out" => length(yu),
-			  "labels" => yu 
-	)
+	modelprops = ModelProperties(nvars(x[1]), length(enc.label), enc)
 	
-	FunctionCell(adaboost, Model(ensembledata), modelprops, "Adaboost ensemble ($(f.tinfo), $L members)")
+	FunctionCell(adaboost, Model(ensembledata, modelprops), "Adaboost ensemble ($(f.tinfo), $L members)")
 end
 
 
 # Execution
-adaboost(x::T where T<:CellData, model::Model{<:AdaBoost.AdaBoostEnsemble}, modelprops::Dict) = datacell(adaboost(getx!(x), model, modelprops), gety(x)) 	
-adaboost(x::T where T<:AbstractVector, model::Model{<:AdaBoost.AdaBoostEnsemble}, modelprops::Dict) = adaboost(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-adaboost(x::T where T<:AbstractMatrix, model::Model{<:AdaBoost.AdaBoostEnsemble}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	return AdaBoost.adaboost_exec(model.data,x)
-end
+adaboost(x::T where T<:CellData, model::Model{<:AdaBoost.AdaBoostEnsemble}) =
+	datacell(adaboost(getx!(x), model), gety(x)) 	
+adaboost(x::T where T<:AbstractVector, model::Model{<:AdaBoost.AdaBoostEnsemble}) =
+	adaboost(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+adaboost(x::T where T<:AbstractMatrix, model::Model{<:AdaBoost.AdaBoostEnsemble}) =
+	AdaBoost.adaboost_exec(model.data,x)

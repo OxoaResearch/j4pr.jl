@@ -1,107 +1,80 @@
-##############################################################################################################################
-# Operators [Data cells]												     #
-##############################################################################################################################
+"""
+	PipeCell{T,S,U}(x::T, y::S, f::U, layer::Int, tinfo::String, oinfo::String)
 
-# Vertical datacell concatenation (e.g. data concatenation) and auxiliary methods
-dcat(x::T where T<:PTuple{<:Void}) = nothing
-dcat(x::T where T<:Array{<:Void}) = nothing
-dcat(::Void) = nothing 
-dcat(::Void,::Void) = nothing
-dcat(x,::Void) = dcat(x)
-dcat(::Void,x) = dcat(x)
-dcat(x::AbstractVector) = getobs(x)
-dcat(x::AbstractMatrix) = getobs(x)
-dcat(x::Matrix) = x 
-dcat(x::Vector) = x
-dcat(x::AbstractVector, y::AbstractVector) = vcat(mat(x, ObsDim.Constant{2}()), mat(y,ObsDim.Constant{2}()))
-dcat(x::AbstractMatrix, y::AbstractVector) = vcat(dcat(x), mat(y, ObsDim.Constant{2}()))
-dcat(x::AbstractVector, y::AbstractMatrix) = vcat(mat(x, ObsDim.Constant{2}()), dcat(y))
-dcat(x::AbstractMatrix, y::AbstractMatrix) = vcat(dcat(x), dcat(y))
-dcat(x,y,z...) = dcat(dcat(x,y),z...)
-dcat(x) = dcat(x...)
-vcat(c::T...) where T<:CellData = begin
-	@assert all(labx == laby for labx in gety!.(c), laby in gety!.(c)) "[vcat] 'y' fields have to be identical for all DataCells."
-	datacell(dcat(getx!.(c)), gety!(c[1]))
+Constructs the basic object for complex processing data, the `PipeCell`. The constructor is parametric so it can be
+easily extended to new types of processing.
+
+# Main `PipeCell` constructors
+  * `PipeCell(x::T where T<:PTuple{Abstractcell}, tinfo::String = "")` creates a `stacked pipe`
+  * `PipeCell(x::T where T<:PTuple{AbstractCell}, dispatch::SortedDict, tinfo::String = "")` creates a `parallel pipe`
+  * `PipeCell(x::T where T<:PTuple{AbstractCell}, order::Vector{Int}, tinfo::String="")` creates a `serial pipe`
+
+where `const PTuple{T} = Tuple{Vararg{<:T}}`.
+
+The concepts are as follows: when piping data to a stacked pipe, the data is individually piped to each AbstractCell 
+of the pipe. For parallel pipes, dispatch allows to select which element of the collection (e.g. `Vector`, `Tuple`, data cell etc.)
+gets piped where. Serial pipes process data in a serial manner. Pipes can be created also by using the functions 
+`pipestack`, `pipeparallel` and `pipeserial`. 
+"""
+#############
+# PipeCells #
+#############
+struct PipeCell{T,S,U} <: AbstractCell{T,S,U}
+	x::T                                                                                    # List of Data/Function/PipeCells
+    	y::S                                                                                    # Processing information
+    	f::U                                                                                    # <unused so far>
+	layer::Int										# Layer
+    	tinfo::String										# Title or name
+    	oinfo::String                                                                        	# Other information
 end
 
+# General constructors for Stacked pipes (e.g. input routed to all cells)
+PipeCell(x::T where T<:PTuple{AbstractCell}, tinfo::String = "") = PipeCell(x, nothing, nothing, countlayers(x)+1, tinfo, oinfoglobal )
 
-# Horizontal datacell concatenation (e.g. observation concatenation) and auxiliary methods
-ocat(x::T where T<:PTuple{<:Void}) = nothing
-ocat(x::T where T<:Array{<:Void}) = nothing
-ocat(::Void) = nothing 
-ocat(::Void,::Void) = nothing
-ocat(x,::Void) = ocat(x)
-ocat(::Void,x) = ocat(x)
-ocat(x::AbstractVector) = getobs(x)
-ocat(x::AbstractMatrix) = getobs(x)
-ocat(x::Vector) = x
-ocat(x::Matrix) = x
-ocat(x::AbstractVector, y::AbstractVector) = vcat(ocat(x), ocat(y))
-ocat(x::AbstractMatrix, y::AbstractVector) = hcat(ocat(x), mat(y, ObsDim.Constant{2}()))
-ocat(x::AbstractVector, y::AbstractMatrix) = hcat(mat(x, ObsDim.Constant{2}()), ocat(y))
-ocat(x::AbstractMatrix, y::AbstractMatrix) = hcat(ocat(x), ocat(y))
-ocat(x,y,z...) = ocat(ocat(x,y),z...)
-ocat(x) = ocat(x...)
-hcat(c::T...) where T<:CellData = datacell(ocat(getx!.(c)), ocat(gety!.(c)))
-
-
-
-# Piping operators
-|>(x::T where T<:AbstractArray, c::S where S<:CellData) = begin
-    	info("[operators] Creating new data cell with Array contents..." )
-    	datacell(x)
+# General constructor for Parallel pipes (e.g. input routed according to some dispatch information to cells)
+PipeCell(x::T where T<:PTuple{AbstractCell}, dispatch::SortedDict, tinfo::String = "") = begin
+	@assert length(x) == length(keys(dispatch)) "Parallel pipe element number does not match dispatch information."	
+	PipeCell(x, dispatch, nothing, countlayers(x)+1, tinfo, oinfoglobal )
 end
 
-|>(x::T where T<:Tuple, c::S where S<:CellData) = begin 					# Generally used in the case: (data, labels ) |> datacell([])
-	if (nobs(c) > 0)
-		info("[operators] Creating new data cell appending Tuple contents..." )
-		datacell(dcat(x[1],getx!(c)), dcat(x[2], gety!(c)))
-	else
-		info("[operators] Creating new data cell with Tuple contents..." )
-		datacell(x...)
-	end
-end
-
-
-|>(x1::T where T<:CellDataU, x2::S where S<:CellDataU) = begin                 			# Generally used to glue together two DataCells
-	@assert(nobs(x1) == nobs(x2))
-	datacell(dcat(getx!(x1),getx!(x2)))
-end
-
-|>(x1::T where T<:CellDataU, x2::S where S<:CellData) = begin                 			# Generally used to glue together two DataCells
-	@assert(nobs(x1) == nobs(x2))
-	datacell(dcat(getx!(x1),getx!(x2)), gety!(x2))
-end
-
-|>(x1::T where T<:CellData, x2::S where S<:CellDataU) = begin                 			# Generally used to glue together two DataCells
-	@assert(nobs(x1) == nobs(x2))
-	datacell(dcat(getx!(x1),getx!(x2)), gety!(x1))
-end
-
-|>(x1::T where T<:CellData, x2::S where S<:CellData) = begin                 			# Generally used to glue together two DataCells
-	@assert(nobs(x1) == nobs(x2))
-	if isequal(gety!(x1), gety!(x2))	
-		datacell(dcat(getx!(x1),getx!(x2)), gety!(x1))
-	else
-		datacell(dcat(getx!(x1),getx!(x2)), dcat(gety!(x1),gety!(x2)))
-	end
+# General constructor for Serial pipes (e.g. input passes from element to element of the pipe according to some order)
+PipeCell(x::T where T<:PTuple{AbstractCell}, order::Vector{Int}, tinfo::String="") = begin
+	@assert length(x) >= length(order) "Serial pipe must contain at least as many elements as order vector."	
+	PipeCell(x, order, nothing, countlayers(x)+1, tinfo, oinfoglobal )
 end
 
 
 
-##############################################################################################################################
-# Operators [Function cells]																								 #
-##############################################################################################################################
+#####################
+# PipeCell aliases  #
+#####################
 
-# Pipe operators for function cells (a different execution method for each FunctionCell variety: fixed, untrained and trained)
-|>(x::T where T, c::S where S<:CellFunF) = getf!(c)(x, c.fargs...; c.fkwargs...)
-|>(x::T where T, c::S where S<:CellFunU) = getf!(c)(x, c.fargs...; c.fkwargs...)
-|>(x::T where T, c::S where S<:CellFunT) = getf!(c)(x, getx!(c), gety!(c) ; c.fkwargs...)
+# Stacked pipe aliases
+const PipeStacked = PipeCell{<:PTuple{AbstractCell}, Void, Void}				# Stacked pipe (generic)
+const PipeStackedF = PipeCell{<:PTuple{CellFunF}, Void, Void}  					# Stacked pipe (fixed Cells)
+const PipeStackedU = PipeCell{<:PTuple{CellFunU}, Void, Void}  					# Stacked pipe (untrained Cells)
+const PipeStackedT =  PipeCell{<:PTuple{CellFunT}, Void, Void} 					# Stacked pipe (trained Cells)
+
+# Parallel pipe aliases
+const PipeParallel = PipeCell{<:PTuple{AbstractCell}, <:SortedDict, Void}			#  Parallel pipe (generic)
+const PipeParallelF = PipeCell{<:PTuple{CellFunF}, <:SortedDict, Void} 				#  Parallel pipe (fixed Cells)
+const PipeParallelU = PipeCell{<:PTuple{CellFunU}, <:SortedDict, Void}				#  Parallel pipe (untrained Cells)
+const PipeParallelT = PipeCell{<:PTuple{CellFunT}, <:SortedDict, Void} 				#  Parallel pipe (trained Cells)
+
+# Serial pipe aliases 
+const PipeSerial = PipeCell{<:PTuple{AbstractCell}, <:Vector{Int}, Void}			# Serial pipe (generic)
+const PipeSerialF = PipeCell{<:PTuple{CellFunF}, <:Vector{Int}, Void}				# Serial pipe (fixed Cells)
+const PipeSerialU = PipeCell{<:PTuple{CellFunU}, <:Vector{Int}, Void} 				# Serial pipe (untrained Cells)
+const PipeSerialT = PipeCell{<:PTuple{CellFunT}, <:Vector{Int}, Void} 				# Serial pipe (trained Cells)
+
+# Pipe alias
+const PipeGeneric = PipeCell{<:PTuple{AbstractCell}, <:Any, <:Any}				# Any type of pipe
 
 
-##############################################################################################################################
-# Operators for Pipes
-##############################################################################################################################
+
+##############################
+# Piping operators for Pipes #
+##############################
 
 # Pipe operator (stacked pipes)
 |>(x::T where T, p::PipeStacked) = pipestack(ntuple(i->p[i](x), Val{length(p)})) # Pipe operators for generic stacked pipes
@@ -203,27 +176,6 @@ end
 
 
 ##############################################################################################################################
-# Operators [AbstractCells] 
-##############################################################################################################################
-
-# Simple math operators (quite outdated but may still be useful)
-+(ac::T where T<:AbstractCell) = ac.x
--(ac::T where T<:AbstractCell) = ac.y
-~(ac::T where T<:AbstractCell) = dump(ac)
-
-
-
-# Concatenation (Pipe creation operators)
-vcat(ac::T where T<:AbstractCell, args...) = pipestack((ac, args...))	                        # Vertical concatenation creates stacked pipes
-vcat(ac::T...)  where T<:AbstractCell= pipestack(ac)                   	  			# Vertical concatenation creates stacked pipes
-hcat(ac::T where T<:AbstractCell, args...) = pipeparallel((ac, args...))                       	# Horizontal concatenation creates parallel pipes
-hcat(ac::T...) where T<:AbstractCell = pipeparallel(ac)                				# Horizontal concatenation creates parallel pipes
-+(ac::T where T<:AbstractCell, args...) = pipeserial((ac, args...))                            	# Summation operator creates serial pipes
-+(ac::T...) where T<:AbstractCell = pipeserial(ac)             					# Summation operator creates serial pipes
-
-
-
-##############################################################################################################################
 # Functions needed to construct pipes 
 ##############################################################################################################################
 
@@ -270,6 +222,43 @@ Creates a `serial pipe`.
 pipeserial(x::T where T<:PTuple{AbstractCell}, order=collect(1:length(x))) = PipeCell(x, order)				
 pipeserial(x, order=collect(1:length(x))) = pipeserial(map(AbstractCell, x), order) 
 pipeserial(x::T where T<:PTuple, order=collect(1:length(x))) = flatten(x, PipeSerial)
+
+
+#####################################
+# Concatenation operators for Pipes #
+#####################################
+vcat(ac::T where T<:AbstractCell, args...) = pipestack((ac, args...))	                        # Vertical concatenation creates stacked pipes
+vcat(ac::T...)  where T<:AbstractCell= pipestack(ac)                   	  			# Vertical concatenation creates stacked pipes
+hcat(ac::T where T<:AbstractCell, args...) = pipeparallel((ac, args...))                       	# Horizontal concatenation creates parallel pipes
+hcat(ac::T...) where T<:AbstractCell = pipeparallel(ac)                				# Horizontal concatenation creates parallel pipes
++(ac::T where T<:AbstractCell, args...) = pipeserial((ac, args...))                            	# Summation operator creates serial pipes
++(ac::T...) where T<:AbstractCell = pipeserial(ac)             					# Summation operator creates serial pipes
+
+
+
+######################
+# Indexing for Pipes #
+######################
+# Generic setindex! for data cells
+setindex!(c::T where T<:PipeGeneric, cells, inds...) = setindex!(getx!(c), cells, inds...)
+
+getindex(ac::T where T<:PipeGeneric, i::Int64) = getx!(ac)[i]
+getindex(ac::T where T<:PipeStacked, i::Union{Vector{Int},UnitRange{Int}}) = PipeCell(getx!(ac)[i])
+getindex(ac::T where T<:PipeParallel, i::Union{Vector{Int}, UnitRange{Int}}) = PipeCell(getx!(ac)[i], SortedDict(Dict(j=>ac.y[j] for j in i)))
+getindex(ac::T where T<:PipeSerial, i::Union{Vector{Int}, UnitRange{Int}}) = PipeCell(getx!(ac)[i], collect(1:length(i)) )
+
+
+
+#################################
+# Iteration interface for pipes #
+#################################
+start(p::PipeGeneric) = 1
+next(p::PipeGeneric, state) = (getx!(p)[state], state+1)
+done(p::PipeGeneric, state) = state > length(getx!(p))
+endof(p::PipeGeneric) = length(getx!(p))
+eltype(p::PipeGeneric) = eltype(getx!(p))
+length(p::PipeGeneric) = length(getx!(p))
+
 
 
 """

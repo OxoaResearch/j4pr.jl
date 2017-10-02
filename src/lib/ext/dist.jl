@@ -8,7 +8,7 @@ Constructs an untrained function cell using a `d::Distances.PreMetric` function 
 
 For more information on the distances allowed, see ?Distances.
 """
-dist(d::Distances.PreMetric=Distances.Euclidean()) = FunctionCell(dist, (d,), Dict(), "Distance ($d))") 
+dist(d::Distances.PreMetric=Distances.Euclidean()) = FunctionCell(dist, (d,), ModelProperties(), "Distance ($d))") 
 
 
 
@@ -30,23 +30,23 @@ dist(x::T where T<:AbstractMatrix, d::Distances.PreMetric=Distances.Euclidean())
 	namedist = "Distance ($d)"
 	
 	# Build model properties
-	modelprops = Dict("size_in" => nvars(x), 					# Size of the input data
-			"size_out" => nobs(x), 						# Size of the output data (number of observations of reference dataset)
-	)
+	modelprops = ModelProperties(nvars(x),nobs(x))
 	
 	# Returned trained cell
-	FunctionCell(dist, Model((d,getobs(x))), modelprops, namedist)	 
+	FunctionCell(dist, Model((d,getobs(x)), modelprops), namedist)	 
 end
 
 
 
 # Execution
-dist(x::T where T<:CellData, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}, modelprops::Dict) = datacell(dist(getx!(x), model, modelprops), gety(x)) 	
-dist(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}, modelprops::Dict) = dist(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-dist(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
+dist(x::T where T<:CellData, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}) =
+	datacell(dist(getx!(x), model), gety(x)) 	
+dist(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}) =
+	dist(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+dist(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Distances.PreMetric,Matrix}}) =
 	Distances.pairwise(model.data[1], model.data[2], getobs(x))
-end
+
+
 
 # Wrapper for dist(X,Y)
 """

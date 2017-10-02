@@ -17,7 +17,10 @@ The parameter `r` can be a real scalar, a vector or symetric matrix.
 
 Read the `MultivariateStats.jl` documentation for more information.  
 """
-lr(r=0; trans::Bool=true, bias::Bool=true) = FunctionCell(lr, (r,), Dict(), kwtitle("Linear regressor", [(:trans,trans),(:bias,bias)]); trans=trans, bias=bias) 
+lr(r=0; trans::Bool=true, bias::Bool=true) = 
+	FunctionCell(lr, (r,), ModelProperties(), 
+	      kwtitle("Linear regressor", [(:trans,trans),(:bias,bias)]); 
+	      trans=trans, bias=bias) 
 
 
 
@@ -30,10 +33,13 @@ lr(r=0; trans::Bool=true, bias::Bool=true) = FunctionCell(lr, (r,), Dict(), kwti
 Trains a Least-Squares regression function cell. Returns the regression coefficients and bias (if available) 
 """
 # Training
-lr(x::T where T<:CellDataU, r=0; trans::Bool=true, bias::Bool=true) = lr((getx!(x), zeros(nobs(x))), r; trans=trans, bias=bias)
-lr(x::T where T<:CellData, r=0; trans::Bool=true, bias::Bool=true) = lr((getx!(x), gety(x)), r; trans=trans, bias=bias)
-lr(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractArray, r=0; trans::Bool=true, bias::Bool=true) = lr((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), r; trans=trans, bias=bias)
-lr(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractArray, r=0; trans::Bool=true, bias::Bool=true ) = begin
+lr(x::T where T<:CellDataU, r::Union{Real, AbstractArray}=0; trans::Bool=true, bias::Bool=true) =
+	lr((getx!(x), zeros(nobs(x))), r; trans=trans, bias=bias)
+lr(x::T where T<:CellData, r::Union{Real, AbstractArray}=0; trans::Bool=true, bias::Bool=true) =
+	lr((getx!(x), gety(x)), r; trans=trans, bias=bias)
+lr(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractArray, r::Union{Real, AbstractArray}=0; trans::Bool=true, bias::Bool=true) =
+	lr((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), r; trans=trans, bias=bias)
+lr(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractArray, r::Union{Real, AbstractArray}=0; trans::Bool=true, bias::Bool=true ) = begin
 	
 	@assert nobs(x[1]) == nobs(x[2])
 
@@ -53,20 +59,18 @@ lr(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractArray, r=0; trans::Boo
 	end
 
 	# Build model properties 
-	modelprops = Dict("size_in" => size(a,1),		
-		   	  "size_out" => size(a,2)
-	)
+	modelprops = ModelProperties(size(a,1), size(a,2))
 	
 	# Returned trained cell
-	FunctionCell(lr, Model((a,b)), modelprops, kwtitle("Linear regressor", [(:trans,trans),(:bias,bias)]))	 
+	FunctionCell(lr, Model((a,b), modelprops), kwtitle("Linear regressor", [(:trans,trans),(:bias,bias)]))	 
 end
 
 
 
 # Execution
-lr(x::T where T<:CellData, model::Model{<:Tuple{<:AbstractArray, <:AbstractArray}}, modelprops::Dict) = datacell(lr(getx!(x), model, modelprops), gety(x)) 	
-lr(x::T where T<:AbstractVector, model::Model{<:Tuple{<:AbstractArray, <:AbstractArray}}, modelprops::Dict) = lr(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-lr(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:AbstractArray, <:AbstractArray}}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	return model.data[1]'*x .+ model.data[2] # e.g. aᵀX+b
-end
+lr(x::T where T<:CellData, model::Model{<:Tuple{<:AbstractArray, <:AbstractArray}}) =
+	datacell(lr(getx!(x), model), gety(x)) 	
+lr(x::T where T<:AbstractVector, model::Model{<:Tuple{<:AbstractArray, <:AbstractArray}}) =
+	lr(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+lr(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:AbstractArray, <:AbstractArray}}) =
+	model.data[1]'*x .+ model.data[2] # e.g. aᵀX+b

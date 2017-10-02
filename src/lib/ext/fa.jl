@@ -18,7 +18,7 @@ of the input dataset, `n` the number of samples
 
 Read the `MultivariateStats.jl` documentation for more information.  
 """
-fa(;kwargs...) = FunctionCell(fa, (), Dict(), kwtitle("Factor Analysis", kwargs); kwargs...) 
+fa(;kwargs...) = FunctionCell(fa, (), ModelProperties(), kwtitle("Factor Analysis", kwargs); kwargs...) 
 
 
 
@@ -39,24 +39,21 @@ fa(x::T where T<:AbstractMatrix; kwargs...)  = begin
 	fadata = fit(MultivariateStats.FactorAnalysis, getobs(x); kwargs...)
 
 	# Build model properties
-	modelprops = Dict("size_in" => length(fadata.mean), 					
-		   	  "size_out" => size(fadata.W,2),
-	)
+	modelprops = ModelProperties(length(fadata.mean),size(fadata.W,2))
 	
 	# Returned trained cell
-	FunctionCell(fa, Model(fadata), modelprops, kwtitle("Factor Analysis",kwargs))	 
+	FunctionCell(fa, Model(fadata, modelprops), kwtitle("Factor Analysis",kwargs))	 
 end
 
 
 
 # Execution
-fa(x::T where T<:CellData, model::Model{<:MultivariateStats.FactorAnalysis}, modelprops::Dict) = datacell(fa(getx!(x), model, modelprops), gety(x)) 	
-fa(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.FactorAnalysis}, modelprops::Dict) = fa(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-fa(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.FactorAnalysis}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
+fa(x::T where T<:CellData, model::Model{<:MultivariateStats.FactorAnalysis}) =
+	datacell(fa(getx!(x), model), gety(x)) 	
+fa(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.FactorAnalysis}) =
+	fa(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+fa(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.FactorAnalysis}) = 
 	MultivariateStats.transform(model.data, getobs(x))
-end
 
 
 
@@ -92,15 +89,17 @@ julia> ([1.0 2 3 4 5]' |> P) |> PR
 far(x::T where T<:CellFunT{<:Model{<:MultivariateStats.FactorAnalysis}}) = begin
 	
 	# Build model properties
-	modelprops = Dict("size_in" => gety(x)["size_out"],
-		   	  "size_out"=> gety(x)["size_in"]
-	)
-	FunctionCell(far, getx(x), modelprops,"Factor Analysis: reconstruct")
+	modelprops = ModelProperties(getx!(x).properties.odim, getx!(x).properties.idim)
+	
+	FunctionCell(far, Model(getx(x).data, modelprops), "Factor Analysis: reconstruct")
 end
 
 
 
 # Execution
-far(x::T where T<:CellData, model::Model{<:MultivariateStats.FactorAnalysis}, modelprops::Dict) = datacell(far(getx!(x), model, modelprops), gety(x)) 	
-far(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.FactorAnalysis}, modelprops::Dict) = far(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-far(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.FactorAnalysis}, modelprops::Dict)::Matrix{Float64} = MultivariateStats.reconstruct(model.data, getobs(x))
+far(x::T where T<:CellData, model::Model{<:MultivariateStats.FactorAnalysis}) =
+	datacell(far(getx!(x), model), gety(x)) 	
+far(x::T where T<:AbstractVector, model::Model{<:MultivariateStats.FactorAnalysis}) =
+	far(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+far(x::T where T<:AbstractMatrix, model::Model{<:MultivariateStats.FactorAnalysis})::Matrix{Float64} =
+	MultivariateStats.reconstruct(model.data, getobs(x))

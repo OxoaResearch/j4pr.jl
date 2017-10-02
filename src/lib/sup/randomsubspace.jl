@@ -211,9 +211,10 @@ julia> +D |> we_trained # run ensemble on training data
  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16  2.22045e-16     1.0          1.0          1.0          1.0          1.0          1.0          0.88   
 ```
 """
-randomsubspace(f::F where F<:CellFunU, L::Int, M::Int, combiner::ClassifierCombiner.AbstractCombiner=ClassifierCombiner.NoCombiner(), replace::Bool=true; 
-	       parallel_train::Bool=true, parallel_execution::Bool=false) = 
-	FunctionCell(randomsubspace, (f, L, M, combiner, replace), Dict(), "Sub-space ensemble ($(f.tinfo), $L members × $M vars)";
+randomsubspace(f::F where F<:CellFunU, L::Int, M::Int, 
+	       combiner::ClassifierCombiner.AbstractCombiner=ClassifierCombiner.NoCombiner(), 
+	       replace::Bool=true; parallel_train::Bool=true, parallel_execution::Bool=false) = 
+	FunctionCell(randomsubspace, (f, L, M, combiner, replace), ModelProperties(), "Sub-space ensemble ($(f.tinfo), $L members × $M vars)";
 			parallel_train=parallel_train, parallel_execution=parallel_execution) # untrained function cell
 
 
@@ -243,28 +244,25 @@ begin
 	@assert nobs(x[1]) == nobs(x[2]) "[randomsubspace] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 
 	# Transform labels first
-	yu = sort(unique(x[2]))
-	yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
+	enc = labelencn(x[2])
+	yenc = label2ind.(x[2],enc)
 
 	# Train model
 	ensembledata = RandomSubspace.randomsubspace_train(x[1], yenc, L, M, f.f, nothing, combiner, replace; 
 						    parallel_train=parallel_train, parallel_execution=parallel_execution)
 	
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x[1]),
-		   	  "size_out" => length(yu),
-			  "labels" => yu 
-	)
+	modelprops = ModelProperties(nvars(x[1]), length(enc.label), enc)
 	
-	FunctionCell(randomsubspace, Model(ensembledata), modelprops, 
+	FunctionCell(randomsubspace, Model(ensembledata, modelprops), 
 	      "Sub-space ensemble ($(f.tinfo), $L members × $M vars)" ) # trained function cell
 end
 
 
 # Execution
-randomsubspace(x::T where T<:CellData, model::Model{<:RandomSubspace.SubspaceEnsemble}, modelprops::Dict) = datacell(randomsubspace(getx!(x), model, modelprops), gety(x)) 	
-randomsubspace(x::T where T<:AbstractVector, model::Model{<:RandomSubspace.SubspaceEnsemble}, modelprops::Dict) = randomsubspace(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-randomsubspace(x::T where T<:AbstractMatrix, model::Model{<:RandomSubspace.SubspaceEnsemble}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	return RandomSubspace.randomsubspace_exec(model.data,x)
-end
+randomsubspace(x::T where T<:CellData, model::Model{<:RandomSubspace.SubspaceEnsemble}) =
+	datacell(randomsubspace(getx!(x), model), gety(x)) 	
+randomsubspace(x::T where T<:AbstractVector, model::Model{<:RandomSubspace.SubspaceEnsemble}) = 
+	randomsubspace(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+randomsubspace(x::T where T<:AbstractMatrix, model::Model{<:RandomSubspace.SubspaceEnsemble}) =
+	RandomSubspace.randomsubspace_exec(model.data,x)

@@ -57,11 +57,13 @@ varsubset(x::T where T<:AbstractArray, idx) = _variable_(x,idx)
 
 
 # Data access: idx selects variable
-@inline _variable_(x::T where T<:AbstractVector, idx) = view(x, :, idx)
-@inline _variable_(x::T where T<:AbstractMatrix, idx) = view(x, idx, :)
-@inline _variable_(x::T where T<:CellData, idx) = _variable_(getx!(x), idx)
+_variable_(x::T where T<:AbstractVector, idx) = view(x, :, idx)
+_variable_(x::T where T<:AbstractMatrix, idx) = view(x, idx, :)
+_variable_(x::T where T<:CellData, idx) = _variable_(getx!(x), idx)
 
-
+# Data access when specifying empty static arrays (always return nothing)
+_variable_(x::T where T<:AbstractArray, ::StaticArrays.SVector{0}) = nothing
+_variable_(::AbstractArray{T,2} where T, ::StaticArrays.SArray{Tuple{0},S,1,0} where S) = nothing  
 
 # gettargets and gettarget low-level functions for MLDataPattern integration
 LearnBase.gettargets(x::T where T<:CellDataU, idx, obsdim::LearnBase.ObsDimension=LearnBase.ObsDim.Undefined()) = nothing
