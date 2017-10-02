@@ -71,7 +71,7 @@ function cell based on the input data and labels.
 For more information:
 	[1] L. Kuncheva "Combining Pattern Classifiers 2'nd Ed." 2014, ISBN 978-1-118-31523-1
 """
-lindisc(r1::Float64=0.0, r2::Float64=0.0) = FunctionCell(lindisc, (r1,r2), Dict(), "Linear discriminant classifier: r1=$r1, r2=$r2") 
+lindisc(r1::Float64=0.0, r2::Float64=0.0) = FunctionCell(lindisc, (r1,r2), ModelProperties(), "Linear discriminant classifier: r1=$r1, r2=$r2") 
 
 
 
@@ -91,30 +91,25 @@ lindisc(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, r1::Float
 	@assert nobs(x[1]) == nobs(x[2]) "[lindisc] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 	
 	# Transform labels first
-	yu = sort(unique(x[2]))
-	yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
-
+	enc = labelencn(x[2])
+	yenc = label2ind.(x[2],enc)
+	
 	# Train model
 	lddata = LinDiscClassifier.LinDisc_train(getobs(x[1]), yenc, r1, r2)
 
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x[1]),
-		   	  "size_out" => length(yu),
-			  "labels" => yu 
-	)
+	modelprops = ModelProperties(nvars(x[1]), length(enc.label), enc)
 	
-	FunctionCell(lindisc, Model(lddata), modelprops, "Linear discriminant classifier: r1=$r1, r2=$r2") 
+	FunctionCell(lindisc, Model(lddata, modelprops), "Linear discriminant classifier: r1=$r1, r2=$r2") 
 
 end
 
 
 
 # Execution
-lindisc(x::T where T<:CellData, model::Model{<:LinDiscClassifier.LinDiscModel}, modelprops::Dict) = datacell(lindisc(getx!(x), model, modelprops), gety(x)) 	
-lindisc(x::T where T<:AbstractVector, model::Model{<:LinDiscClassifier.LinDiscModel}, modelprops::Dict) = lindisc(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-lindisc(x::T where T<:AbstractMatrix, model::Model{<:LinDiscClassifier.LinDiscModel}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
-	# Return the transformed observations   
+lindisc(x::T where T<:CellData, model::Model{<:LinDiscClassifier.LinDiscModel}) = 
+	datacell(lindisc(getx!(x), model), gety(x)) 	
+lindisc(x::T where T<:AbstractVector, model::Model{<:LinDiscClassifier.LinDiscModel}) = 
+	lindisc(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+lindisc(x::T where T<:AbstractMatrix, model::Model{<:LinDiscClassifier.LinDiscModel}) =
 	LinDiscClassifier.LinDisc_exec(model.data, getobs(x))
-end

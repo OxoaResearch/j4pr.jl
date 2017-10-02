@@ -16,45 +16,46 @@ Unrecognized options will be ignored.
 
 #Examples
 ```
-julia> wu = j4pr.ohenc("binary")
-One-hot encoder (binary), unknown I/O dims, untrained
+ wu = ohenc("binary")
+One-hot encoder (binary), varying I/O dimensions, untrained
 
 julia> wt = ["a","b","c"] |> wu
-One-hot encoder (binary), 1 -> 3, trained
+One-hot encoder (binary), 1->3, trained
 
-julia> +wt
-Dict{Int64,Tuple{String,Array{String,1}}} with 1 entry:
- 1 => ("binary", String["a", "b", "c"])
-  
+julia> (+wt).data
+DataStructures.SortedDict{Int64,Tuple{String,Array{String,1}},Base.Order.ForwardOrdering} with 1 entry:
+  1 => ("binary", String["a", "b", "c"])
+
 julia> ["a","b","d","c","a","d"] |> wt
-3×6 Array{Float64,2}:
- 0.707107  0.0       NaN  0.0       0.707107  NaN
- 0.0       0.707107  NaN  0.0       0.0       NaN
- 0.0       0.0       NaN  0.707107  0.0       NaN
 
-julia> a=datacell(["a" "a" "b" "b" "b"; "a" "b" "c" "d" "e"],["a","a","b","b","b"])
-DataCell, 5 obs, 2 vars, 2 classes, labeled: "b"(3),"a"(2)
+3×6 Array{Float64,2}:
+ 1.0  0.0  NaN  0.0  1.0  NaN
+ 0.0  1.0  NaN  0.0  0.0  NaN
+ 0.0  0.0  NaN  1.0  0.0  NaN
+
+julia> a = datacell(["a" "a" "b" "b" "b"; "a" "b" "c" "d" "e"],["a","a","b","b","b"])
+DataCell, 5 obs, 2 vars, 1 target(s)/obs, 2 distinct values: "b"(3),"a"(2)
 
 julia> wt = a |> ohenc(Dict(1=>"integer",2=>"binary"))
-One-hot encoder (mixed), 2 -> 6, trained
+One-hot encoder (mixed), 2->6, trained
 
-julia> +wt
-Dict{Int64,Tuple{String,Array{String,1}}} with 2 entries:
-  2 => ("binary", String["a", "b", "c", "d", "e"])
+julia> (+wt).data
+DataStructures.SortedDict{Int64,Tuple{String,Array{String,1}},Base.Order.ForwardOrdering} with 2 entries:
   1 => ("integer", String["a", "b"])
+  2 => ("binary", String["a", "b", "c", "d", "e"])
 
 julia> ["x" "x" "a" "b"; "e" "d" "c" "x"] |> wt
 6×4 Array{Float64,2}:
-   0.0         0.0       0.0       NaN  
-   0.0         0.0       0.0       NaN  
-   0.0         0.0       0.707107  NaN  
-   0.0         0.707107  0.0       NaN  
-   0.707107    0.0       0.0       NaN  
- NaN         NaN         1.0         2.0
+ NaN    NaN    1.0    2.0
+   0.0    0.0  0.0  NaN  
+   0.0    0.0  0.0  NaN  
+   0.0    0.0  1.0  NaN  
+   0.0    1.0  0.0  NaN  
+   1.0    0.0  0.0  NaN  
 ```
 """
-ohenc(opts::T where T<:AbstractString) = FunctionCell(ohenc, (opts,), Dict(), "One-hot encoder ("*opts*")")
-ohenc(opts::T where T<:Dict) = FunctionCell(ohenc, (opts,), Dict(), "One-hot encoder (mixed)")
+ohenc(opts::T where T<:AbstractString) = FunctionCell(ohenc, (opts,), ModelProperties(), "One-hot encoder ("*opts*")")
+ohenc(opts::T where T<:Dict) = FunctionCell(ohenc, (opts,), ModelProperties(), "One-hot encoder (mixed)")
 
 
 
@@ -114,34 +115,32 @@ ohenc(x::T where T<:Union{AbstractArray, CellData}, opts) = begin
 	variables_unprocessed = setdiff(collect(1:nvars(x)), variables_to_process)
 	
 	# Create model properties
-	modelprops =  Dict(
-		"size_in" => nvars(x), 				# Size of the input data
-		"size_out" => size_out,				# Size of the output data 
-		"size_unprocessed" => length(variables_unprocessed),
-		"variables_to_process" => variables_to_process, 	# Which variables to process 
-		"variables_unprocessed" => variables_unprocessed
-	)  								
-	
+	modelprops = ModelProperties(nvars(x), size_out, nothing,  
+			Dict("size_unprocessed" => length(variables_unprocessed),
+			"variables_to_process" => variables_to_process, 	# Which variables to process 
+			"variables_unprocessed" => variables_unprocessed
+			)			  								
+	)
+
 	# Train
 	modeldata = SortedDict(Dict( idx => (v, unique(_variable_(x,idx))) for (idx,v) in dopts ))	
 	
 	# Return trained cell	
-	FunctionCell(ohenc, Model(modeldata), modelprops, encodername)
+	FunctionCell(ohenc, Model(modeldata, modelprops), encodername)
 end
 
 # Execution
-ohenc(x::T where T<:CellData, model::Model, modelprops::Dict) = DataCell(ohenc(getx!(x), model, modelprops), gety!(x))
+ohenc(x::T where T<:CellData, model::Model) = DataCell(ohenc(getx!(x), model), gety!(x))
 
-ohenc(x::T where T<:AbstractArray, model::Model, modelprops::Dict) = begin
+ohenc(x::T where T<:AbstractVector, model::Model) = ohenc(mat(x, ObsDim.Constant{2}()),model)
+
+ohenc(x::T where T<:AbstractMatrix, model::Model) = begin
 	
 	# Read some inputs
-	size_in::Int = modelprops["size_in"]
-	size_out::Int = modelprops["size_out"]
-	size_unprocessed::Int = modelprops["size_unprocessed"]
-	variables_unprocessed::Vector{Int} = modelprops["variables_unprocessed"]
-
-	# Make sure we have the proper dimensions in execution
-	@assert size_in == nvars(x) "[ohenc] Input dimension of $(nvars(x)) variables, expected $(size_in)."
+	size_in::Int = model.properties.idim
+	size_out::Int = model.properties.odim
+	size_unprocessed::Int = model.properties.other["size_unprocessed"]
+	variables_unprocessed::Vector{Int} = model.properties.other["variables_unprocessed"]
 
 	# Allocate encoding matrix
 	B = Matrix{eltype(1.0)}(size_out - size_unprocessed, nobs(x))

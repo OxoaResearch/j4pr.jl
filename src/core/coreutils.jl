@@ -365,3 +365,9 @@ countappw(v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}, w::V
 	app[.!mask] = val
 	return app
 end
+
+
+
+# Positional argument selectors
+idx(args...) = FunctionCell(getindex, args, "Index selector (args=$args)")
+idx(f::Function, args...) = FunctionCell((x,args...)->f(getindex(x,args...)), args, "Index selector+function (args=$args)")

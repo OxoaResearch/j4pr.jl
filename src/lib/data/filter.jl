@@ -27,20 +27,19 @@ filtering the variable). `opts` specifies the filtering:
 
 # Examples
 ```
-julia> a=j4pr.datacell([1 NaN 1 2 2; NaN 0 1 2 NaN; NaN NaN 0 0 1])
-DataCell, 5 obs, 3 vars, 0 classes, unlabeled
+julia> a = datacell([1 NaN 1 2 2; NaN 0 1 2 NaN; NaN NaN 0 0 1])
+DataCell, 5 obs, 3 vars, 0 target(s)/obs
 
-julia> wu = j4pr.filterg(isnan, Dict(1=>"mean", 2=>(a,b)->123, 3=>"median"))
-Generic filter (mixed), unknown I/O dims, untrained
+julia> wu = filterg(isnan, Dict(1=>"mean", 2=>(a,b)->123, 3=>"median"))
+Generic filter (mixed), varying I/O dimensions, untrained
 
 julia> wt = a |> wu
-Filter (mixed), 3 -> 3, trained
+Generic filter (mixed), 3->3, trained
 
 julia> +wt
-Dict{Int64,Tuple{Function,Any}} with 3 entries:
-  2 => (isnan, #11)
-  3 => (isnan, j4pr.#110)
-  1 => (isnan, j4pr.#109)
+Model
+`- data: Dict{Int64,Tuple{Function,Any}}
+`- properties: Int/Int/MLLabelUtils.LabelEnc.NativeLabels{Any,0}/Dict{String,Any}
 
 julia> +a
 3×5 Array{Float64,2}:
@@ -54,14 +53,14 @@ julia> +(a |> wt)
  123.0  0.0  1.0  2.0  123.0
    0.0  0.0  0.0  0.0    1.0
 
-julia> a=j4pr.datacell([1 2 3 4 5; 6 7 8 9 0.0],["a", "a", "a", "b", "b"])
-DataCell, 5 obs, 2 vars, 2 classes, labeled: "b"(2),"a"(3)
+julia> a = datacell([1 2 3 4 5; 6 7 8 9 0.0],["a", "a", "a", "b", "b"])
+DataCell, 5 obs, 2 vars, 1 target(s)/obs, 2 distinct values: "b"(2),"a"(3)
 
-julia> wu = j4pr.filterg(x->mod(x,5)>2, "mean")
-Generic filter (mean), unknown I/O dims, untrained
+julia> wu = filterg(x->mod(x,5)>2, "mean")
+Generic filter (mean), varying I/O dimensions, untrained
 
-julia> wt=a |> wu
-Filter (mean), 2 -> 2, trained
+julia> wt = a |> wu
+Generic filter (mean), 2->2, trained
 
 julia> +a
 2×5 Array{Float64,2}:
@@ -72,12 +71,19 @@ julia> +(a |> wt)
 2×5 Array{Float64,2}:
  1.0  2.0  2.66667  2.66667  5.0
  6.0  7.0  4.33333  4.33333  0.0
-```
+``
 """
-filterg(f::Function, g::Function, opts::T where T<:AbstractString) = FunctionCell(filterg, (f,g,opts), Dict(), "Generic filter ("*opts*")")
-filterg(f::Function, g::Function, opts::T where T<:Function) = FunctionCell(filterg, (f,g,opts), Dict(), "Generic filter (function)")
-filterg(f::Function, g::Function, opts::T where T<:Dict) = FunctionCell(filterg, (f,g,opts), Dict(), "Generic filter (mixed)")
+filterg(f::Function, g::Function, opts::T where T<:AbstractString) = 
+	FunctionCell(filterg, (f,g,opts), ModelProperties(), "Generic filter ("*opts*")")
+
+filterg(f::Function, g::Function, opts::T where T<:Function) = 
+	FunctionCell(filterg, (f,g,opts), ModelProperties(), "Generic filter (function)")
+
+filterg(f::Function, g::Function, opts::T where T<:Dict) = 
+	FunctionCell(filterg, (f,g,opts), ModelProperties(), "Generic filter (mixed)")
+
 filterg(g::Function, opts) = filterg(identity, g, opts)
+
 filterg(opts) = filterg(identity, _isreplaceable_, opts) 
 
 
@@ -140,13 +146,13 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, 
 	priors = countmapn(labels)	
 
 	# Create model properties
-	modelprops =  Dict("priors" => priors,					# Priors
-		    	"size_in" => nvars(x), 					# Size of the input data
-			"size_out" => nvars(x), 				# Size of the output data (same as input)
+	
+	modelprops = ModelProperties(nvars(x), nvars(x), nothing,
+			Dict("priors" => priors,				# Priors
 			"variables_to_process" => collect(keys(dopts)),		# Which columns to process (e.g. can be any sort of vector
 			"targets_function" => f					# Function used to obtain targets (needed at runtime)
+			)
 	)
-
 	
 	# Define filtering functions (v - train data vector, t - train targets array, x - runtime data, y - runtime label) 
 	_mean_(v::T where T<:AbstractVector, ::Void) = begin m = mean(v); return (x,y)->m; end
@@ -215,14 +221,14 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, 
 	end
 	
 	# Return model cell
-	return FunctionCell(filterg, Model(modeldata), modelprops, filtername)
+	return FunctionCell(filterg, Model(modeldata, modelprops), filtername)
 end
 
 
 # Execution
-filterg(x::T where T<:Union{AbstractArray, CellData}, model::Model, modelprops::Dict) = begin
+filterg(x::T where T<:Union{AbstractArray, CellData}, model::Model) = begin
 	
-	f = modelprops["targets_function"]
+	f = model.properties.other["targets_function"]
 	xc = deepcopy(x)				# Create local copy of input
 	labels = _targets_(f, xc)			# Get labels (it is assumed that the labels are readily available)
 						
@@ -235,6 +241,3 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, model::Model, modelprops::
 	end
 	return xc
 end
-
-
-

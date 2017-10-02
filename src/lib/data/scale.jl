@@ -44,10 +44,10 @@ julia> a|>w; +a
  1.0        2.0       3.0       4.0       5.0     
 ```
 """
-scaler!(f::Function, opts::T where T<:AbstractString) = FunctionCell(scaler!, (f,opts), Dict(), "Data scaler! ("*opts*")")
+scaler!(f::Function, opts::T where T<:AbstractString) = FunctionCell(scaler!, (f,opts), ModelProperties(), "Data scaler! ("*opts*")")
 scaler!(opts::T where T<:AbstractString) = scaler!(identity, opts) 
 
-scaler!(f::Function, opts::T where T<:Dict) = FunctionCell(scaler!, (f, opts), Dict(), "Data scaler! (mixed)")
+scaler!(f::Function, opts::T where T<:Dict) = FunctionCell(scaler!, (f, opts), ModelProperties(), "Data scaler! (mixed)")
 scaler!(opts::T where T<:Dict) = scaler!(identity, opts)
 
 
@@ -105,12 +105,11 @@ scaler!(x::T where T<:Union{AbstractArray, CellData}, f::Function, opts) = begin
 	priors = countmapn(labels)	
 
 	# Create model properties
-	modelprops = Dict("priors" => priors,					# Priors
-		    	"size_in" => nvars(x), 					# Size of the input data
-			"size_out" => nvars(x), 				# Size of the output data (same as input)
-			"variables_to_process" => collect(keys(dopts))		# Which columns to process (e.g. can be any sort of vector
+	modelprops = ModelProperties(nvars(x), nvars(x), nothing, 
+			Dict("priors" => priors,						# Priors
+			"variables_to_process" => collect(keys(dopts))				# Which columns to process (can be any sort of vector)
+			)	
 	)
-
 	
 	# Define processing functions (x - data vector, t - targets array, p - class priors), returns Tuple(mean, variance, clip) 
 	# - Scalers not based on class information have also an overloaded version for labeled datasets which reverts to one where 
@@ -190,13 +189,13 @@ scaler!(x::T where T<:Union{AbstractArray, CellData}, f::Function, opts) = begin
 	end
 	
 	# Return trained cell
-	return FunctionCell(scaler!, Model(modeldata), modelprops, scalername)
+	return FunctionCell(scaler!, Model(modeldata, modelprops), scalername)
 end
 
 
 
 # Execution
-scaler!(x::T where T<:Union{AbstractArray, CellData}, model::Model, modelprops::Dict) = begin
+scaler!(x::T where T<:Union{AbstractArray, CellData}, model::Model) = begin
 	
 	for (idx, (scale, offset, clip)) in model.data
 		variable = _variable_(x,idx) 	# Assign temp variable

@@ -16,7 +16,7 @@ Digging into the code will yield more low-level documentation
 in the form of comments :) . 
 
 To begin the documentation process regarding the library, type 
-`?DataCell`, `?FunctionCell`, `?PipeCell`, `?functioncell` and `?datacell`. 
+`?DataCell`, `?FunctionCell`, `?PipeCell` and `?datacell`. 
 Also, start exploring **src/j4pr.jl** as well as the included files. 
 The code is commented as much as possible and should at least partially 
 make up for the lack in documentation. 
@@ -29,7 +29,7 @@ module j4pr
     	##############################################################################################################################
     	# Dependencies														     #
     	##############################################################################################################################
-    	
+	
 	# Imports
 	importall LearnBase, MLLabelUtils, MLDataUtils, Images, ImageInTerminal 
 	import Base: Test, convert, promote_rule, show, +, -, *, |>, ~, vcat, hcat, getindex, setindex!, size, endof, ndims, 
@@ -43,10 +43,10 @@ module j4pr
 
 	# No method extension
 	using Reexport
-	using Compat, RDatasets, DataArrays
+	using StaticArrays, DataArrays, Compat, RDatasets
 	using DataStructures: SortedDict
 	using StatsBase: countmap, fit, Histogram
-
+	using MLLabelUtils: LabelEncoding, labelenc, convertlabel, ind2label, label2ind, classify
 
 
     	##############################################################################################################################
@@ -73,7 +73,7 @@ module j4pr
 	   	nvars, size, start, next, done, eltype, length, ndims, endof,			# Various useful functions for data cells	
 	   	uniquenn, classsizes, nclasssizes, classnames, countmapn,
 		nclass, deleteat!, deleteat, idx, countapp, countappw, 																
-		varsubset,									# Lazy subset of variables 
+		varsubset, labelencn,									# Lazy subset of variables 
 	   	strip, 										# Return tuple from data cell
 	   	pipestack, pipeparallel, pipeserial,                                          	# Create pipes	   
 	   	flatten, mat, 		                                                       	# Flatten a pipe made out of data
@@ -127,14 +127,14 @@ module j4pr
     	##############################################################################################################################
 
     	# [core]
-    	include("core/constructors.jl")                                                         # Constructors for the J4PR objects
-    	include("core/aliases.jl")                                                         	# Aliases for the J4PR objects
-    	include("core/operators.jl")                                                            # Operators for the J4PR objects
-	include("core/interfaces.jl")								# Indexing operators, iteration interfaces
-	include("core/mldatapattern.jl")							# MLDataPattern interface
+    	include("core/abstractcell.jl")                                                         # AbstractCell related  
+    	include("core/datacell.jl")                                                         	# DataCell related  
+    	include("core/functioncell.jl")                                                         # FunctionCell related  
+    	include("core/pipecell.jl")                                                         	# PipeCell related  
 	include("core/calls.jl")                                                                # < call > methods
-    	include("core/printers.jl")                                                             # Text output (e.g. in REPL) for J4PR objects
     	include("core/convert_promote.jl")                                                      # Conversion and Promotion rules in J4PR
+	include("core/mldatapattern.jl")							# MLDataPattern interface
+    	include("core/printers.jl")                                                             # Text output (e.g. in REPL) for J4PR objects
     	include("core/coreutils.jl")                                                            # Utility functions (manipulate data and pipes)
     	include("core/macros.jl") 								# Macros
     	include("core/parallel.jl") 								# Code associated with Cell parallelism
@@ -143,7 +143,6 @@ module j4pr
     
 	# [lib]
 	# [lib/data] e.g. data manipulation
-		include("lib/data/cell.jl")                                                     # Fast function for creating cells
 		include("lib/data/cslice.jl")							# Class slicing (e.g. select classes)
 		include("lib/data/labelutils.jl")                                               # Manipulation of datacell labels
 		include("lib/data/rdataset.jl")							# Loads different R datasets

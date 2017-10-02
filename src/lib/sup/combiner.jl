@@ -395,7 +395,7 @@ end
 
 Majority vote label combiner. `L` is the size of the upstream ensemble. The number of classes `C` is most of the time not necessary are defaults to `-1`. 
 """
-votecombiner(L::Int, C::Int=-1) = FunctionCell(genericcombiner, Model(ClassifierCombiner.VoteCombiner(L,C)), Dict("size_in"=>L, "size_out"=>1), "Vote combiner") 
+votecombiner(L::Int, C::Int=-1) = FunctionCell(genericcombiner, Model(ClassifierCombiner.VoteCombiner(L,C), ModelProperties(L,1)), "Vote combiner") 
 
 
 
@@ -404,7 +404,7 @@ votecombiner(L::Int, C::Int=-1) = FunctionCell(genericcombiner, Model(Classifier
 
 Generates an untrained function cell that when piped data into, trains a weighted vote label combiner. `L` is the size of the upstream ensemble.
 """
-wvotecombiner(L::Int) = FunctionCell(wvotecombiner, (L,), Dict("size_in"=>L, "size_out"=>1), "Weighted-Vote combiner" ) # untrained function cell
+wvotecombiner(L::Int) = FunctionCell(wvotecombiner, (L,), ModelProperties(L,1), "Weighted-Vote combiner" ) # untrained function cell
 
 """
 	wvotecombiner(x,L)
@@ -424,12 +424,7 @@ wvotecombiner(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, L::
 	# Check that the specified ensemble number is equal to the determined one
 	@assert L==wvcombiner.L "[wvotecombiner] Expected ensemble dimension is $L and the one determined from input data is $(wvcombiner.L)"
 
-	# Build model properties 
-	modelprops = Dict("size_in" => L,
-		   	  "size_out" => 1
-	)
-	
-	FunctionCell(genericcombiner, Model(wvcombiner), modelprops, "Weighted-Vode combiner") 
+	FunctionCell(genericcombiner, Model(wvcombiner, ModelProperties(L,1)), "Weighted-Vode combiner") 
 end
 
 
@@ -439,7 +434,7 @@ end
 
 Generates an untrained function cell that when piped data into, trains a Naive Bayes label combiner. `L` is the size of the upstream ensemble.
 """
-naivebayescombiner(L::Int) = FunctionCell(naivebayescombiner, (L,), Dict("size_in"=>L, "size_out"=>1), "Naive-Bayes combiner" ) # untrained function cell
+naivebayescombiner(L::Int) = FunctionCell(naivebayescombiner, (L,), ModelProperties(L,1), "Naive-Bayes combiner" ) # untrained function cell
 
 """
 	naivebayescombiner(x,L)
@@ -459,12 +454,7 @@ naivebayescombiner(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector
 	# Check that the specified ensemble number is equal to the determined one
 	@assert L==nbcombiner.L "[naivebayescombiner] Expected ensemble dimension is $L and the one determined from input data is $(nbcombiner.L)"
 
-	# Build model properties 
-	modelprops = Dict("size_in" => L,
-		   	  "size_out" => 1
-	)
-	
-	FunctionCell(genericcombiner, Model(nbcombiner), modelprops, "Naive-Bayes combiner") 
+	FunctionCell(genericcombiner, Model(nbcombiner, ModelProperties(L,1)), "Naive-Bayes combiner") 
 end
 
 
@@ -476,8 +466,9 @@ end
 
 Trains a mean continuous output combiner. `L` is the size of the upstream ensemble, `C` is the expected number of classes and `α` is the parameter of the generalized mean formula.
 """
-meancombiner(L::Int, C::Int;α::Float64=1.0) = FunctionCell(genericcombiner, Model(ClassifierCombiner.GeneralizedMeanCombiner(L,C,α)), 
-							    Dict("size_in"=>L*C, "size_out"=>C), kwtitle("Generalized mean combiner",((:α,α),))) 
+meancombiner(L::Int, C::Int;α::Float64=1.0) = 
+	FunctionCell(genericcombiner, Model(ClassifierCombiner.GeneralizedMeanCombiner(L,C,α), ModelProperties(L*C,C)), 
+	      kwtitle("Generalized mean combiner",((:α,α),))) 
 
 
 
@@ -487,8 +478,9 @@ meancombiner(L::Int, C::Int;α::Float64=1.0) = FunctionCell(genericcombiner, Mod
 Trains a weighted mean continuous output combiner. `L` is the size of the upstream ensemble, `C` is the expected number of classes, `weights` are the 
 individual weights of the ensemble memebers and `α` is the parameter of the generalized mean formula.
 """
-wmeancombiner(L::Int, C::Int, weights::Vector{Float64};α::Float64=1.0) = FunctionCell(genericcombiner, Model(ClassifierCombiner.WeightedMeanCombiner(L,C,α,weights)), 
-										      Dict("size_in"=>L*C, "size_out"=>C), kwtitle("Weighted mean combiner",((:α,α),))) 
+wmeancombiner(L::Int, C::Int, weights::Vector{Float64};α::Float64=1.0) = 
+	FunctionCell(genericcombiner, Model(ClassifierCombiner.WeightedMeanCombiner(L,C,α,weights), ModelProperties(L*C,C)), 
+	      kwtitle("Weighted mean combiner",((:α,α),))) 
 
 
 
@@ -497,7 +489,7 @@ wmeancombiner(L::Int, C::Int, weights::Vector{Float64};α::Float64=1.0) = Functi
 
 Trains a product continuous output combiner. `L` is the size of the upstream ensemble, `C` is the expected number of classes.
 """
-productcombiner(L::Int, C::Int) = FunctionCell(genericcombiner, Model(ClassifierCombiner.ProductCombiner(L,C)), Dict("size_in"=>L*C, "size_out"=>C), "Product combiner") 
+productcombiner(L::Int, C::Int) = FunctionCell(genericcombiner, Model(ClassifierCombiner.ProductCombiner(L,C), ModelProperties(L*C,C)), "Product combiner") 
 
 
 
@@ -506,14 +498,14 @@ productcombiner(L::Int, C::Int) = FunctionCell(genericcombiner, Model(Classifier
 
 Trains a median continuous output combiner. `L` is the size of the upstream ensemble, `C` is the expected number of classes.
 """
-mediancombiner(L::Int, C::Int) = FunctionCell(genericcombiner, Model(ClassifierCombiner.MedianCombiner(L,C)), Dict("size_in"=>L*C, "size_out"=>C), "Median combiner") 
+mediancombiner(L::Int, C::Int) = FunctionCell(genericcombiner, Model(ClassifierCombiner.MedianCombiner(L,C), ModelProperties(L*C,C)), "Median combiner") 
 
 
 
 # Execution methods for all combiners ;)
-genericcombiner(x::T where T<:CellData, model::Model{<:ClassifierCombiner.AbstractCombiner}, modelprops::Dict) = datacell(genericcombiner(getx!(x), model, modelprops), gety(x)) 	
-genericcombiner(x::T where T<:AbstractVector, model::Model{<:ClassifierCombiner.AbstractCombiner}, modelprops::Dict) = genericcombiner(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-genericcombiner(x::T where T<:AbstractMatrix, model::Model{<:ClassifierCombiner.AbstractCombiner}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	return j4pr.mat(ClassifierCombiner.combiner_exec(model.data, getobs(x)), LearnBase.ObsDim.Constant{2}())	
-end
+genericcombiner(x::T where T<:CellData, model::Model{<:ClassifierCombiner.AbstractCombiner}) = 
+	datacell(genericcombiner(getx!(x), model), gety(x)) 	
+genericcombiner(x::T where T<:AbstractVector, model::Model{<:ClassifierCombiner.AbstractCombiner}) = 
+	genericcombiner(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+genericcombiner(x::T where T<:AbstractMatrix, model::Model{<:ClassifierCombiner.AbstractCombiner}) = 
+	mat(ClassifierCombiner.combiner_exec(model.data, getobs(x)), LearnBase.ObsDim.Constant{2}())	

@@ -41,35 +41,41 @@ _show_title_(c::T where T<:AbstractCell) = isempty(c.tinfo) ? "" : c.tinfo
 
 
 
-# Size printers
-_show_size_(c::T where T<:CellFunF) = "no I/O size information"
-_show_size_(c::T where T<:CellFun) = begin
-	sizestr = ""
-	d = gety!(c)
-	if haskey(d, "size_in") 
-		if haskey(d, "size_out")
-			sizestr = string(d["size_in"]) * "->" * string(d["size_out"])  
+# Dimension printers
+_show_dims_(c::T where T<:CellFunF) = "varying I/O dimensions"
+_show_dims_(c::T where T<:CellFun) = begin
+
+	# Read input and output dimensions
+	_getdims_(c::CellFunU) = (gety!(c).idim, gety!(c).odim)
+	_getdims_(c::CellFunT) = (getx!(c).properties.idim, getx!(c).properties.odim)
+	idim, odim = _getdims_(c)
+	
+	# Build dimension string
+	dimstr = ""
+	if idim !=0 
+		if odim != 0
+			dimstr = string(idim) * "->" * string(odim)  
 		else
-			sizestr = string(d["size_in"]) * "->" * "unknown"
+			dimstr = string(idim) * "->" * "unknown"
 		end
 	else
-		if haskey(d, "size_out")
-			sizestr = "unknown" * "->" * string(d["size_out"]) 
+		if odim != 0
+			dimstr = "unknown" * "->" * string(odim) 
 		else
-			sizestr="no I/O size information"
+			dimstr="varying I/O dimensions"
 		end
 	end
-	return sizestr
+	return dimstr
 end
-_show_size_(c::T where T<:CellDataU) = string(nobs(c))*" obs, "*string(nvars(c))*" vars, "*"0 target(s)/obs"
-_show_size_(c::T where T<:CellDataL) = string(nobs(c))*" obs, "*string(nvars(c))*" vars, 1 target(s)/obs, "*string(length(classnames(c)))*" distinct values"
-_show_size_(c::T where T<:CellDataLL) = string(nobs(c))*" obs, "*string(nvars(c))*" vars, "*string(length(classnames(c)))*" target(s)/obs"
-_show_size_(c::T where T<:AbstractCell) = "<no size>"
+_show_dims_(c::T where T<:CellDataU) = string(nobs(c))*" obs, "*string(nvars(c))*" vars, "*"0 target(s)/obs"
+_show_dims_(c::T where T<:CellDataL) = string(nobs(c))*" obs, "*string(nvars(c))*" vars, 1 target(s)/obs, "*string(length(classnames(c)))*" distinct values"
+_show_dims_(c::T where T<:CellDataLL) = string(nobs(c))*" obs, "*string(nvars(c))*" vars, "*string(length(classnames(c)))*" target(s)/obs"
+_show_dims_(c::T where T<:AbstractCell) = "<no dimensions>"
 
 
 
 # Printer for unlabeled data blocks
-Base.show(io::IO, c::CellDataU) = print(io, _show_celltype_(c), _show_title_(c), ", ", _show_size_(c))
+Base.show(io::IO, c::CellDataU) = print(io, _show_celltype_(c), _show_title_(c), ", ", _show_dims_(c))
 
 # Printer for labeled data blocks
 Base.show(io::IO, c::CellDataL) = begin
@@ -85,15 +91,15 @@ Base.show(io::IO, c::CellDataL) = begin
 		cstr=chop(cstr)
     	end
 
-	print(io, _show_celltype_(c), _show_title_(c), ", ", _show_size_(c), cstr)
+	print(io, _show_celltype_(c), _show_title_(c), ", ", _show_dims_(c), cstr)
 
 end
 
 # Printer for data blocks with multiple labels
-Base.show(io::IO, c::CellDataLL) = print(io, _show_celltype_(c), _show_title_(c), ", ", _show_size_(c))
+Base.show(io::IO, c::CellDataLL) = print(io, _show_celltype_(c), _show_title_(c), ", ", _show_dims_(c))
 
 # Printer for fixed/untrained function cells 
-Base.show(io::IO, c::CellFun) = print(io, _show_celltype_(c), _show_title_(c), ", ", _show_size_(c), ", ", _show_status_(c))
+Base.show(io::IO, c::CellFun) = print(io, _show_celltype_(c), _show_title_(c), ", ", _show_dims_(c), ", ", _show_status_(c))
 
 # Printer for pipes
 Base.show(io::IO, p::PipeGeneric) = print(io, _show_celltype_(p), _show_title_(p), ", ", length(getx!(p)), " element(s)", ", ",p.layer," layer(s)",", ", _show_status_(p))
@@ -103,7 +109,7 @@ Base.show(io::IO, ac::T where T<:AbstractCell) = print(io, _show_celltype_(ac), 
 
 # Low-level printer for tuples containing AbstractCells
 Base.show(io::IO, x::T where T<:PTuple{AbstractCell}) = begin
-	println("$(length(x))-element PTuple{$(eltype(x))}:")
+	println("$(length(x))-element Tuple{$(eltype(x))}:")
 	for i in x
 		print(io,"`- "); println(io, i)
 	end

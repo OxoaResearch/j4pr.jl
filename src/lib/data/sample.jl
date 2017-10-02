@@ -20,8 +20,8 @@ corresponding indices in the dataset are returned.
 
 # Examples
 ```
-julia> a=datacell([1 2 3; 4 5 6],["a","a","b"])
-DataCell, 3 obs, 2 vars, 2 classes, labeled: "b"(1),"a"(2)
+julia> a = datacell([1 2 3; 4 5 6],["a","a","b"])
+DataCell, 3 obs, 2 vars, 1 target(s)/obs, 2 distinct values: "b"(1),"a"(2)
 
 julia> +a
 2×3 Array{Int64,2}:
@@ -29,27 +29,27 @@ julia> +a
  4  5  6
 
 julia> a |> sample(7)
-([*]DataCell, 7 obs, 2 vars, 2 classes, labeled: "b"(2),"a"(5), [1, 1, 3, 1, 3, 1, 1])
+([*]DataCell, 7 obs, 2 vars, 1 target(s)/obs, 2 distinct values: "b"(1),"a"(6), [1, 2, 2, 3, 2, 1, 2])
 
 julia> +(ans[1])
 2×7 SubArray{Int64,2,Array{Int64,2},Tuple{Base.Slice{Base.OneTo{Int64}},Array{Int64,1}},false}:
- 1  1  3  1  3  1  1
- 4  4  6  4  6  4  4
+ 1  2  2  3  2  1  2
+ 4  5  5  6  5  4  5
 
-julia> a=datacell([1 2 3 4 5; 6 7 8 9 0],["a","a","b","b","b"]);
+julia> a = datacell([1 2 3 4 5; 6 7 8 9 0],["a","a","b","b","b"]);
 
 julia> +a
 2×5 Array{Int64,2}:
  1  2  3  4  5
  6  7  8  9  0
 
-julia> b= sample(a,Dict("a"=>4, "b"=>2.3))
-(Data* cell, 11 obs, 2 vars, 2 classes, labeled: "b"(7),"a"(4), [4, 4, 5, 3, 3, 5, 4, 2, 2, 2, 1])
+julia> b = sample(a,Dict("a"=>4, "b"=>2.3))
+([*]DataCell, 11 obs, 2 vars, 1 target(s)/obs, 2 distinct values: "b"(7),"a"(4), [4, 4, 4, 3, 4, 5, 4, 1, 2, 2, 2])
 
 julia> +b[1]
 2×11 SubArray{Int64,2,Array{Int64,2},Tuple{Base.Slice{Base.OneTo{Int64}},Array{Int64,1}},false}:
- 4  4  5  3  3  5  4  2  2  2  1
- 9  9  0  8  8  0  9  7  7  7  6
+ 4  4  4  3  4  5  4  1  2  2  2
+ 9  9  9  8  9  0  9  6  7  7  7
 ```
 """
 sample(f::Function, opts::S where S<:Dict{T} where T<:DataElement) = FunctionCell(sample, (f,opts), "Labeled data sampler")

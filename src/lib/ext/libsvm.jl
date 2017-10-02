@@ -33,8 +33,8 @@ Generates a function cell that when piped data, trains a SVM classifier/regresso
 
 Read the `LIBSVM.jl` documentation for more information.  
 """
-libsvm(;kwargs...) = FunctionCell(libsvm, (), Dict(), kwtitle("LIBSVM",kwargs); _libsvm_parse_kwargs_(nothing, kwargs)...)
-libsvm(d::T where T<:Distances.PreMetric; kwargs...) = FunctionCell(libsvm, (d,), Dict(),  kwtitle("LIBSVM",kwargs); _libsvm_parse_kwargs_(d, kwargs)...) 
+libsvm(;kwargs...) = FunctionCell(libsvm, (), ModelProperties(), kwtitle("LIBSVM",kwargs); _libsvm_parse_kwargs_(nothing, kwargs)...)
+libsvm(d::T where T<:Distances.PreMetric; kwargs...) = FunctionCell(libsvm, (d,), ModelProperties(),  kwtitle("LIBSVM",kwargs); _libsvm_parse_kwargs_(d, kwargs)...) 
 
 
 
@@ -70,13 +70,13 @@ libsvm(x::Tuple{T,S} where T<:AbstractMatrix where S<:Union{Void,AbstractVector}
 	end
 	
 	# Transform labels first if svmtype if SVC or NuSVC
-	yu = []; 
 	yenc=[];
 	clf = true
 	if isequal(newkwargs[:svmtype], LIBSVM.SVC) || isequal(newkwargs[:svmtype], LIBSVM.NuSVC)
-		yu = sort(unique(x[2]))
-		yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
+		enc = labelencn(x[2])
+		yenc = label2ind.(x[2],enc)
 	else
+		enc = labelencn([])
 		yenc = x[2] # regression or oneclass svm, do not change
 		clf = false
 	end
@@ -99,29 +99,31 @@ libsvm(x::Tuple{T,S} where T<:AbstractMatrix where S<:Union{Void,AbstractVector}
 	end
 
 	# Keep track of how the labeles were re-ordered
-	reorder = indexin(1:length(yu), modeldata.labels) # it is possible to use 1:length(yu) because the unique labels are sorted
-							  # and the labels are encoded according to the sorted unique labels (i.e. position)
+	reorder = indexin(1:length(enc.label), modeldata.labels) # it is possible to use 1:length(enc.label) because the unique labels are sorted
+							  	 # and the labels are encoded according to the sorted unique labels (i.e. position)
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x[1]),
-		   	  "size_out" => clf ? length(yu) : 1, # the output size is the number of classes (e.g. 1 prob/class) for classification, 1 for regression 
-			  "kernel_distance" => d,
-			  "labels" => yu,
+	modelprops = ModelProperties(nvars(x[1]),
+		   	  	     clf ? length(enc.label) : 1, # the output size is the number of classes (e.g. 1 prob/class) for classification, 1 for regression 
+			  	     enc,
+				     Dict("kernel_distance" => d)
 	)
 
 	# Build title
 	title = "LIBSVM: svmtype=$(newkwargs[:svmtype]), kernel=$(newkwargs[:kernel]), probability=$(newkwargs[:probability]), cachesize=$(newkwargs[:cachesize])(MB)" 
 	
 	# Return trained cell (retain both SVM model and initial training data)
-	FunctionCell(libsvm, Model((modeldata, getobs(x[1]), reorder)), modelprops, title)
+	FunctionCell(libsvm, Model((modeldata, getobs(x[1]), reorder), modelprops), title)
 end
 
 
 
 # Execution
-libsvm(x::T where T<:CellData, model::Model{<:Tuple}, modelprops::Dict) = datacell(libsvm(getx!(x), model, modelprops), gety(x)) 	
-libsvm(x::T where T<:AbstractVector, model::Model{<:Tuple}, modelprops::Dict) = libsvm(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-libsvm(x::T where T<:AbstractMatrix, model::Model{<:Tuple}, modelprops::Dict)::Matrix{Float64} = 
-	_libsvm_execute_(model.data[1].SVMtype, model.data[1], x, modelprops["kernel_distance"], model.data[2], model.data[3])  
+libsvm(x::T where T<:CellData, model::Model{<:Tuple}) =
+	datacell(libsvm(getx!(x), model), gety(x)) 	
+libsvm(x::T where T<:AbstractVector, model::Model{<:Tuple}) =
+	libsvm(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+libsvm(x::T where T<:AbstractMatrix, model::Model{<:Tuple})::Matrix{Float64} = 
+	_libsvm_execute_(model.data[1].SVMtype, model.data[1], x, model.properties.other["kernel_distance"], model.data[2], model.data[3])  
 
 # Define execution methods (for return type annotations) and coversion of results to matrices
 _libsvm_execute_(::Type{LIBSVM.OneClassSVM}, model_data, x, ::Void, xd, reorder=Int[]) = 

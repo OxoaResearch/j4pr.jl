@@ -18,7 +18,7 @@ or a vector of size 'k' providing the indexes of the initial seeds.
 
 Read the `Clustering.jl` documentation for more information.  
 """
-kmedoids(k::Int, d::Distances.PreMetric=Distances.Euclidean(); kwargs...) = FunctionCell(kmedoids, (k,d), Dict(), kwtitle("K-medoids ($k clusters)", kwargs); kwargs...) 
+kmedoids(k::Int, d::Distances.PreMetric=Distances.Euclidean(); kwargs...) = FunctionCell(kmedoids, (k,d), ModelProperties(), kwtitle("K-medoids ($k clusters)", kwargs); kwargs...) 
 
 
 
@@ -44,24 +44,21 @@ kmedoids(x::T where T<:AbstractMatrix, k::Int, d::Distances.PreMetric=Distances.
 	@assert length(kmeddata.medoids) == k "[kmedoids] The number of medoids (cluster centers) differes from the desired one k=$k."
 
 	# Build model properties 
-	modelprops = Dict("size_in" => length(kmeddata.acosts),
-		   	  "size_out" => k	 
-	)
+	modelprops = ModelProperties(length(kmeddata.acosts), k)
 	
-	FunctionCell(kmedoids, Model((d, x[:,sort(kmeddata.medoids)], kmeddata)), modelprops, kwtitle("K-medoids ($k clusters)", kwargs) );	 
+	FunctionCell(kmedoids, Model((d, x[:,sort(kmeddata.medoids)], kmeddata), modelprops), kwtitle("K-medoids ($k clusters)", kwargs) );	 
 end
 
 
 
 # Execution
-kmedoids(x::T where T<:CellData, model::Model{<:Tuple{<:Distances.PreMetric, <:AbstractArray, <:Clustering.KmedoidsResult}}, modelprops::Dict) = datacell(kmedoids(getx!(x), model, modelprops), gety(x)) 	
-kmedoids(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Distances.PreMetric, <:AbstractArray, <:Clustering.KmedoidsResult}}, modelprops::Dict) = kmedoids(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-kmedoids(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Distances.PreMetric, <:AbstractArray, <:Clustering.KmedoidsResult}}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
+kmedoids(x::T where T<:CellData, model::Model{<:Tuple{<:Distances.PreMetric, <:AbstractArray, <:Clustering.KmedoidsResult}}) =
+	datacell(kmedoids(getx!(x), model), gety(x)) 	
+kmedoids(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Distances.PreMetric, <:AbstractArray, <:Clustering.KmedoidsResult}}) =
+	kmedoids(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+kmedoids(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Distances.PreMetric, <:AbstractArray, <:Clustering.KmedoidsResult}}) =
 	# Return distances from each input sample to the medoids 
 	Distances.pairwise(model.data[1], model.data[2], x)
-end
 
 
 
@@ -84,7 +81,7 @@ from new samples to the clustering generated from the untrained function cell.
   * `display` Level of information; can be `:none`, `:final`, `:iter` (default `:none`)
 """
 kmedoids!(medoids::Vector{Int}, d::Distances.PreMetric=Distances.Euclidean(); kwargs...) = 
-	FunctionCell(kmedoids!, (medoids,d), Dict(), kwtitle("K-medoids! ($(length(medoids)) clusters)", kwargs); kwargs...) 
+	FunctionCell(kmedoids!, (medoids,d), ModelProperties(), kwtitle("K-medoids! ($(length(medoids)) clusters)", kwargs); kwargs...) 
 
 
 
@@ -108,12 +105,10 @@ kmedoids!(x::T where T<:AbstractMatrix, medoids::Vector{Int}, d::Distances.PreMe
 	kmeddata = Clustering.kmedoids!(x, medoids; kwargs...) 
 	
 	# Build model properties 
-	modelprops = Dict("size_in" => length(kmeddata.acosts),
-		   	  "size_out" => length(kmeddata.medoids) 
-	)
+	modelprops = ModelProperties(length(kmeddata.acosts), length(kmeddata.medoids))
 	
 	# Return a trained cell that uses `kmedoids` and not `kmedoids!` as execution function 
 	# since the only difference is in training (e.g. clustering) and not in
 	# assigning new data to clusters.
-	FunctionCell(kmedoids, Model((d, x[:,sort(kmeddata.medoids)], kmeddata)), modelprops, kwtitle("K-medoids ($(length(medoids)) clusters)", kwargs) );	 
+	FunctionCell(kmedoids, Model((d, x[:,sort(kmeddata.medoids)], kmeddata), modelprops), kwtitle("K-medoids ($(length(medoids)) clusters)", kwargs) );	 
 end

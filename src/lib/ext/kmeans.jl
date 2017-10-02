@@ -19,7 +19,7 @@ from the untrained function cell.
 
 Read the `Clustering.jl` documentation for more information.  
 """
-kmeans(k::Int, d::Distances.PreMetric=Distances.Euclidean(); kwargs...) = FunctionCell(kmeans, (k,d), Dict(), kwtitle("K-means ($k clusters)", kwargs); kwargs...) 
+kmeans(k::Int, d::Distances.PreMetric=Distances.Euclidean(); kwargs...) = FunctionCell(kmeans, (k,d), ModelProperties(), kwtitle("K-means ($k clusters)", kwargs); kwargs...) 
 
 
 
@@ -44,24 +44,21 @@ kmeans(x::T where T<:AbstractMatrix, k::Int, d::Distances.PreMetric=Distances.Eu
 	@assert size(kmeansdata.centers,2) == k "[kmeans] The number of resulting clusters differes from the desired one k=$k."
 
 	# Build model properties 
-	modelprops = Dict("size_in" => size(kmeansdata.centers,1),
-		   	  "size_out" => k	 # e.g the number of cluster centers is equal to k
-	)
+	modelprops = ModelProperties(size(kmeansdata.centers,1),k) # output dimension is 'k' i.e. the number of cluster centers is 'k'
 	
-	FunctionCell(kmeans, Model((d,kmeansdata)), modelprops, kwtitle("K-means ($k clusters)", kwargs) );	 
+	FunctionCell(kmeans, Model((d,kmeansdata), modelprops), kwtitle("K-means ($k clusters)", kwargs) );	 
 end
 
 
 
 # Execution
-kmeans(x::T where T<:CellData, model::Model{<:Tuple{<:Distances.PreMetric, <:Clustering.KmeansResult}}, modelprops::Dict) = datacell(kmeans(getx!(x), model, modelprops), gety(x)) 	
-kmeans(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Distances.PreMetric, <:Clustering.KmeansResult}}, modelprops::Dict) = kmeans(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-kmeans(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Distances.PreMetric, <:Clustering.KmeansResult}}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
+kmeans(x::T where T<:CellData, model::Model{<:Tuple{<:Distances.PreMetric, <:Clustering.KmeansResult}}) =
+	datacell(kmeans(getx!(x), model), gety(x)) 	
+kmeans(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Distances.PreMetric, <:Clustering.KmeansResult}}) =
+	kmeans(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+kmeans(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Distances.PreMetric, <:Clustering.KmeansResult}}) =
 	# Return distances from each input sample to clustering centers 
 	Distances.pairwise(model.data[1], model.data[2].centers, x) # d(centers,x)
-end
 
 
 
@@ -87,7 +84,7 @@ to the clustering generated from the untrained function cell.
 Read the `Clustering.jl` documentation for more information.  
 """
 kmeans!(centers::T where T<:AbstractMatrix, d::Distances.PreMetric=Distances.Euclidean(); kwargs...) = 
-	FunctionCell(kmeans!, (centers,d), Dict(), kwtitle("K-means! ($(size(centers,2)) clusters)", kwargs); kwargs...) 
+	FunctionCell(kmeans!, (centers,d), ModelProperties(), kwtitle("K-means! ($(size(centers,2)) clusters)", kwargs); kwargs...) 
 
 
 
@@ -110,13 +107,10 @@ kmeans!(x::T where T<:AbstractMatrix, centers::S where S<:AbstractMatrix, d::Dis
 	kmeansdata = Clustering.kmeans!(x, centers; kwargs...) 
 	
 	# Build model properties 
-	modelprops = Dict("size_in" => size(kmeansdata.centers,1),
-		   	  "size_out" => size(kmeansdata.centers,2),	 #e.g the output dims are equal to the number of centers
-			  "eval_distance" => d,
-	)
+	modelprops = ModelProperties(size(kmeansdata.centers,1), size(kmeansdata.centers,2), nothing, Dict("eval_distance" => d))
 	
 	# Return a trained cell that uses `kmeans` and not `kmeans!` as execution function 
 	# since the only difference is in training (e.g. clustering) and not in
 	# assigning new data to clusters.
-	FunctionCell(kmeans, Model((d,kmeansdata)), modelprops, kwtitle("K-means ($(size(kmeansdata.centers,2)) clusters)", kwargs) );	 
+	FunctionCell(kmeans, Model((d,kmeansdata), modelprops), kwtitle("K-means ($(size(kmeansdata.centers,2)) clusters)", kwargs) );	 
 end

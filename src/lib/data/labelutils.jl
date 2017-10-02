@@ -59,7 +59,6 @@ it will add labels/targets and return it.
   * `v` a vector that will become the new targets of `x`
   * `remove` defaults to `true` and specifies whether any existing labels/targets are to be kept or, if `idx` is present, whether to remove the 
   variables from `x` from which the new labels/targets were obtained.
-
 """
 labelize(f::T where T<:Function, remove::Bool=true) = FunctionCell(labelize, (f,remove), "Data labeler: f=$f, remove=$remove")
 labelize(v::T where T<:AbstractArray, remove::Bool=true) = FunctionCell(labelize, (v,), "Data labeler: preloaded targets")

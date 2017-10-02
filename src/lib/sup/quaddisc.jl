@@ -96,7 +96,7 @@ function cell based on the input data and labels.
 For more information:
 	[1] L. Kuncheva "Combining Pattern Classifiers 2'nd Ed." 2014, ISBN 978-1-118-31523-1
 """
-quaddisc(r1::Float64=0.0, r2::Float64=0.0) = FunctionCell(quaddisc, (r1,r2), Dict(), "Quadratic discriminant classifier: r1=$r1, r2=$r2") 
+quaddisc(r1::Float64=0.0, r2::Float64=0.0) = FunctionCell(quaddisc, (r1,r2), ModelProperties(), "Quadratic discriminant classifier: r1=$r1, r2=$r2") 
 
 
 
@@ -116,30 +116,25 @@ quaddisc(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, r1::Floa
 	@assert nobs(x[1]) == nobs(x[2]) "[quaddisc] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 	
 	# Transform labels first
-	yu = sort(unique(x[2]))
-	yenc = Vector{Int}(ohenc_integer(x[2],yu)) # encode to Int labels based on position in the sorted vector of unique labels 
+	enc = labelencn(x[2])
+	yenc = label2ind.(x[2],enc)
 
 	# Train model
 	qddata = QuadDiscClassifier.QuadDisc_train(getobs(x[1]), yenc, r1, r2)
 
 	# Build model properties 
-	modelprops = Dict("size_in" => nvars(x[1]),
-		   	  "size_out" => length(yu),
-			  "labels" => yu 
-	)
+	modelprops = ModelProperties(nvars(x[1]), length(enc.label), enc)
 	
-	FunctionCell(quaddisc, Model(qddata), modelprops, "Quadratic discriminant classifier: r1=$r1, r2=$r2") 
+	FunctionCell(quaddisc, Model(qddata, modelprops), "Quadratic discriminant classifier: r1=$r1, r2=$r2") 
 
 end
 
 
 
 # Execution
-quaddisc(x::T where T<:CellData, model::Model{<:QuadDiscClassifier.QuadDiscModel}, modelprops::Dict) = datacell(quaddisc(getx!(x), model, modelprops), gety(x)) 	
-quaddisc(x::T where T<:AbstractVector, model::Model{<:QuadDiscClassifier.QuadDiscModel}, modelprops::Dict) = quaddisc(mat(x, LearnBase.ObsDim.Constant{2}()), model, modelprops) 	
-quaddisc(x::T where T<:AbstractMatrix, model::Model{<:QuadDiscClassifier.QuadDiscModel}, modelprops::Dict) = begin
-	@assert modelprops["size_in"] == nvars(x) "$(modelprops["size_in"]) input variable(s) expected, got $(nvars(x))."	
-	
-	# Return the transformed observations   
+quaddisc(x::T where T<:CellData, model::Model{<:QuadDiscClassifier.QuadDiscModel}) = 
+	datacell(quaddisc(getx!(x), model), gety(x)) 	
+quaddisc(x::T where T<:AbstractVector, model::Model{<:QuadDiscClassifier.QuadDiscModel}) = 
+	quaddisc(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
+quaddisc(x::T where T<:AbstractMatrix, model::Model{<:QuadDiscClassifier.QuadDiscModel}) = 
 	QuadDiscClassifier.QuadDisc_exec(model.data, getobs(x))
-end
