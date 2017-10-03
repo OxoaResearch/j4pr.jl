@@ -31,10 +31,10 @@ module j4pr
     	##############################################################################################################################
 	
 	# Imports
-	importall LearnBase, MLLabelUtils, MLDataUtils, Images, ImageInTerminal 
 	import Base: Test, convert, promote_rule, show, +, -, *, |>, ~, vcat, hcat, getindex, setindex!, size, endof, ndims, 
 		     isnan, deleteat!, values, start, next, done, length, eltype, strip, interrupt
 	import StatsBase: sample
+	import MLDataPattern: nobs, getobs, datasubset, targets, gettargets 
 	import UnicodePlots, LossFunctions, Distances, MultivariateStats, Clustering, DecisionTree
 
 	if (VERSION <= v"0.6") # LIBSVM does not work with Julia 0.7
@@ -42,11 +42,10 @@ module j4pr
 	end
 
 	# No method extension
-	using Reexport
-	using StaticArrays, DataArrays, Compat, RDatasets
 	using DataStructures: SortedDict
 	using StatsBase: countmap, fit, Histogram
-	using MLLabelUtils: LabelEncoding, labelenc, convertlabel, ind2label, label2ind, classify
+	using Reexport, StaticArrays, DataArrays, Compat, RDatasets, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, 
+		Images, ImageInTerminal
 
 
     	##############################################################################################################################
@@ -66,14 +65,15 @@ module j4pr
     	export
 		# [core]
 		@async_cell, @remote_cell,							# Macros
-	   	AbstractCell, DataCell, FunctionCell, PipeCell, Model,				# The basic constructors 
+	   	AbstractCell, DataCell, FunctionCell, PipeCell,					# The basic types and constructors 
+		Model, ModelProperties,								# Model related types	
 	   	DataGenerator,									# Data generators submodule
 		functioncell, datacell,                                                         # Functions to create cells 
 	   	getx, getx!, gety, gety!, getf, getf!,                               		# Functions the get various cell fields
 	   	nvars, size, start, next, done, eltype, length, ndims, endof,			# Various useful functions for data cells	
 	   	uniquenn, classsizes, nclasssizes, classnames, countmapn,
 		nclass, deleteat!, deleteat, idx, countapp, countappw, 																
-		varsubset, labelencn,									# Lazy subset of variables 
+		varsubset, labelencn,								# Lazy subset of variables 
 	   	strip, 										# Return tuple from data cell
 	   	pipestack, pipeparallel, pipeserial,                                          	# Create pipes	   
 	   	flatten, mat, 		                                                       	# Flatten a pipe made out of data

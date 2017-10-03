@@ -385,21 +385,19 @@ by these i.e. passed sequentially through each, sent to each in parallel etc.
     To obtain 'trained' FunctionCells, one has to define a small training wrapper:
     ```julia
     bar(x) = mean(x); baz(x,m) = x-m;
-    train(x) = begin # 'x' stands everywhere for input data
+    function train(x) # 'x' stands for input data
         # Generate model data
-        model_data = Model(bar(x)) # it is wrapped by a 'Model' type   
-      				   # 'Model' has one field only, 'data' 
-        # Construct execution function based on 'baz' (has to have 3 input arguments: data, model and model properties)
-        exec_func = (x,m,mp)->baz(x,m.data) # construct execution function
-					           
+        model_data = bar(x) 
+        # Construct execution function based on 'baz' (2 input arguments: data, model)
+        exec_func = (x,m)->baz(x,m.data) # construct execution function                                           
         # Construct 'trained' function cell that uses the execution function defined above
-        out = FunctionCell(exec_func, model_data, Dict(),"Trained using bar")
+        out = FunctionCell(exec_func, Model(model_data),"Trained using bar")
     end;
     ```
 
     To obtain 'untrained' FunctionCells, one has to wrap the `train` function previously defined:
     ```julia
-    to_train() = FunctionCell(train, (), Dict(), "Expects data to train") # create untrained FunctionCell
+    to_train() = FunctionCell(train, (), ModelProperties(), "Expects data to train") # create untrained FunctionCell
     ```
   
     Now, the basic functionality is covered:
