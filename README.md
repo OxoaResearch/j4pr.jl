@@ -57,7 +57,7 @@ julia> result = ts |> tclf # test on 'ts'
 julia> using MLLabelUtils; ENC = MLLabelUtils.LabelEnc.OneOfK; # to shorten code below
 
 julia> loss(result,                                                                 # calculate classification error for result
-           x->convertlabel(ENC, x, tclf.y["labels"]),                               # function to encode original labels
+           x->convertlabel(ENC, x, tclf.x.properties.labels.label),                 # function to encode original labels
            x->convertlabel(ENC, targets(indmax,x))                                  # function to encode the predicted labels
            )
 # 0.025396825396825393
