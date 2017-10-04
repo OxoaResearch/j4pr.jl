@@ -42,6 +42,7 @@ module j4pr
 	end
 
 	# No method extension
+	using StaticArrays
 	using DataStructures: SortedDict
 	using StatsBase: countmap, fit, Histogram
 	using Reexport, StaticArrays, DataArrays, Compat, RDatasets, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, 
@@ -72,7 +73,7 @@ module j4pr
 	   	getx, getx!, gety, gety!, getf, getf!,                               		# Functions the get various cell fields
 	   	nvars, size, start, next, done, eltype, length, ndims, endof,			# Various useful functions for data cells	
 	   	uniquenn, classsizes, nclasssizes, classnames, countmapn,
-		nclass, deleteat!, deleteat, idx, countapp, countappw, 																
+		nclass, deleteat!, deleteat, idx, 
 		varsubset, labelencn,								# Lazy subset of variables 
 	   	strip, 										# Return tuple from data cell
 	   	pipestack, pipeparallel, pipeserial,                                          	# Create pipes	   
@@ -80,7 +81,12 @@ module j4pr
 	   	addlabels, unlabel, labelize,							# Label-related functionality
 	  	pintgen, rdataset,								# Data generators
 	   	interrupt,
-
+		
+		#[/lib]	
+		countapp, countapp!, countappw, countappw!, 					# Counting utils 
+		gini, misclassification,							# Purity utility functions
+		linearspace, densityspace,							# Generate vectors with specifically spaced values	
+		
 		# [/lib/data]
 		DataGenerator, 									# Small sub-module that generates some datasets 
 		cslice,										# Class slicing
@@ -119,7 +125,8 @@ module j4pr
 		ClassifierCombiner, votecombiner, wvotecombiner, naivebayescombiner,		# Label combiners
 		meancombiner, wmeancombiner, productcombiner, mediancombiner,			# Continuous output combiners
 		RandomSubspace, randomsubspace,							# Random sub-space ensemble
-		AdaBoost, adaboost								# AdaBoost ensemble
+		AdaBoost, adaboost,								# AdaBoost ensemble
+		stump, stumpr									# Decision stump classifier and regressor
 
 
     	##############################################################################################################################
@@ -142,6 +149,8 @@ module j4pr
 	include("core/version.jl")								# Fancy J4PR info
     
 	# [lib]
+	include("lib/libutils.jl")								# Utility functions for learning
+
 	# [lib/data] e.g. data manipulation
 		include("lib/data/cslice.jl")							# Class slicing (e.g. select classes)
 		include("lib/data/labelutils.jl")                                               # Manipulation of datacell labels
@@ -189,6 +198,7 @@ module j4pr
 		include("lib/sup/combiner.jl")							# Combine classifier outputs (labels, class posteriors, etc.)
 		include("lib/sup/randomsubspace.jl")						# Random subspace ensemble framework
 		include("lib/sup/adaboost.jl")							# AdaBoost ensemble framework
+		include("lib/sup/stump.jl")							# Decision stump classifier and regressor
 
 	# [exp] e.g. Experimental stuff
 		include("exp/plotting.jl")							# Plots for labeled/unlabeled datasets (UnicodePlots.jl)
