@@ -116,13 +116,13 @@ misclassification(p::AbstractArray{T}) where T<:Real = begin
 end
 
 """
-	linearspace(v, n [;count=0, prop=0])
+	linearsplit(v, n [;count=0, prop=0])
 
-Generate `n` a vector of sorted linearly spaced values starting from the values of an
+Generate a sorted vector of `n` linearly spaced values starting from the values of an
 input vector `v`. The input vector may be trimmed using the parameters `prop` and `count` 
 as in `StatsBase.trim`.
 """
-linearspace(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0) = begin
+linearsplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0) = begin
 	vt = trim(v, prop=prop, count=count)		# trim
 	n = min(n, length(unique(vt)))			# number of points 	
 	L = linspace(minimum(vt),maximum(vt),n+1); 	# generate space
@@ -130,13 +130,16 @@ linearspace(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=
 end
 
 """
-	densityspace(v, n [;count=0, prop=0])
+	densitysplitv, n [;count=0, prop=0])
 
-Generate `n` a vector of sorted linearly spaced values starting from the values of an
+Generate a sorted vector of `n` values, spaced according to the value density of an
 input vector `v`. The input vector may be trimmed using the parameters `prop` and `count` 
 as in `StatsBase.trim`.
 """
-densityspace(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0) = begin
+densitysplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0) = begin
+	if length(v)/length(unique(v)) < n
+		v .+= 10.*rand(length(v))*eps()
+	end
 	vt = trim(v, prop=prop, count=count)		# trim 
 	n = min(n, length(unique(vt)))			# number of points
 	vt = sort(sample(vt, n, replace=false))		# sort, sample
