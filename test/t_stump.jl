@@ -30,7 +30,7 @@ end
 	
 # model=:linear fit is not tested because it is unstable in certain situations  
 Wreg = [j4pr.stumpr(model=m, errcrit=ec, vartypes=v, nthresh=n, split=s, count=c, prop=p) for 
-							m in [ :mean, :median],
+							m in [:mean, :median],
 						        ec in [(x,y)->mean((x-y).^2), (x,y)->mean(abs.(x-y))],
 							v in [:nominal, :real, Dict(1=>:nominal)], 
 	  						n in [2,5], 

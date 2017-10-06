@@ -3,7 +3,6 @@ module DecisionStump
 
 	using StaticArrays, MLDataPattern
 	using StatsBase: entropy, trim, sample
-	using MultivariateStats: llsq
 	using Distances: sqeuclidean
 	using j4pr: countappw, countappw!, gini, misclassification, linearsplit, densitysplit
 	export AbstractStump, StumpClassifier, StumpRegressor, stumpc_train, stump	
@@ -276,8 +275,7 @@ module DecisionStump
 			if length(x)==1
 				m=[0.0,y[1]]
 			else
-			
-				m = llsq(Matrix(x+eps()*rand(length(x))),y[:])
+				m=[x+1e-12*rand() ones(x)]\y+1e-12*rand() #add just a bit of noise	
 			end
 			return m, m[1].*x.+m[2] # ŷ
 		end
@@ -516,7 +514,7 @@ where `N` is the number of distinct variable values seen in training, the last c
 If the variable is real, only two sets of coefficients are present.
 
 !!! Note
-  `model=:linear` is still experimental and it is known to produce segmentation faults.
+  `model=:linear` is still experimental and it might produce bad results for small values or singular data matrices.
 """
 stumpr(;kwargs...) = FunctionCell(stumpr, (), ModelProperties(), kwtitle("Decision stump regressor", kwargs); kwargs...) 
 
