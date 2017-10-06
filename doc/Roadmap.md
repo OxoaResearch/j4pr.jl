@@ -50,7 +50,7 @@
 			- voting -->j4pr.jl					[OK][v.0.1.0]
 			- averaging -->j4pr.jl					[OK][v.0.1.0]
 			- NaiveByes --> j4pr.jl					[OK][v.0.1.0]
-			- BKS, DT -->j4pr.jl					[TODO][v.0.1.1]
+			- BKS -->j4pr.jl					[OK][v.0.1.1]
 		- Boosting 
 			- Adaboost M1 --> j4pr.jl				[OK][v.0.1.0]
 			- Adaboost M2 --> j4pr.jl				[OK][v.0.1.0]

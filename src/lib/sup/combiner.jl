@@ -59,7 +59,25 @@ module ClassifierCombiner
 								#  - CM(k,s,i) indicates ensemble member 'i', true class 'k' and estimate 's';
 								#  - k and s are indices in the sorted vector of unique labels.
 	end							
+
+	"""
+	BKS ("Behavious Knowledge Space") label combiner. 
 	
+	# Fields
+	 * `L::Int` is the expected ensemble size on whose output it operates
+	 * `labels::Vector{S}` is the training labels vector
+	 * `labelcount::Matrix{Int}` is the unique label count matrix
+	 * `E::Matrix{S}` is matrix of ensemble decisions for the training data
+	 * `default::S` is the default label
+	"""
+	struct BKSCombiner{S} <: LabelCombiner
+		L::Int 						# Ensemble size
+		labels::Vector{S}				# List of labels (should be in some order)
+		labelcount::Matrix{Int}				# Class counts corresponding to label combinations (size: number of classes x unique label combinations)
+		E::Matrix{S}				 	# E(i,j) is a matrix containing unique label combinations (size: number of classes  x unique label combinations)
+		default::S					# The default label
+	end							
+
 	"""
 	Generalized mean combiner. 
 	
@@ -260,8 +278,33 @@ module ClassifierCombiner
 		
 		return NaiveBayesCombiner(m, ulabels, labelcount, CM)
 	end
-
 	
+	function combiner_train(predictions::T where T<:AbstractArray, labels::S where S<:AbstractVector{V}, ::Type{BKSCombiner}) where V
+		ip = decision_profile_labels(predictions)
+		m = size(ip,1)						# Size of ensemble
+		n = size(ip,2)						# Number of samples
+		ulabels::Vector{V} = sort(unique(labels))		# Sorted unique labels
+		C::Int = length(ulabels)				# Number of classes
+
+		@assert n==length(labels) "[Classifier Combiner] The size of the training labels must match the number of output samples."
+		 
+		E = unique(ip,2)  					# unique decision profile i.e. only unique combinations of labels
+		
+		labelcount = zeros(Int, C,size(E,2))			# label counts for each class
+
+		# Search for unique label output combinations and count how many fall in each class
+		@inbounds for i in 1:size(ip,2) # i - samples 
+			for j in 1:size(E,2) 	# j - label combinations
+				if view(E,:,j) == view(ip,:,i)
+					labelcount[findin(ulabels,view(labels,i)),j]+=1
+					continue # skip search for other combinations
+				end
+			end
+		end
+
+		return BKSCombiner(m, ulabels, labelcount, E, ulabels[indmax(sum(labelcount,2))])
+	end
+
 
 	"""
 		combiner_exec(combiner, predictions)
@@ -342,6 +385,26 @@ module ClassifierCombiner
 			out[j] = classes[findmax(tmp)[2]]
 		end	
 		
+		return out
+	end
+
+	function combiner_exec(x::S where S<:BKSCombiner{B}, predictions::T where T<:AbstractArray) where B
+		p = decision_profile_labels(predictions)
+		@assert size(p,1) == x.L "[Classifier combiner] Mismatch between expected and actual ensemble results size" 
+		
+		n = size(p,2)				# Number of samples
+		classes::Vector{B} = x.labels		# Ordered observed classes (in training)
+		C = length(classes)			# Number of classes
+		out = fill(x.default,n)			# Output
+		
+		@inbounds for i in 1:size(p,2)    	# i - samples 
+			for j in 1:size(x.E,2) 		# j - label combinations
+				if view(x.E,:,j) == view(p,:,i)
+					out[i] = x.labels[indmax(view(x.labelcount,:,j))]
+					continue 	# skip search for other combinations
+				end
+			end
+		end
 		return out
 	end
 
@@ -455,6 +518,36 @@ naivebayescombiner(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector
 	@assert L==nbcombiner.L "[naivebayescombiner] Expected ensemble dimension is $L and the one determined from input data is $(nbcombiner.L)"
 
 	FunctionCell(genericcombiner, Model(nbcombiner, ModelProperties(L,1)), "Naive-Bayes combiner") 
+end
+
+
+
+"""
+	bkscombiner(L::Int)
+
+Generates an untrained function cell that when piped data into, trains a BKS label combiner. `L` is the size of the upstream ensemble.
+"""
+bkscombiner(L::Int) = FunctionCell(bkscombiner, (L,), ModelProperties(L,1), "BKS combiner" ) # untrained function cell
+
+"""
+	bkscombiner(x,L)
+
+Trains a BKS label combiner using the data `x`, considering an upstream ensemble size `L`.
+"""
+# Training
+bkscombiner(x::T where T<:CellDataL, L::Int) = bkscombiner((getx!(x), gety(x)), L)
+bkscombiner(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, L::Int) = bkscombiner((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), L)
+bkscombiner(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, L::Int) = begin
+
+	@assert nobs(x[1]) == nobs(x[2]) "[bkscombiner] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
+	
+	# Train combiner
+	bkscombiner = ClassifierCombiner.combiner_train(getobs(x[1]), getobs(x[2]), ClassifierCombiner.BKSCombiner)
+	
+	# Check that the specified ensemble number is equal to the determined one
+	@assert L==bkscombiner.L "[bkscombiner] Expected ensemble dimension is $L and the one determined from input data is $(nbcombiner.L)"
+
+	FunctionCell(genericcombiner, Model(bkscombiner, ModelProperties(L,1)), "BKS combiner") 
 end
 
 

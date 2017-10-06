@@ -121,7 +121,8 @@ module j4pr
 		LinDiscClassifier, lindisc,							# Linear discriminant classifier
 		QuadDiscClassifier, quaddisc,							# Quadratic discriminant classifier
 		loss,										# Calculate losses based on MLLabelUtils.jl and LossFunctions.jl
-		ClassifierCombiner, votecombiner, wvotecombiner, naivebayescombiner,		# Label combiners
+		ClassifierCombiner, votecombiner, wvotecombiner,				# Label combiners
+		naivebayescombiner, bkscombiner,
 		meancombiner, wmeancombiner, productcombiner, mediancombiner,			# Continuous output combiners
 		RandomSubspace, randomsubspace,							# Random sub-space ensemble
 		AdaBoost, adaboost,								# AdaBoost ensemble
