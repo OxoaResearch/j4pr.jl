@@ -5,6 +5,7 @@
 		- Whitening --> MultivariateStats.jl				[OK][v.0.1.0]
 		- PCA --> MultivariateStats.jl					[OK][v.0.1.0] 
 		- PPCA (probabilitstic PCA) --> MultivariateStats.jl		[OK][v.0.1.0]
+		- KPCA (Kernel PCA) --> MultivariateStats.jl			[OK][v.0.1.1]
 		- LDA/LDA subspace --> MultivariateStats.jl			[OK][v.0.1.0] 
 		- ICA --> MultivariateStats.jl					[OK][v.0.1.0] 
 		- MDS --> MultivariateStats.jl					[OK][v.0.1.0]
@@ -31,8 +32,8 @@
 		- kNN --> NearestNeighbours.jl + j4pr.jl			[OK][v.0.1.0]
 		- SVM --> LIBSVM.jl						[OK][v.0.1.0] 
 		- XGBoost --> XGBoost.jl					[Unknown version]
-		- Naive Bayes --> j4pr.jl					[TODO][v.0.1.1]
-		- Decision Stump -->j4pr.jl					[TODO][v.0.1.1]
+		- Naive Bayes --> j4pr.jl					[Unknown version]
+		- Decision Stump -->j4pr.jl					[OK][v.0.1.1]
 		- Decision Tree --> DecisionTree.jl				[OK][v.0.1.0] 
 		- Random Forest --> DecisionTree.jl				[OK][v.0.1.0] 
 		- Adaboosted stumps --> DecisionTree.jl				[OK][v.0.1.0] 
@@ -53,16 +54,18 @@
 		- Boosting 
 			- Adaboost M1 --> j4pr.jl				[OK][v.0.1.0]
 			- Adaboost M2 --> j4pr.jl				[OK][v.0.1.0]
-			- Arc-x4 --> j4pr.jl					[TODO][v.0.1.1]
+			- Arc-x4 --> j4pr.jl					[Unknown version]	
 		- Gradient Boosting --> ?					[Unknown version]
 		- Random subspace --> j4pr.jl					[OK][v.0.1.0]
 		- Network classifiers --> j4pr.jl				[v.0.1.3?]
 		- Rotation Forest --> j4pr.jl					[Unknown version]	
 
-	* Evaluation 
-		- cross-validation --> MLBase.jl				[TO DO][v.0.1.2?] 
+	* Evaluation & Optimization 
+		- cross-validation --> MLBase.jl				[TO DO][v.0.1.1] 
 		- loss-functions --> MLLabelUtils.jl, LossFunctions.jl		[OK][v.0.1.0]
-		- ROC Analysis --> ROCAnalysis.jl/MLBase.jl			[TODO][v.0.1.2?]
+		- ROC Analysis --> ROCAnalysis.jl/MLBase.jl			[TODO][v.0.1.1]
+		- Hyperparameter optimization --> MLBase.jl?			[TODO][v.0.1.1]
+
 	* Feature Selection
 		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.3?]
 
@@ -73,6 +76,7 @@
 		- LASSO --> Lasso.jl (builds on GLM.jl)				[Unknown version]
 	 	- SVM --> LIBSVM.jl						[OK][v.0.1.0]
 	 	- kNN --> NearestNeighbors.jl + j4pr.jl				[OK][v.0.1.0]	
+		- Decision Stump -->j4pr.jl					[OK][v.0.1.1]
 		- Decision Tree --> DecisionTree.jl				[OK][v.0.1.0]
 		- Random Forest --> DecisionTree.jl				[OK][v.0.1.0]
 

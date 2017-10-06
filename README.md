@@ -249,7 +249,7 @@ by these i.e. passed sequentially through each, sent to each in parallel etc.
       # DataCell, 2 obs, 3 vars, 0 target(s)/obs
       ```
     
-    - Index similar to an ``Array``:
+    - Index similar to an `Array`:
       ```julia
       julia> A=datacell(X2,y2);
 
@@ -325,7 +325,7 @@ by these i.e. passed sequentially through each, sent to each in parallel etc.
       #  0.0696501
       ```
     
-    - The concatenation of 'labeled' and 'unlabeled' ``DataCell`` objects is more restrictive:
+    - The concatenation of 'labeled' and 'unlabeled' `DataCell` objects is more restrictive:
       ```julia
       julia> A=datacell(rand(3),[0,0,1]); B=datacell(100*rand(2,3)); C=datacell([1.0,2.0,3.0],[1,2,1]);
 
