@@ -58,7 +58,7 @@ function apply_j4pr_colorscheme()
 	OhMyREPL.enable_autocomplete_brackets(false)
 
 	# Prompt
-	OhMyREPL.input_prompt!("julia4πr>", :yellow)
+	OhMyREPL.input_prompt!("julia-[j4πr]>", :light_green)
 	#OhMyREPL.output_prompt!("", :white)
 end
 

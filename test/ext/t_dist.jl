@@ -17,7 +17,7 @@ A04 = j4pr.datacell(matrixdata)
 A05 = j4pr.datacell(matrixdata, labels)
 A06 = j4pr.datacell(matrixdata, multilabels)
 
-# Test only for Euclidean distance
+# Tests
 D = [Distances.Euclidean(),
      Distances.Cityblock(),
      Distances.Chebyshev(),
