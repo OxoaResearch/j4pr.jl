@@ -50,13 +50,37 @@ trained function cell, retaining the training data.
 # Keyword arguments
   * `symmetric::Bool` specifies whether the kernel should be symmetric i.e. calculated using the same observations (default `false`)
 
+A list of common used kernels can be found below (definitions from the documentation of to MLKernels.jl):
 # Kernels
-List of the commonly used kernels:
-    function 				description
-    `(x,y)->x'y` 			 `Linear`
-    `(x,y)->(x'y+c)^d` 			 `Polynomial`
-    `(x,y)->exp(-γ*norm(x-y)^2.0)` 	 `Radial basis function (RBF)`
+  * `(x,y)-> a⋅xᵀy + c		Linear, a>0, c≥0`
+  * `(x,y)-> (a⋅xᵀy+c)ᵈ		Polynomial, a>0, c≥0, d∈Ζ₊`
+  * `(x,y)-> tanh(a⋅xᵀy+c)		Sigmoid, a>0, c≥0`
+  * `(x,y)-> exp(a⋅xᵀy)		Exponentiated, a>0`
+  * `(x,y)-> exp(-α*‖x-y‖)		Exponential, α>0`
+  * `(x,y)-> exp(-α⋅‖x-y‖²)		Squared exponential, α>0`
+  * `(x,y)-> exp(-α⋅‖x-y‖ᵞ)		Gamma exponential, α>0, 0<γ<1`
+  * `(x,y)-> (1 + α⋅‖x-y‖²)⁻ᵝ	Rational quadratic, α>0, β>0`
+  * `(x,y)-> (1 + α⋅‖x-y‖ᵞ)⁻ᵝ	Gamma-rational, α>0, β>0, 0<γ,1`
+  * `(x,y)-> exp{-α⋅Σᵢsin²[p⋅(xᵢ-yᵢ)]}	Periodic kernel, p>0, α>0`
+  * `(x,y)-> ‖x-y‖²ᵞ		Power, 0<γ≤1 (negative definite)`
+  * `(x,y)-> log(1+α⋅‖x-y‖²ᵞ)	Log, α>0, 0<γ≤1 (negative definite)` 
 
+# Examples
+```
+julia> k(a,c) = (x,y)->a*x'y+c # linear kernel                                                                                                                                                 
+k (generic function with 1 method)                                                                                                                                                             
+
+julia> K = kernel(k(1.0,2.0))                                                                                                                                                                  
+Kernel: symmetric=false, varying I/O dimensions, untrained                                                                                                                                     
+
+julia> x=[1,2,3]; y=[4,5,6,7];                                                                                                                                                                    
+                                                                                                                                                                                               
+julia> y |> K(x)                                                                                                                                                                               
+3×4 Array{Int64,2}:        
+  6   7   8   9                                                                                                                                                                                
+ 10  12  14  16                                                                                                                                                                                
+ 14  17  20  23   
+```
 """
 kernel(f::Function=(x,y)->x'y; symmetric::Bool=false) = 
 	FunctionCell(kernel, (f,), ModelProperties(), "Kernel: symmetric=$symmetric"; symmetric=symmetric) 
