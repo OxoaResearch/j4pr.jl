@@ -23,6 +23,7 @@ for future distance calculations.
 """
 # Training
 dist(x::T where T<:CellData, d::Distances.PreMetric=Distances.Euclidean()) = dist(getx!(x), d)
+dist(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, d::Distances.PreMetric=Distances.Euclidean()) = dist(x[1], d)
 dist(x::T where T<:AbstractVector, d::Distances.PreMetric=Distances.Euclidean()) = dist(mat(x, LearnBase.ObsDim.Constant{2}()), d)
 dist(x::T where T<:AbstractMatrix, d::Distances.PreMetric=Distances.Euclidean()) = begin
 	
