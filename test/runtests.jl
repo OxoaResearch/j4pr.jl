@@ -81,3 +81,9 @@ if (VERSION <= v"0.6") # LIBSVM does not work with Julia 0.7
 		Base.Test.@testset "libsvm.jl (LIBSVM classifier/regressor)" begin t_libsvm(); end
 	end
 end
+
+# [/lib/unsup]
+include("t_kernel.jl")
+Base.Test.@testset "[j4pr: /src/lib/unsup]" begin
+	Base.Test.@testset "kernel.jl (kernels)" begin t_kernel(); end
+end

@@ -80,12 +80,12 @@ module j4pr
 	  	pintgen, rdataset,								# Data generators
 	   	interrupt,
 		
-		#[/lib]	
+		# [lib]	
 		countapp, countapp!, countappw, countappw!, 					# Counting utils 
 		gini, misclassification,							# Purity utility functions
 		linearsplit, densitysplit,							# Split vectors according to different criteria	
 		
-		# [/lib/data]
+		# [lib/data]
 		DataGenerator, 									# Small sub-module that generates some datasets 
 		cslice,										# Class slicing
 	   	sample,										# Data sampling (sub/super sampling)
@@ -96,7 +96,7 @@ module j4pr
 	   	lineplot, scatterplot, densityplot1d, densityplot2d,				# Plots
 		im2targets, targets2im,								# From Images.jl Arrays to DataCells and back	
 
-		# [/lib/ext]
+		# [lib/ext]
 		dist,										# Distances
 		whiten,										# Data Whitening
 		pca, pcar,									# PCA and reconstruction
@@ -116,7 +116,7 @@ module j4pr
 		treer, randomforestr,								# Decisiontree, random forest regression
 		aboostump,									# Adaptively boosted stump classifier
 		
-		# [/lib/sup]
+		# [lib/sup]
 		loss,										# Calculate losses based on MLLabelUtils.jl and LossFunctions.jl
 		kNNClassifier, knn, knnr,							# k-nearest neighbours classifier and regressor
 		LinDiscClassifier, lindisc,							# Linear discriminant classifier
@@ -127,8 +127,10 @@ module j4pr
 		meancombiner, wmeancombiner, productcombiner, mediancombiner,			# Continuous output combiners
 		RandomSubspace, randomsubspace,							# Random sub-space ensemble
 		AdaBoost, adaboost,								# AdaBoost ensemble
-		stump, stumpr									# Decision stump classifier and regressor
+		DecisionStump, stump, stumpr,							# Decision stump classifier and regressor
 
+		# [lib/unsup]
+		kernelize!, kernelize, kernel							# Construct kernels
 
     	##############################################################################################################################
     	# Include														     #
@@ -188,8 +190,7 @@ module j4pr
 		end
 	
 	# [lib/unsup] e.g. unsupervised learning
-		# ...
-		# ...
+		include("lib/unsup/kernel.jl")							# Lightweight way of constructing kernels
 
 	# [lib/sup] e.g. supervised learning
 		include("lib/sup/knn.jl")							# kNN classifier/regressor/density estimator
