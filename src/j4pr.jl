@@ -117,10 +117,11 @@ module j4pr
 		aboostump,									# Adaptively boosted stump classifier
 		
 		# [/lib/sup]
+		loss,										# Calculate losses based on MLLabelUtils.jl and LossFunctions.jl
 		kNNClassifier, knn, knnr,							# k-nearest neighbours classifier and regressor
 		LinDiscClassifier, lindisc,							# Linear discriminant classifier
 		QuadDiscClassifier, quaddisc,							# Quadratic discriminant classifier
-		loss,										# Calculate losses based on MLLabelUtils.jl and LossFunctions.jl
+		ParzenClassifier, parzen,							# Parzen window density estimator/regressor/classifier
 		ClassifierCombiner, votecombiner, wvotecombiner,				# Label combiners
 		naivebayescombiner, bkscombiner,
 		meancombiner, wmeancombiner, productcombiner, mediancombiner,			# Continuous output combiners
@@ -140,7 +141,6 @@ module j4pr
     	include("core/pipecell.jl")                                                         	# PipeCell related  
 	include("core/calls.jl")                                                                # < call > methods
     	include("core/convert_promote.jl")                                                      # Conversion and Promotion rules in J4PR
-	include("core/mldatapattern.jl")							# MLDataPattern interface
     	include("core/printers.jl")                                                             # Text output (e.g. in REPL) for J4PR objects
     	include("core/coreutils.jl")                                                            # Utility functions (manipulate data and pipes)
     	include("core/macros.jl") 								# Macros
@@ -150,6 +150,7 @@ module j4pr
     
 	# [lib]
 	include("lib/libutils.jl")								# Utility functions for learning
+	include("lib/mldatapattern.jl")								# MLDataPattern interface
 
 	# [lib/data] e.g. data manipulation
 		include("lib/data/cslice.jl")							# Class slicing (e.g. select classes)
