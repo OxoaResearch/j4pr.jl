@@ -5,7 +5,7 @@
   * Wrapped Factor Analysis (requires latestMultivariateStats.jl)
   * Wrapped kernel PCA (requires latestMultivariateStats.jl)
   * Added decision stump classifier, regressor
-  * Added BKS label combiner
+  * Added DT and BKS label combiners
   * Added support for generating kernels i.e. kernel trick 
 
 0.1.0 / 2017-09-24

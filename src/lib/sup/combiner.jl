@@ -1,6 +1,7 @@
 module ClassifierCombiner
 
 	using StatsBase: countmap
+	using Distances
 	using j4pr: countapp, countappw
 	
 	export AbstractCombiner, NoCombiner, LabelCombiner, ContinuousCombiner, VoteCombiner, WeightedVoteCombiner,
@@ -133,6 +134,23 @@ module ClassifierCombiner
 		C::Int						# Number of classes	
 	end
 
+	"""
+	Decision Template combiner. 
+	
+	# Fields
+	 * `L::Int` is the expected ensemble size on whose output it operates
+	 * `C::Int` is the number of classes
+	 * `DT::Array{Float64,3}` is the decision templates array
+	 * `d::Distances.PreMetric` is the distance used to evaluate the similarity between the
+	 current record decision profile and the templates
+	"""
+	struct DTCombiner{T<:Distances.PreMetric} <: ContinuousCombiner
+		L::Int 						# Ensemble size
+		C::Int						# Number of classes	
+		DT::Array{Float64,3}				# Decision templates
+		d::T						# Distance
+	end
+	
 	"""
 		decision_profile_labels(x)
 	
@@ -305,6 +323,24 @@ module ClassifierCombiner
 		return BKSCombiner(m, ulabels, labelcount, E, ulabels[indmax(sum(labelcount,2))])
 	end
 
+	function combiner_train(predictions::T where T<:AbstractArray, labels::S where S<:AbstractVector{V}, d::Distances.PreMetric, ::Type{DTCombiner}) where V
+		ulabels::Vector{V} = sort(unique(labels))		# Sorted unique labels
+		C::Int = length(ulabels)				# Number of classes
+
+		ip = decision_profile_continuous(predictions, C)	
+		m = size(ip,3)						# Size of ensemble
+		n = size(ip,2)						# Number of samples
+
+		@assert n==length(labels) "[Classifier Combiner] The size of the training labels must match the number of output samples."
+		
+		# decision templates: 1'st dimension - mean class posteriors, 2'nd dimension - ensemble member, 3'rd dimension true class,
+		DT = zeros(C,m,C)  					
+		@inbounds for i in 1:C	# Calculate the mean estimated class probabilities over all ensemble members, for each class 
+			DT[:,:,i] = squeeze(mean(ip[:,labels.==ulabels[i],:],2),2)
+		end
+
+		return DTCombiner(m, C, DT, d)
+	end
 
 	"""
 		combiner_exec(combiner, predictions)
@@ -441,6 +477,21 @@ module ClassifierCombiner
 		
 		return squeeze(prod(p,3),3)
 	end
+	
+	function combiner_exec(x::DTCombiner, predictions::T where T<:AbstractArray)
+		p = decision_profile_continuous(predictions, x.C)
+		@assert size(p,1) == x.C "[Classifier combiner] Mismatch between expected and input number of classes" 
+		@assert size(p,3) == x.L "[Classifier combiner] Mismatch between expected and input ensemble size" 
+		n = size(p,2)
+		out = Matrix{Float64}(x.C, n)
+
+		for j in 1:n
+			for i in 1:x.C
+				out[i,j] = 1-1/(x.C*x.L)*Distances.evaluate(x.d, x.DT[:,:,i], p[:,j,:]) 
+			end
+		end
+		return out 
+	end
 end
 
 
@@ -545,7 +596,7 @@ bkscombiner(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, L::In
 	bkscombiner = ClassifierCombiner.combiner_train(getobs(x[1]), getobs(x[2]), ClassifierCombiner.BKSCombiner)
 	
 	# Check that the specified ensemble number is equal to the determined one
-	@assert L==bkscombiner.L "[bkscombiner] Expected ensemble dimension is $L and the one determined from input data is $(nbcombiner.L)"
+	@assert L==bkscombiner.L "[bkscombiner] Expected ensemble dimension is $L and the one determined from input data is $(bkscombiner.L)"
 
 	FunctionCell(genericcombiner, Model(bkscombiner, ModelProperties(L,1)), "BKS combiner") 
 end
@@ -592,6 +643,44 @@ productcombiner(L::Int, C::Int) = FunctionCell(genericcombiner, Model(Classifier
 Trains a median continuous output combiner. `L` is the size of the upstream ensemble, `C` is the expected number of classes.
 """
 mediancombiner(L::Int, C::Int) = FunctionCell(genericcombiner, Model(ClassifierCombiner.MedianCombiner(L,C), ModelProperties(L*C,C)), "Median combiner") 
+
+
+
+"""
+	dtcombiner(L::Int, C::Int [;d=Distances.Euclidean()])
+
+Generates an untrained function cell that when piped data into, trains a DT (decision templates) continuous combiner. 
+`L` is the size of the upstream ensemble, `C` is the expected number of classes and `d::Distances.PreMetric` is a 
+distance used to evaluate the similarity between the ensemble outputs for a given observation and the class templates.
+"""
+dtcombiner(L::Int, C::Int; d::Distances.PreMetric=Distances.Euclidean()) = 
+	FunctionCell(dtcombiner, (L,C), ModelProperties(L*C,C), "DT combiner";d=d) # untrained function cell
+
+"""
+	dtcombiner(x, L::Int, C::Int, [;d=Distances.Euclidean()])
+
+Trains a DT continuous output combiner. `L` is the size of the upstream ensemble, `C` is the expected number of classes and
+`d::Distances.PreMetric` is a distance used to evaluate the similarity between the ensemble outputs for a given observation 
+and the class templates.
+"""
+# Training
+dtcombiner(x::T where T<:CellDataL, L::Int, C::Int; d::Distances.PreMetric=Distances.Euclidean()) = 
+	dtcombiner((getx!(x), gety(x)), L, C; d=d)
+dtcombiner(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, L::Int, C::Int; d::Distances.PreMetric=Distances.Euclidean()) = 
+	dtcombiner((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), L, C; d=d)
+dtcombiner(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, L::Int, C::Int; d::Distances.PreMetric=Distances.Euclidean()) = begin
+
+	@assert nobs(x[1]) == nobs(x[2]) "[dtcombiner] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
+	
+	# Train combiner
+	dtcombiner = ClassifierCombiner.combiner_train(getobs(x[1]), getobs(x[2]), d, ClassifierCombiner.DTCombiner)
+	
+	# Check that the specified ensemble number is equal to the determined one
+	@assert L==dtcombiner.L "[dtcombiner] Expected ensemble dimension is $L and the one determined from input data is $(dtcombiner.L)"
+	@assert C==dtcombiner.C "[dtcombiner] Expected $C classes and the number determined from input data is $(dtcombiner.C)"
+
+	FunctionCell(genericcombiner, Model(dtcombiner, ModelProperties(L*C,C)), "DT combiner") 
+end
 
 
 

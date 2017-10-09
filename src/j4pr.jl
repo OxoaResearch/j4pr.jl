@@ -124,7 +124,8 @@ module j4pr
 		ParzenClassifier, parzen,							# Parzen window density estimator/regressor/classifier
 		ClassifierCombiner, votecombiner, wvotecombiner,				# Label combiners
 		naivebayescombiner, bkscombiner,
-		meancombiner, wmeancombiner, productcombiner, mediancombiner,			# Continuous output combiners
+		meancombiner, wmeancombiner, productcombiner,					# Continuous output combiners
+		mediancombiner, dtcombiner,
 		RandomSubspace, randomsubspace,							# Random sub-space ensemble
 		AdaBoost, adaboost,								# AdaBoost ensemble
 		DecisionStump, stump, stumpr,							# Decision stump classifier and regressor
