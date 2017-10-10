@@ -48,7 +48,8 @@ TL=([ 0 0 1;
       0.7 0.8 0], # output for 3 samples, 2 classes and 2 ensemble members
     [0,0,1])	  # labels
 L =j4pr.mat([0,1,0.2,0.8])
-Base.Test.@test all(vec(L |> j4pr.dtcombiner(TL,2,2)) .≈ [1-1/4*Distances.euclidean(zz.x.data.DT[:,:,1],[0 0.2;1 0.8]), 
-						    1-1/4*Distances.euclidean(zz.x.data.DT[:,:,2],[0 0.2;1 0.8])])
+dtcomb=j4pr.dtcombiner(TL,2,2)
+Base.Test.@test all(vec(L |> dtcomb) .≈ [1-1/4*Distances.euclidean(dtcomb.x.data.DT[:,:,1],[0 0.2;1 0.8]), 
+					1-1/4*Distances.euclidean(dtcomb.x.data.DT[:,:,2],[0 0.2;1 0.8])])
 
 end
