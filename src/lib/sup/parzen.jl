@@ -25,8 +25,8 @@ module ParzenClassifier
 	const ParzenModelDensity{S<:Void} = ParzenModel{S}
 
 	# Printers
-	Base.show(io::IO, m::ParzenModelClassification) = print("ParzenModel, classification, h=$(m.h)")
-	Base.show(io::IO, m::ParzenModelDensity) = print("ParzenModel, density estimation, h=$(m.h)")
+	Base.show(io::IO, m::ParzenModelClassification) = print(io, "Parzen model, classification, h=$(m.h)")
+	Base.show(io::IO, m::ParzenModelDensity) = print(io, "Parzen model, density estimation, h=$(m.h)")
 
 
 

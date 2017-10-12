@@ -34,8 +34,8 @@ module RandomSubspace
 	const SubspaceEnsembleClassic{F<:Function, T, U} = SubspaceEnsemble{F,T,U} 	# the execution function is specified
 
 	# Printers
-	Base.show(io::IO, m::SubspaceEnsembleCell) = print("Sub-space ensemble, $(length(m.idx)) members, Cell version")
-	Base.show(io::IO, m::SubspaceEnsembleClassic) = print("Sub-space ensemble, $(length(m.idx)) members")
+	Base.show(io::IO, m::SubspaceEnsembleCell) = print(io, "Sub-space ensemble, $(length(m.idx)) members, Cell version")
+	Base.show(io::IO, m::SubspaceEnsembleClassic) = print(io, "Sub-space ensemble, $(length(m.idx)) members")
 
 
 

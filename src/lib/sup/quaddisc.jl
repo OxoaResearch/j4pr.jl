@@ -15,7 +15,7 @@ module QuadDiscClassifier
 	end
 
 	# Printers
-	Base.show(io::IO, m::QuadDiscModel) = print("Quadratic Discriminant Model, $(length(mean)) classes, r1=$r1, r2=$r2")
+	Base.show(io::IO, m::QuadDiscModel) = print(io, "Quadratic Discriminant model, $(length(m.mean)) classes, r1=$(m.r1), r2=$(m.r2)")
 
 
 	# Train methods (classification)

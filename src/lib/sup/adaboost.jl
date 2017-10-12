@@ -41,10 +41,10 @@ module AdaBoost
 	const AdaBoostEnsembleM2Classic{F<:Function, T, B<:AdaBoostM2, U} = AdaBoostEnsemble{F,T,B,U}		# M2 boost, with execution function
 	
 	# Printers
-	Base.show(io::IO, m::AdaBoostEnsembleM1Cell) = print("AdaBoost M1 ensemble, $(length(m.weights)) members, Cell version")
-	Base.show(io::IO, m::AdaBoostEnsembleM2Cell) = print("AdaBoost M2 ensemble, $(length(m.weights)) members, Cell version")
-	Base.show(io::IO, m::AdaBoostEnsembleM1Classic) = print("AdaBoost M1 ensemble, $(length(m.weights)) members")
-	Base.show(io::IO, m::AdaBoostEnsembleM2Classic) = print("AdaBoost M2 ensemble, $(length(m.weights)) members")
+	Base.show(io::IO, m::AdaBoostEnsembleM1Cell) = print(io, "AdaBoost M1 ensemble, $(length(m.weights)) members, Cell version")
+	Base.show(io::IO, m::AdaBoostEnsembleM2Cell) = print(io, "AdaBoost M2 ensemble, $(length(m.weights)) members, Cell version")
+	Base.show(io::IO, m::AdaBoostEnsembleM1Classic) = print(io, "AdaBoost M1 ensemble, $(length(m.weights)) members")
+	Base.show(io::IO, m::AdaBoostEnsembleM2Classic) = print(io, "AdaBoost M2 ensemble, $(length(m.weights)) members")
 
 
 

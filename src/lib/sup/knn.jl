@@ -22,10 +22,10 @@ module kNNClassifier
 	const kNNModelRegressionR{T<:Float64, S<:Vector{Float64}} = kNNModel{T,S}
 
 	# Printers
-	Base.show(io::IO, m::kNNModelClassificationNN) = print("KNNModel, classification, NN, k=$(m.k)")
-	Base.show(io::IO, m::kNNModelClassificationR) = print("KNNModel, classification, range, r=$(m.k)")
-	Base.show(io::IO, m::kNNModelRegressionNN) = print("KNNModel, regression, NN, k=$(m.k)")
-	Base.show(io::IO, m::kNNModelRegressionR) = print("KNNModel, regression, range, r=$(m.k)")
+	Base.show(io::IO, m::kNNModelClassificationNN) = print(io, "KNN model, classification, NN, k=$(m.k)")
+	Base.show(io::IO, m::kNNModelClassificationR) = print(io, "KNN model, classification, range, r=$(m.k)")
+	Base.show(io::IO, m::kNNModelRegressionNN) = print(io, "KNN model, regression, NN, k=$(m.k)")
+	Base.show(io::IO, m::kNNModelRegressionR) = print(io, "KNN model, regression, range, r=$(m.k)")
 
 
 

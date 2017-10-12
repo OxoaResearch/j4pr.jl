@@ -42,10 +42,10 @@ module DecisionStump
 	const RegressionStumpN = RegressionStump{N} where N					# stump regressor - nominal variable
 	
 	# Printers
-	Base.show(io::IO, m::ClassificationStumpOR) = print("Decision stump, classification, var=$(m.idx), th=$(m.th[1])")
-	Base.show(io::IO, m::ClassificationStumpN) = print("Decision stump, classification, var=$(m.idx), $(length(m.th)) thresholds")
-	Base.show(io::IO, m::RegressionStumpOR) = print("Decision stump, regression, var=$(m.idx), th=$(m.th[1]), order $(size(m.coeff,2)-1) fit")
-	Base.show(io::IO, m::RegressionStumpN) = print("Decision stump, regression, var=$(m.idx), $(length(m.th)) thresholds, order 0 fit")
+	Base.show(io::IO, m::ClassificationStumpOR) = print(io, "Decision stump, classification, var=$(m.idx), th=$(m.th[1])")
+	Base.show(io::IO, m::ClassificationStumpN) = print(io, "Decision stump, classification, var=$(m.idx), $(length(m.th)) thresholds")
+	Base.show(io::IO, m::RegressionStumpOR) = print(io, "Decision stump, regression, var=$(m.idx), th=$(m.th[1]), order $(size(m.coeff,2)-1) fit")
+	Base.show(io::IO, m::RegressionStumpN) = print(io, "Decision stump, regression, var=$(m.idx), $(length(m.th)) thresholds, order 0 fit")
 	
 
 
