@@ -19,3 +19,4 @@ Compat
 RDatasets
 DataArrays
 DataStructures
+ROCAnalysis

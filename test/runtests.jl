@@ -63,6 +63,7 @@ include("t_combiners.jl")
 include("t_randomsubspace.jl")
 include("t_adaboost.jl")
 include("t_stump.jl")
+include("t_roc.jl")
 Base.Test.@testset "[j4pr: /src/lib/sup]" begin
 	Base.Test.@testset "knn.jl (knn regression/classification)" begin t_knn(); end
 	Base.Test.@testset "lindisc.jl (Linear discriminant classifier)" begin t_lindisc(); end
@@ -73,6 +74,7 @@ Base.Test.@testset "[j4pr: /src/lib/sup]" begin
 	Base.Test.@testset "randomsubspace.jl (Random subspace ensemble)" begin t_randomsubspace(); end
 	Base.Test.@testset "adaboost.jl (AdaBoost ensemble)" begin t_adaboost(); end
 	Base.Test.@testset "stump.jl (Decision stump classifier and regressor)" begin t_stump(); end
+	Base.Test.@testset "roc.jl (ROC curves and operating points)" begin t_roc(); end
 end
 
 if (VERSION <= v"0.6") # LIBSVM does not work with Julia 0.7

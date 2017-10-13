@@ -94,6 +94,7 @@ module j4pr
 	   	filterdomain!,									# Data domain filtering
 	   	ohenc, ohenc_integer, ohenc_binary,						# One hot encoder
 	   	lineplot, scatterplot, densityplot1d, densityplot2d,				# Plots
+		rocplot,
 		im2targets, targets2im,								# From Images.jl Arrays to DataCells and back	
 
 		# [lib/ext]
@@ -129,6 +130,7 @@ module j4pr
 		RandomSubspace, randomsubspace,							# Random sub-space ensemble
 		AdaBoost, adaboost,								# AdaBoost ensemble
 		DecisionStump, stump, stumpr,							# Decision stump classifier and regressor
+		ROC, findop, changeop!, simpleop,						# Operating point optimization
 
 		# [lib/unsup]
 		kernelize!, kernelize, kernel							# Construct kernels
@@ -203,6 +205,7 @@ module j4pr
 		include("lib/sup/randomsubspace.jl")						# Random subspace ensemble framework
 		include("lib/sup/adaboost.jl")							# AdaBoost ensemble framework
 		include("lib/sup/stump.jl")							# Decision stump classifier and regressor
+		include("lib/sup/roc.jl")							# ROC Analysis and operating point related functionality
 
 	# [exp] e.g. Experimental stuff
 		include("exp/plotting.jl")							# Plots for labeled/unlabeled datasets (UnicodePlots.jl)
