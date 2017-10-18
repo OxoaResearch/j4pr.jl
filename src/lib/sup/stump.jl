@@ -5,7 +5,7 @@ module DecisionStump
 	using StatsBase: entropy, trim, sample
 	using Distances: sqeuclidean
 	using j4pr: countappw, countappw!, gini, misclassification, linearsplit, densitysplit
-	export AbstractStump, StumpClassifier, StumpRegressor, stumpc_train, stump	
+	export AbstractStump, StumpClassifier, StumpRegressor, stump_train, stump_exec	
 
 	# Types
 	abstract type AbstractStump end
@@ -50,7 +50,7 @@ module DecisionStump
 
 
 	# Calculate the information gain for ordinal or real variables, for all thresholds provided
-	_gain_real_(x::AbstractVector{Float64}, y::AbstractVector{Int}, yu::AbstractVector{Int}, th::Vector{Float64}, f::Function) = begin
+	_gain_real_(x::AbstractVector{Float64}, y::AbstractVector{Int}, yu::AbstractVector{Int}, th::Vector{Float64}, fp::Function) = begin
 		# Initialize 
 		nt = length(th)									# number of thresholds	
 		n = length(y)									# number of samples
@@ -60,7 +60,7 @@ module DecisionStump
 		nleft::Float64 = 0.0
 		@inbounds for i = 1:nt
 			nleft = sum(x.<=th[i])/n
-			I = f(countappw(y,yu)) - nleft*f(countappw(view(y,x.<=th[i]),yu)) - (1-nleft)*f(countappw(view(y,x.>th[i]),yu))
+			I = fp(countappw(y,yu)) - nleft*fp(countappw(view(y,x.<=th[i]),yu)) - (1-nleft)*fp(countappw(view(y,x.>th[i]),yu))
 			# Check if the information gain was improved and update
 			if I >= Imax
 				Imax = I							# update maximum gain
@@ -77,7 +77,7 @@ module DecisionStump
 	end
 
 	# Calculate the information gain for nominal variables, for all thresholds provided
-	_gain_nominal_(x::AbstractVector{Float64}, y::AbstractVector{Int}, yu::AbstractVector{Int}, th::Vector{Float64}, f::Function) = begin
+	_gain_nominal_(x::AbstractVector{Float64}, y::AbstractVector{Int}, yu::AbstractVector{Int}, th::Vector{Float64}, fp::Function) = begin
 		# For nominal splits, N+1 thresholds, if N is the number of distinct values of the variable, the additional one for 'unknown'
 		# 'th' is ignored
 		ux = unique(x) 									# unique values of the variable (i.e. the thresholds)
@@ -97,14 +97,14 @@ module DecisionStump
 		# Calculate gain
 		Isplit = 0.0
 		@inbounds @simd for i in 1:nt
-			Isplit += f(view(probs,:,i))
+			Isplit += fp(view(probs,:,i))
 		end
-		I = f(priors) - Isplit # no actual threshold selection is made
+		I = fp(priors) - Isplit # no actual threshold selection is made
 		return I, ux, probs
 	end
 
 	# Calculate the fit error for ordinal or real variables, for all thresholds provided
-	_regressor_real_(x::AbstractVector{Float64}, y::AbstractVector{Float64}, th::Vector{Float64}, mf::Function, ef::Function) = begin
+	_regressor_real_(x::AbstractVector{Float64}, y::AbstractVector{Float64}, th::Vector{Float64}, fm::Function, fe::Function) = begin
 		# Initialize 
 		nt = length(th)									# number of thresholds	
 		n = length(y)									# number of samples
@@ -115,8 +115,8 @@ module DecisionStump
 		@inbounds for i = 1:nt
 			nleft = sum(x.<=th[i])
 			(nleft == 0 || nleft == n) && continue 					# skip theshold if extreme
-			E = -ef(y,mf(x,y)[2]) + ef(view(y,x.<=th[i]), mf(view(x,x.<=th[i]),view(y,x.<=th[i]))[2]) + 
-			                        ef(view(y,x.>th[i]), mf(view(x,x.>th[i]),view(y,x.>th[i]))[2])
+			E = -fe(y,fm(x,y)[2]) + fe(view(y,x.<=th[i]), fm(view(x,x.<=th[i]),view(y,x.<=th[i]))[2]) + 
+			                        fe(view(y,x.>th[i]), fm(view(x,x.>th[i]),view(y,x.>th[i]))[2])
 			# Check if the error was improved and update
 			if E <= Emin
 				Emin = E							# update error difference
@@ -125,40 +125,60 @@ module DecisionStump
 		end
 
 		if pos == -1
-			return Emin, [th[div(nt,2)]], [mf(x,y)[1] mf(x,y)[1]]
+			return Emin, [th[div(nt,2)]], [fm(x,y)[1] fm(x,y)[1]]
 		else	
-			return Emin, th[pos:pos], [mf(view(x,x.<=th[pos]),view(y,x.<=th[pos]))[1] mf(view(x,x.>th[pos]),view(y,x.>th[pos]))[1]]
+			return Emin, th[pos:pos], [fm(view(x,x.<=th[pos]),view(y,x.<=th[pos]))[1] fm(view(x,x.>th[pos]),view(y,x.>th[pos]))[1]]
 		end
 	end
 
 	# Calculate the fit error for nominal variables, for all thresholds provided
-	_regressor_nominal_(x::AbstractVector{Float64}, y::AbstractVector{Float64}, th::Vector{Float64}, mf::Function, ef::Function) = begin
+	_regressor_nominal_(x::AbstractVector{Float64}, y::AbstractVector{Float64}, th::Vector{Float64}, fm::Function, fe::Function) = begin
 		# For nominal splits, N+1 thresholds, if N is the number of distinct values of the variable, the additional one for 'unknown'
 		# 'th' is ignored
 		ux = sort(unique(x))								# unique values of the variable (i.e. the thresholds)
 		nt = length(ux)									# number of thresholds 
 		n = length(y)  									# number of samples
-		deflt = mf(x,y)[1]								# default coefficients if value is not found
+		deflt = fm(x,y)[1]								# default coefficients if value is not found
 		coeff = zeros(Float64, 2, nt+1)							# preallocate coefficient matrix (last row for unseen values)
 		coeff[:,end] = deflt 
 		
 		Esplit = 0.0
-		@inbounds for i = 1:nt
+		@inbounds @simd for i = 1:nt
 			ym = view(y,x.==ux[i])							# select values corresponding to current unique data value
-			c, ŷ = mf(fill(ux[i], length(ym)), ym)					# fit model
+			c, ŷ = fm(fill(ux[i], length(ym)), ym)					# fit model
 			coeff[:,i] = c								# get coefficients	
-			Esplit += ef(ym,ŷ)							# update split error	
+			Esplit += fe(ym,ŷ)							# update split error	
 		end
 		
 		# Calculate the error difference
-		E = Esplit - ef(y,mf(x,y)[2]) # no actual threshold selection is made
+		E = Esplit - fe(y,fm(x,y)[2]) # no actual threshold selection is made
 		return E, ux, coeff
 	end
 
 
 
+	"""
+		stump_train(x,y [;kwargs])
+
+	Trains a decision stump classifier using the data `x` and labels `y`.
+
+	# Arguments
+	  * `x::AbstractMatrix{Float64}` the input data; it is assumed that each column of the input matrix represents an observation
+	  * `y::AbstractVector{Int}` the labels vector
+
+	# Keyword arguments
+	  * `crit::Symbol` is the purity criterion used to assess the split. Supported: `:gini`,`:entropy` and `:misclassification` (default `:gini`)
+	  * `nthresh::Int` is the number of thresholds for a ordinal or real variable that will be investigated (default `10`)	
+	  * `split::Symbol` describes the variable split used in generating the thresholds. Supported: `:linear`, `:density` (default `:linear`)
+	  * `count::Int` is the number of samples in a variable that are discarded at both ends of its value interval in training; see `StatsBase.trim` (default `0`)
+	  * `prop::Float64` is the proportion of samples in a variable that are discarded at both ends of its value interval in training; see `StatsBase.trim` (default `0.0`)
+	  * `vartypes::Union{Dict{Int=>Symbol}, Symbol}` describes the type of variables from the dataset; if it is a `Symbol`, all variables 
+	are assumed to be of the same type. If it is a `Dict{Int=>:Symbol}`, the variable indicated by the key is assumed to be of the type of the value; 
+	two values are supported: `:nominal` and any other symbol; if a variable is specified as nominal, the classifier will have `N+1` leaves, where `N` is 
+	the number of distinct values seen in training, the last leaf corresponding to unseen values. If the variable is real, only two leaves are present.
+	"""
 	# Training method (classification)
-	function stump_train_classification(x::AbstractMatrix{Float64}, y::AbstractVector{Int}; 
+	function stump_train(x::AbstractMatrix{Float64}, y::AbstractVector{Int}; 
 		      		crit::Symbol=:gini, 
 		      		vartypes::Union{Dict{Int,Symbol},Symbol}=:real, 
 		      		nthresh::Int=10, split::Symbol=:linear, 
@@ -167,7 +187,7 @@ module DecisionStump
 		n = size(x,2)   				# number of observations
 		yu = sort(unique(y)) 				# unique classes
 		C = length(yu)
-		@assert C > 1 "[stump_train_classification] Number of classes has to be larger than 1."
+		@assert C > 1 "[stump_train] Number of classes has to be larger than 1."
 		
 		
 		# Parse purity criterion 
@@ -178,7 +198,7 @@ module DecisionStump
 		elseif crit == :misclassification
 			purity_function = misclassification
 		else
-			warn("[stump_train_classification] Unrecognized purity criterion, defaulting to ':gini'.")
+			warn("[stump_train] Unrecognized purity criterion, defaulting to ':gini'.")
 			purity_function = gini
 		end
 		
@@ -191,7 +211,7 @@ module DecisionStump
 		elseif split == :density
 			split_function = densitysplit
 		else
-			warn("[stump_train_classification] Unrecognized variable split, defaulting to ':linear' split.")
+			warn("[stump_train] Unrecognized variable split, defaulting to ':linear' split.")
 			split_function = linearsplit
 		end
 
@@ -234,7 +254,7 @@ module DecisionStump
 		vidx = 0;									# the index of the best variable
 		th = -Inf
 		prob = Matrix(Float64[])
-		for i in 1:m
+		@inbounds for i in 1:m
 			variable = view(x,i,:)							# variable data
 			tv = split_function(variable, nthresh, prop=prop, count=count)		# thresholds to be investivated
 			I, t, v = gain_functions[i](variable, y, yu, tv, purity_function) 	# get the information gain, threshold and split for 	
@@ -246,9 +266,36 @@ module DecisionStump
 		end
 		return ClassificationStump(vidx, SVector(th...), prob)
 	end
-	
+
+
+	"""
+		stump_train(x,y [;kwargs])
+
+	Trains a decision stump regressor using the data `x` and regression targets `y`.
+
+	# Arguments
+	  * `x::AbstractMatrix{Float64}` the input data; it is assumed that each column of the input matrix represents an observation
+	  * `y::AbstractVector{Float64}` the regression targets vector
+
+	# Keyword arguments
+	  * `model::Symbol` is the type of model assumed for the data. Supported: `:mean`,`:median` and `:linear` (default `:mean`); regardless of 
+	the model, there are always two coefficients / leaf of the stump, corresponding to the linear and constant terms of a linear model.
+	  * `errcrit::Function` A function that returns a measure of the difference between two vectors or scalars (default `Distances.sqeuclidean`)	
+	  * `nthresh::Int` is the number of thresholds for a ordinal or real variable that will be investigated (default `10`)	
+	  * `split::Symbol` describes the variable split used in generating the thresholds. Supported: `:linear`, `:density` (default `:linear`)
+	  * `count::Int` is the number of samples in a variable that are discarded at both ends of its value interval in training; see `StatsBase.trim` (default `0`)
+	  * `prop::Int` is the proportion of samples in a variable that are discarded at both ends of its value interval in training; see `StatsBase.trim` (default `0.0`)
+	  * `vartypes::Union{Dict{Int=>Symbol}, Symbol}` describes the type of variables from the dataset; if it is a `Symbol`, all variables 
+	are assumed to be of the same type. If it is a `Dict{Int=>:Symbol}`, the variable indicated by the key is assumed to be of the type of the value; 
+	two values are supported: `:nominal` and any other symbol; if a variable is specified as nominal, the regressor will have `N+1` sets of coefficients, 
+	where `N` is the number of distinct variable values seen in training, the last coefficients corresponding to unseen values. 
+	If the variable is real, only two sets of coefficients are present.
+
+	!!! Note
+	  `model=:linear` is still experimental and it might produce bad results for small values or singular data matrices.
+	"""
 	# Training method (regression)
-	function stump_train_regression(x::AbstractMatrix{Float64}, y::AbstractVector{Float64}; 
+	function stump_train(x::AbstractMatrix{Float64}, y::AbstractVector{Float64}; 
 				model::Symbol=:mean,
 		      		errcrit::Function=sqeuclidean,
 		      		vartypes::Union{Dict{Int,Symbol},Symbol}=:real, 
@@ -288,7 +335,7 @@ module DecisionStump
 		elseif model == :linear
 			model_function = _linear_
 		else
-			warn("[stump_train_regression] Unrecognized model, defaulting to ':mean'.")
+			warn("[stump_train] Unrecognized model, defaulting to ':mean'.")
 			model_function = _mean_
 		end
 		
@@ -301,7 +348,7 @@ module DecisionStump
 		elseif split == :density
 			split_function = densitysplit
 		else
-			warn("[stump_train_regression] Unrecognized variable split, defaulting to ':linear' split.")
+			warn("[stump_train] Unrecognized variable split, defaulting to ':linear' split.")
 			split_function = linearsplit
 		end
 
@@ -315,7 +362,7 @@ module DecisionStump
 				if vartypes == :nominal	
 					regressor[i] = _regressor_nominal_
 					if model == :linear 
-						warn("[stump_train_regression] A ':linear' regression model is not supported with ':nominal' variables. Changing model to ':mean'.")
+						warn("[stump_train] A ':linear' regression model is not supported with ':nominal' variables. Changing model to ':mean'.")
 						model_function = _mean_
 					end
 				else
@@ -330,7 +377,7 @@ module DecisionStump
 					if vartypes[i] == :nominal
 						regressor[i] = _regressor_nominal_
 						if model == :linear 
-							warn("[stump_train_regression] A ':linear' regression model is not supported with ':nominal' variables. Changing model to ':mean'.")
+							warn("[stump_train] A ':linear' regression model is not supported with ':nominal' variables. Changing model to ':mean'.")
 							model_function = _mean_
 						end
 					else
@@ -352,7 +399,7 @@ module DecisionStump
 		vidx = 0;									# the index of the best variable
 		th = Inf
 		coeff = Matrix(Float64[])
-		for i in 1:m
+		@inbounds for i in 1:m
 			variable = view(x,i,:)							# variable data
 			tv = split_function(variable, nthresh, prop=prop, count=count)		# thresholds to be investivated
 			E, t, c = regressor_functions[i](variable, y, tv, model_function, errcrit) # get the error, threshold and split for 	
@@ -466,7 +513,7 @@ stump(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector; kwargs...) 
 	yenc = label2ind.(x[2],enc)
 	
 	# Train model
-	stumpdata = DecisionStump.stump_train_classification(getobs(x[1]), yenc; kwargs...)
+	stumpdata = DecisionStump.stump_train(getobs(x[1]), yenc; kwargs...)
 
 	# Build model properties 
 	modelprops = ModelProperties(nvars(x[1]), length(enc.label), enc)
@@ -501,7 +548,7 @@ trained regressor function cell.
 
 # Keyword arguments
   * `model::Symbol` is the type of model assumed for the data. Supported: `:mean`,`:median` and `:linear` (default `:mean`); regardless of 
-the model, there are always two coefficients / leaf of th stump, corresponding to the linear and constant terms of a linear model.
+the model, there are always two coefficients / leaf of the stump, corresponding to the linear and constant terms of a linear model.
   * `errcrit::Function` A function that returns a measure of the difference between two vectors or scalars (default `Distances.sqeuclidean`)	
   * `nthresh::Int` is the number of thresholds for a ordinal or real variable that will be investigated (default `10`)	
   * `split::Symbol` describes the variable split used in generating the thresholds. Supported: `:linear`, `:density` (default `:linear`)
@@ -537,7 +584,7 @@ stumpr(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector; kwargs...)
 	@assert nobs(x[1]) == nobs(x[2]) "[stumpr] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 	
 	# Train model
-	stumpdata = DecisionStump.stump_train_regression(getobs(x[1]), getobs(x[2]); kwargs...)
+	stumpdata = DecisionStump.stump_train(getobs(x[1]), getobs(x[2]); kwargs...)
 	
 	FunctionCell(stumpr, Model(stumpdata, ModelProperties(nvars(x[1]),1)), 
 	      kwtitle("Decision stump regressor", kwargs)) 
