@@ -84,7 +84,8 @@ module j4pr
 		countapp, countapp!, countappw, countappw!, 					# Counting utils 
 		gini, misclassification,							# Purity utility functions
 		linearsplit, densitysplit,							# Split vectors according to different criteria	
-		
+		confusionmatrix,								# Confusion matrix
+
 		# [lib/data]
 		DataGenerator, 									# Small sub-module that generates some datasets 
 		cslice,										# Class slicing
@@ -93,8 +94,8 @@ module j4pr
 	   	filterg,									# Data processing (for missing values)	
 	   	filterdomain!,									# Data domain filtering
 	   	ohenc, ohenc_integer, ohenc_binary,						# One hot encoder
-	   	lineplot, scatterplot, densityplot1d, densityplot2d,				# Plots
-		rocplot,
+	   	lineplot, scatterplot, densityplot1d, 						# Plots
+		densityplot2d, rocplot,
 		im2targets, targets2im,								# From Images.jl Arrays to DataCells and back	
 
 		# [lib/ext]

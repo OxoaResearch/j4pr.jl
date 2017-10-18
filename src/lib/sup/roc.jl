@@ -1,7 +1,8 @@
 module ROC
 
-	using ROCAnalysis
-	export AbstractOP, ComplexOP, SimpleOP, findop, changeop!, simpleop
+	using ROCAnalysis, MLLabelUtils
+	export AbstractOP, ComplexOP, SimpleOP, findop, changeop!, simpleop, 
+		AbstractPerfMetric, TPr, FPr, TNr, FNr
 
 	abstract type AbstractOP end
 
@@ -147,7 +148,7 @@ module ROC
 		# Construct the weights 
 		θ = (θ+1.0)/2.0
 		op.weights[diagind(op.weights)] = 1.0/(2*(1-θ+eps())); 		# update diagonal elements
-		op.weights[op.targetclass, op.targetclass] = 1.0/(2*θ+eps())		# update target class weights
+		op.weights[op.targetclass, op.targetclass] = 1.0/(2*θ+eps())	# update target class weights
 		nothing;
 	end
 
@@ -204,7 +205,7 @@ findop(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, class, pm:
 	
 	# Transform labels first
 	enc = labelencn(x[2])
-	origclass = (class isa Int) ? ind2label(enc,class) : class
+	origclass = (class isa Int) ? ind2label(class,enc) : class
 	
 	# Get op
 	op = ROC.findop(x, origclass, pm, clamp(val,0.0,1.0))

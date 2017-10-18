@@ -194,3 +194,31 @@ densityplot1d(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractVector, xidx
  	end
 	p	
 end
+
+
+
+# ROC curve plots 
+using j4pr.ROC: ComplexOP, AbstractPerfMetric, TPr, FPr, TNr, FNr 
+
+rocplot(x::CellFunT{<:Model{<:ComplexOP}}, xmetric::AbstractPerfMetric=FPr(), 
+		ymetric::AbstractPerfMetric=TPr(); color=:white, kwargs...) = 
+	rocplot(getx!(x), xmetric, ymetric; color=color, kwargs...)
+
+rocplot(model::Model{<:ComplexOP}, xmetric::AbstractPerfMetric=FPr(), 
+		ymetric::AbstractPerfMetric=TPr(); color=:white, kwargs...) = 
+	rocplot(model.data, xmetric, ymetric; color=color, kwargs...)
+
+rocplot(op::ComplexOP, xmetric::AbstractPerfMetric=FPr(), ymetric::AbstractPerfMetric=TPr(); color=:white, kwargs...)=
+begin
+	
+	_get_data_(::TPr, op::ComplexOP) = 1-op.r.pmiss # TPr
+	_get_data_(::FNr, op::ComplexOP) = op.r.pmiss   # FNr
+	_get_data_(::FPr, op::ComplexOP) = op.r.pfa   	# FPr
+	_get_data_(::TNr, op::ComplexOP) = 1-op.r.pfa  	# TNr
+	
+	# Get data from op
+	x = _get_data_(xmetric, op)
+	y = _get_data_(ymetric, op)
+
+	p = UnicodePlots.lineplot(x, y; color=color, kwargs...) 
+end
