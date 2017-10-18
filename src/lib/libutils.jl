@@ -20,21 +20,24 @@ julia> countapp([1,2,3,2,1,2],[1,2,4,5,1])
  2.0
 ```
 """
-countapp(v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}) where V = 
+function countapp(v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}) where V 
 	countapp!(zeros(Float64, length(u)), v, u)
+end
 
-countapp!(out::Vector{Float64}, v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}) where V = begin
+function countapp!(out::Vector{Float64}, v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}) where V
 	m = length(u)
-	@assert length(out) == m "[countapp!] output vector size must be $m"
+	@assert length(out) == m "[countapp!] output vector size must be $m."
 	
-	for i in 1:m				# for after 'u' first: reduce allocations significantly
+	@inbounds for i in 1:m				# for after 'u' first: reduce allocations significantly
 		out[i] = 0.0 
 		@simd for vi in v			
-			@inbounds out[i] +=(vi==u[i])
+			out[i] +=(vi==u[i])
 		end
 	end
 	return out
 end
+
+
 
 """
 	countappw(v,u [,w,val])
@@ -62,26 +65,24 @@ julia> j4pr.countappw([1,2,3,2,1,2],[1,2,4,5,1],ones(6),-1.0)
  2.0
 ```
 """
-countappw(v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}, 
-	 w::Vector{Float64}=fill(1/length(v),length(v)), 
-	 val::Float64=0.0) where V = 
+function countappw(v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}, 
+			w::Vector{Float64}=fill(1/length(v),length(v)), val::Float64=0.0) where V 
 	countappw!(zeros(Float64, length(u)), v, u, w, val)
+end
 
-countappw!(out::Vector{Float64}, v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}, 
-	   w::Vector{Float64}=fill(1/length(v),length(v)), 
-	   val::Float64=0.0) where V = 
-begin
+function countappw!(out::Vector{Float64}, v::T where T<:AbstractVector{V}, u::S where S<:AbstractVector{V}, 
+	   		w::Vector{Float64}=fill(1/length(v),length(v)), val::Float64=0.0) where V 
 	m = length(u)
 	n = length(v)
-	@assert length(out) == m "[countappw!] output vector size must be $m"
+	@assert length(out) == m "[countappw!] output vector size must be $m."
 	
-	mask = falses(m)			# vector that keeps trak of the modified positions in `n`; non-modified elements get val at the end	
-	for i in 1:m				# for after 'u' first: reduce allocations significantly
+	mask = falses(m)			# vector that keeps trak of the modified positions in `out`; non-modified elements get val at the end	
+	@inbounds for i in 1:m			# for after 'u' first: reduce allocations significantly
 		out[i] = 0.0
 		@simd for j in 1:n			
 			b=ifelse(v[j]==u[i],true,false)
-			@inbounds mask[i] |= b
-			@inbounds out[i] += b*w[j]
+			mask[i] |= b
+			out[i] += b*w[j]
 		end
 	end
 	out[.!mask] = val
@@ -89,12 +90,13 @@ begin
 end
 
 
+
 """
 	gini(p)
 
 Compute the gini impurity of an array `p`.
 """
-gini(p::AbstractArray{T}) where T<:Real = begin
+function gini(p::AbstractArray{T}) where T<:Real
 	s = zero(T)
 	for i = 1:length(p)
 		s += p[i]^2
@@ -102,18 +104,22 @@ gini(p::AbstractArray{T}) where T<:Real = begin
 	return 1-s
 end
 
+
+
 """
 	misclassification(p)
 
 Compute  the misclassification impurity of an array `p`.
 """
-misclassification(p::AbstractArray{T}) where T<:Real = begin
+function misclassification(p::AbstractArray{T}) where T<:Real
 	m = zero(T)
 	for i = 1:length(p)
 		if p[i] > m m=p[i] end
 	end
 	return 1-m
 end
+
+
 
 """
 	linearsplit(v, n [;count=0, prop=0])
@@ -122,12 +128,14 @@ Generate a sorted vector of `n` linearly spaced values starting from the values 
 input vector `v`. The input vector may be trimmed using the parameters `prop` and `count` 
 as in `StatsBase.trim`.
 """
-linearsplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0) = begin
+function linearsplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0)
 	vt = trim(v, prop=prop, count=count)		# trim
 	n = min(n, length(unique(vt)))			# number of points 	
 	L = linspace(minimum(vt),maximum(vt),n+1); 	# generate space
 	return collect( (L+L.step.hi/2)[1:end-1] )	# take midpoints
 end
+
+
 
 """
 	densitysplitv, n [;count=0, prop=0])
@@ -136,7 +144,7 @@ Generate a sorted vector of `n` values, spaced according to the value density of
 input vector `v`. The input vector may be trimmed using the parameters `prop` and `count` 
 as in `StatsBase.trim`.
 """
-densitysplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0) = begin
+function densitysplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0)
 	if length(v)/length(unique(v)) < n
 		v .+= 10.*rand(length(v))*eps()
 	end
@@ -149,4 +157,114 @@ densitysplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int
 	end
 	vo[n] = vt[n]-eps()				# the last point 
 	return vo
+end
+
+
+
+"""
+	confusionmatrix(predictions, references [;kwargs])
+
+Creates and returns the confusion matrix corresponding to the `predictions` 
+and `references` input label vectors. The two vectors must have the same element
+type and be of the same size. The returned confusion matrix is a `Matrix{Float64}`.
+
+# Keyword arguments
+  * `showmatrix::Bool` specifies whether the matrix should be printed (default `false`)
+  * `normalize::Bool` specifies whether the matrix should normalized with respect to the number of labels (default `false`)
+  * `positive` is the value of the positive or target class; if its value is `nothing`, the 
+  confusion matrix is calculating considering all classes while is a value of the same type
+  as the element type of `predictions` and `references` is specified (the value must be present
+  in the `references` vector, it will consider that class having the label `true` and 
+  all other classes as having the label `false`
+
+# Examples
+```
+julia> using j4pr
+
+julia> references = ["a","a","c","c","b","b"];
+
+julia> predictions = ["a","b","c","c","a","a"];
+
+julia> confusionmatrix(predictions,references)
+3×3 Array{Float64,2}:
+ 1.0  2.0  0.0
+ 1.0  0.0  0.0
+ 0.0  0.0  2.0
+
+julia> confusionmatrix(predictions,references;normalize=true)
+3×3 Array{Float64,2}:
+ 0.166667  0.333333  0.0     
+ 0.166667  0.0       0.0     
+ 0.0       0.0       0.333333
+
+julia> confusionmatrix(predictions,references;normalize=true,positive="a")
+2×2 Array{Float64,2}:
+ 0.166667  0.333333
+ 0.166667  0.333333
+
+julia> confusionmatrix(predictions,references;normalize=true,positive="a",showmatrix=true);
+
+reference labels (columns), "a" is "true":
+ "true"  "false" 
+------------
+0.16666666666666666   0.3333333333333333   
+0.16666666666666666   0.3333333333333333   
+------------
+```
+"""
+function confusionmatrix(predictions::AbstractArray{T}, references::AbstractArray{T}; 
+			showmatrix::Bool=false, normalize::Bool=false, positive=nothing) where T
+	@assert length(predictions) == length(references) "[confusionmatrix] The predicted and reference labels should have the same length."
+	
+	# If positive class is specified, binarize labels	
+	_binarize_(predictions,references,::Void) = 
+		predictions, references, sort(unique(predictions)), sort(unique(references))
+	
+	_binarize_(predictions::AbstractArray{T}, references::AbstractArray{T}, positive::T) = begin
+		@assert positive in references "[confusionmatrix] $(positive) is not in the reference label vector."
+		yb = falses(length(predictions))
+		yrb = falses(length(references))
+		yb[predictions.==positive] = true
+		yrb[references.==positive] = true
+		return yb, yrb, sort(unique(yb),rev=true), sort(unique(yrb),rev=true)
+	end
+	y, yr, yu, yru = _binarize_(predictions, references, positive)
+
+
+	# Construct confusion matrix
+	C = length(yru)
+	@assert issubset(yu,yru) "[confusionmatrix] The predicted labels should be a subset of the reference labels."
+	cm::Matrix{Float64} = zeros(C,C)
+	@inbounds for (j,cr) in enumerate(yru)
+		for (i,cp) in enumerate(yru)
+			cm[i,j] = sum((yr .== cr) .& (y .== cp))
+		end
+	end
+	
+
+	# Check for normalization
+	if normalize cm/=length(y) end
+	
+
+	# Check if the matrix should be nicely printed or not
+	if showmatrix
+		println()
+		if !(positive isa Void)
+			println("reference labels (columns), \"$(positive)\" is \"true\":")
+		else
+			println("reference labels (columns):")
+		end
+		lsize=ceil(Int, log10(length(y)))+2
+		println(sprint((io::IO,v)->map(x->print(io,lpad(" \"$x\" ",lsize)),v), yru))
+
+		println(repeat("-", (lsize+3)*C))
+		for i in 1:size(cm,1)
+			for j in 1:size(cm,2)
+				print(lpad("$(cm[i,j])   ",lsize))
+			end
+			println()
+		end
+		println(repeat("-", (lsize+3)*C))
+	end
+	return cm
 end
