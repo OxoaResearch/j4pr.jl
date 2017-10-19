@@ -61,7 +61,7 @@ module DataGenerator
 		]'
 		y = [zeros(N0);ones(N1)]
 		order = shuffle(1:N)
-		return j4pr.datacell(X[order,:], y[order], name="Two 2-D Gaussians")
+		return j4pr.datacell(X[:,order], y[order], name="Two 2-D Gaussians")
 	end
 	
 
