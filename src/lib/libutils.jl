@@ -193,22 +193,22 @@ julia> confusionmatrix(predictions,references)
 
 julia> confusionmatrix(predictions,references;normalize=true)
 3×3 Array{Float64,2}:
- 0.166667  0.333333  0.0     
- 0.166667  0.0       0.0     
- 0.0       0.0       0.333333
+ 0.5  1.0  0.0
+ 0.5  0.0  0.0
+ 0.0  0.0  1.0
 
 julia> confusionmatrix(predictions,references;normalize=true,positive="a")
 2×2 Array{Float64,2}:
- 0.166667  0.333333
- 0.166667  0.333333
+ 0.5  0.5
+ 0.5  0.5
 
 julia> confusionmatrix(predictions,references;normalize=true,positive="a",showmatrix=true);
 
 reference labels (columns), "a" is "true":
  "true"  "false" 
 ------------
-0.16666666666666666   0.3333333333333333   
-0.16666666666666666   0.3333333333333333   
+0.5   0.5   
+0.5   0.5   
 ------------
 ```
 """
@@ -243,8 +243,14 @@ function confusionmatrix(predictions::AbstractArray{T}, references::AbstractArra
 	
 
 	# Check for normalization
-	if normalize cm/=length(y) end
-	
+	if normalize 
+		# Loop through the classes and normalize the columns
+		# of the confusion matrix with respect to their sum
+		# i.e. the sum of each column should be 1.0
+		for j in 1:C
+			cm[:,j]/=sum(yr .==yru[j])
+		end
+	end
 
 	# Check if the matrix should be nicely printed or not
 	if showmatrix
