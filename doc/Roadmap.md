@@ -70,7 +70,7 @@
 	* Evaluation & Optimization 
 		- cross-validation --> MLBase.jl?				[TODO][v.0.1.2] 
 		- loss-functions --> MLLabelUtils.jl, LossFunctions.jl		[OK][v.0.1.0]
-		- ROC Analysis --> ROCAnalysis.jl+j4pr.jl			[IN PROGRESS][v.0.1.1]
+		- ROC Analysis --> ROCAnalysis.jl+j4pr.jl			[OK][v.0.1.1]
 		- Hyperparameter optimization --> MLBase.jl?			[TODO][v.0.1.2]
 
 	* Feature Selection

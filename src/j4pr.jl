@@ -52,7 +52,7 @@ module j4pr
     	##############################################################################################################################
     	# Global variables and logging configuration										     #
 	##############################################################################################################################
-	global const j4pr_version = "0.1.1-alpha" 	                      			# The current version of j4pr
+	global const j4pr_version = "0.1.1-beta" 	                      			# The current version of j4pr
 
 	oinfoglobal = j4pr_version*Dates.format(Dates.now(), " dd-mm-YYYY")			# Define information string
 		

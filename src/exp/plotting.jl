@@ -211,10 +211,10 @@ rocplot(model::Model{<:ComplexOP}, xmetric::AbstractPerfMetric=FPr(),
 rocplot(op::ComplexOP, xmetric::AbstractPerfMetric=FPr(), ymetric::AbstractPerfMetric=TPr(); color=:white, kwargs...)=
 begin
 	
-	_get_data_(::TPr, op::ComplexOP) = 1-op.r.pmiss # TPr
-	_get_data_(::FNr, op::ComplexOP) = op.r.pmiss   # FNr
-	_get_data_(::FPr, op::ComplexOP) = op.r.pfa   	# FPr
-	_get_data_(::TNr, op::ComplexOP) = 1-op.r.pfa  	# TNr
+	_get_data_(::TPr, op::ComplexOP) = 1-op.rocdata[:,3] 	# TPr
+	_get_data_(::FNr, op::ComplexOP) = op.rocdata[:,3]  	# FNr
+	_get_data_(::FPr, op::ComplexOP) = op.rocdata[:,2]   	# FPr
+	_get_data_(::TNr, op::ComplexOP) = 1-op.rocdata[:,2]  	# TNr
 	
 	# Get data from op
 	x = _get_data_(xmetric, op)

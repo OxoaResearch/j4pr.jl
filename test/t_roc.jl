@@ -28,15 +28,18 @@ function t_roc()
 	desiredval = collect(0:0.1:1);
 	tol = 0.01
 	class = ["a","b"];
+	methods=[:j4pr,:ra]
 	yu = sort(unique(y))
 	for c in class
 		for pm in perfmetric
 			for dv in desiredval
-				op = j4pr.ROC.findop(X, y, c, pm, dv);
-				Xop = op.weights*X;
-				yest = yu[j4pr.targets(indmax,Xop)];
-				ev = calculate_measure(y, yest, c, pm)
-				Base.Test.@test abs(dv-ev) <=tol
+				for m in methods
+					op = j4pr.ROC.findop(X, y, c, pm, dv, m);
+					Xop = op.weights*X;
+					yest = yu[j4pr.targets(indmax,Xop)];
+					ev = calculate_measure(y, yest, c, pm)
+					Base.Test.@test abs(dv-ev) <=tol
+				end
 			end
 		end
 	end
@@ -49,7 +52,7 @@ function t_roc()
 	Base.Test.@test op.pos == pos
 
 	j4pr.ROC.changeop!(op,j4pr.ROC.FPr(),0.0)
-	Base.Test.@test op.pos == length(op.r.θ)
+	Base.Test.@test op.pos == size(op.rocdata,1)
 	
 	# Test simple op
 	sop = j4pr.ROC.simpleop(op); Base.Test.@test sop.weights == op.weights
@@ -81,7 +84,7 @@ function t_roc()
 	Base.Test.@test cop.x.data.pos == pos
 
 	j4pr.changeop!(cop,j4pr.ROC.FPr(),0.0)
-	Base.Test.@test cop.x.data.pos == length(cop.x.data.r.θ)
+	Base.Test.@test cop.x.data.pos == size(cop.x.data.rocdata,1)
 	
 	
 	# Test simple op
