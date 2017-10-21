@@ -9,6 +9,10 @@ extensively cover a specific topic, like most Julia packages,
 but rather to provide some practical consistency and ease of
 use for existing algorithms as well as providing new ones.*
 
+[![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md) 
+[![Build Status](https://travis-ci.org/zgornel/j4pr.jl.svg?branch=latest)](https://travis-ci.org/zgornel/j4pr.jl) 
+[![Coverage Status](https://coveralls.io/repos/github/zgornel/j4pr.jl/badge.svg?branch=latest)](https://coveralls.io/github/zgornel/j4pr.jl?branch=latest)
+
 ## Philosophy and a first glance
 
 j4pr is designed to increase the efficiency in combining 
