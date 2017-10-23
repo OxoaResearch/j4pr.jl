@@ -3,6 +3,7 @@ LearnBase
 MLLabelUtils
 MLDataPattern
 MLDataUtils
+MLKernels
 Images
 ImageInTerminal
 StatsBase

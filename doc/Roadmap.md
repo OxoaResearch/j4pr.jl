@@ -17,7 +17,7 @@
 		- MDS --> MultivariateStats.jl					[OK][v.0.1.0]
 		- Distances/Proximity mapping --> Distances.jl			[OK][v.0.1.0] 
 		- Factor Aralysis -->Multivariatestats.jl			[OK][v.0.1.1]
-		- Kernels i.e. kernel trick --> j4pr.jl				[OK][v.0.1.1]
+		- Kernels i.e. kernel trick --> j4pr.jl, MLKernels.jl		[OK][v.0.1.1]
 		- Sammon transform --> ?					[Unknown version]
 		- tSNE --> TSne.jl 						[Unknown version] 
 	 	- Chernoff --> ?						[Unknown version]

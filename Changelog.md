@@ -3,10 +3,11 @@
   * Moved code relating to different types in separate files
   * Changed model properties from Dict to ModelProperties
   * Wrapped Factor Analysis (requires latestMultivariateStats.jl)
-  * Wrapped kernel PCA (requires latestMultivariateStats.jl)
+  * Wrapped kernel PCA, disabled for now (requires latestMultivariateStats.jl)
+  * Wrapped MLKernels.jl for efficient kernel matrix calculation
+  * Added support for generating custom kernels matrices i.e. kernel trick, less efficient 
   * Added decision stump classifier, regressor
   * Added DT and BKS label combiners
-  * Added support for generating kernels i.e. kernel trick 
   * Added support for operating point search and creation
   * Added an ROC plot, confusion matrix  
 

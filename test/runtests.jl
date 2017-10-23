@@ -33,6 +33,7 @@ include("ext/t_kmedoids.jl")
 include("ext/t_affinityprop.jl")
 include("ext/t_dbscan.jl")
 include("ext/t_decisiontree.jl")
+include("ext/t_mlkernel.jl")
 Base.Test.@testset "[j4pr: /src/lib/ext]" begin
 	Base.Test.@testset "dist.jl (Distances)" begin t_dist(); end
 	Base.Test.@testset "whiten.jl (Whitening)" begin t_whiten(); end
@@ -49,6 +50,7 @@ Base.Test.@testset "[j4pr: /src/lib/ext]" begin
 	Base.Test.@testset "affinityprop.jl (Affinity propagation clustering)" begin t_affinityprop(); end
 	Base.Test.@testset "dbscan.jl (DBSCAN clustering)" begin t_dbscan(); end
 	Base.Test.@testset "decisiontree.jl (DT/RF/stump regression/classification)" begin t_decisiontree(); end
+	Base.Test.@testset "mlkernel.jl (ML kernels)" begin t_mlkernel(); end
 end
 
 

@@ -117,6 +117,7 @@ module j4pr
 		tree, randomforest,								# Decision tree, random forest classifiers
 		treer, randomforestr,								# Decisiontree, random forest regression
 		aboostump,									# Adaptively boosted stump classifier
+		mlkernel, 									# Machine Learning kernels from MLKernels.jl	
 		
 		# [lib/sup]
 		loss,										# Calculate losses based on MLLabelUtils.jl and LossFunctions.jl
@@ -188,7 +189,8 @@ module j4pr
 		include("lib/ext/affinityprop.jl")						# Affinity propagation clustering (Clustering.jl)
 		include("lib/ext/dbscan.jl")							# DBSCAN clustering (Clustering.jl)	
 		include("lib/ext/decisiontree.jl")						# DecisionTree, Random Forest, Boosted stumps (DecisionTree.jl) 
-	
+		include("lib/ext/mlkernel.jl") 							# Machine Learning kernels (MLKernels.jl)	
+		
 		if (VERSION <= v"0.6") # LIBSVM does not work with Julia 0.7
 			include("lib/ext/libsvm.jl")						# LIBSVM classifier/regressor (LIBSVM.jl)
 		end
