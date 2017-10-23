@@ -46,7 +46,7 @@ module j4pr
 	using DataStructures: SortedDict
 	using StatsBase: countmap, fit, Histogram
 	using Reexport, StaticArrays, DataArrays, Compat, RDatasets, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, 
-		Images, ImageInTerminal
+		MLKernels, Images, ImageInTerminal
 
 
     	##############################################################################################################################
@@ -102,7 +102,7 @@ module j4pr
 		dist,										# Distances
 		whiten,										# Data Whitening
 		pca, pcar,									# PCA and reconstruction
-		kpca, kpcar,									# Kernel-PCA and reconstruction
+		### kpca, kpcar,								# Kernel-PCA and reconstruction
 		ppca, ppcar,									# Probabilistic PCA and reconstruction
 		ica,										# ICA
 		mds,										# MDS

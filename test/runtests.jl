@@ -22,7 +22,7 @@ include("ext/t_dist.jl")
 include("ext/t_pca.jl")
 include("ext/t_whiten.jl")
 include("ext/t_ppca.jl")
-include("ext/t_kpca.jl")
+### include("ext/t_kpca.jl")
 include("ext/t_ica.jl")
 include("ext/t_mds.jl")
 include("ext/t_lda.jl")
@@ -38,7 +38,7 @@ Base.Test.@testset "[j4pr: /src/lib/ext]" begin
 	Base.Test.@testset "whiten.jl (Whitening)" begin t_whiten(); end
 	Base.Test.@testset "pca.jl (PCA)" begin t_pca(); end
 	Base.Test.@testset "ppca.jl (PPCA)" begin t_ppca(); end
-	Base.Test.@testset "kpca.jl (KPCA)" begin t_kpca(); end
+	### Base.Test.@testset "kpca.jl (KPCA)" begin t_kpca(); end
 	Base.Test.@testset "ica.jl (ICA)" begin t_pca(); end
 	Base.Test.@testset "mds.jl (MDS)" begin t_pca(); end
 	Base.Test.@testset "lda.jl (LDA)" begin t_lda(); end
