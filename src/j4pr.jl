@@ -177,7 +177,7 @@ module j4pr
 		include("lib/ext/dist.jl")							# Distances (Distances.jl)
 		include("lib/ext/whiten.jl")							# Data whitening (MultivariateStats.jl)
 		include("lib/ext/pca.jl")							# PCA (MultivariateStats.jl)
-		include("lib/ext/kpca.jl")							# Kernel-PCA (MultivariateStats.jl)
+		### include("lib/ext/kpca.jl")							# Kernel-PCA (MultivariateStats.jl)
 		include("lib/ext/ppca.jl")							# Probabilistic PCA (MultivariateStats.jl)
 		include("lib/ext/ica.jl")							# ICA (MultivariateStats.jl)
 		include("lib/ext/mds.jl")							# MDS (MultivariateStats.jl)
