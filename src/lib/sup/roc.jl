@@ -95,15 +95,16 @@ module ROC
 		# and sample thresholds if necessary
 		positives = view(x, idx, y.==targetclass)
 		upositives::Vector{T} = sort(unique(positives))
-		if length(upositives) + 2 > maxops 
+		nops::Int = length(upositives)+2
+		if nops > maxops 
+			nops = maxops
 			upositives = sort(sample(upositives, maxops-2, replace=false))
 		end
 		
-		@show length(upositives)
 		# Pre-allocate output and calculate false positives, false negatives for the data
-		rocdata = zeros(Float64, maxops, 3)
+		rocdata = zeros(Float64, nops, 3)
 		rocdata[1,:] = [0.0, 1.0, 0.0]						# minimum threshold case
-		rocdata[maxops,:] = [1.0, 0.0, 1.0]					# maximum threshold case
+		rocdata[nops,:] = [1.0, 0.0, 1.0]					# maximum threshold case
 		nP = length(positives)
 		nN = n-nP
 		
@@ -136,7 +137,7 @@ module ROC
 		
 		# If more ops than needed, limit their number
 		nops = length(r.θ)+1
-		opidx = Vector{Int}(maxops)
+		opidx = collect(1:min(nops,maxops))
 		if nops > maxops
 			opidx[1] = 1; opidx[end] = nops
 			opidx[2:end-1] = sort(sample(2:nops-1, maxops-2, replace=false))

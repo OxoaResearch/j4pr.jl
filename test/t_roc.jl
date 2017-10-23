@@ -34,7 +34,7 @@ function t_roc()
 		for pm in perfmetric
 			for dv in desiredval
 				for m in methods
-					op = j4pr.ROC.findop(X, y, c, pm, dv, m);
+					op = j4pr.ROC.findop(X, y, c, pm, dv, m, 10_000); # large number of ops for low tolerances
 					Xop = op.weights*X;
 					yest = yu[j4pr.targets(indmax,Xop)];
 					ev = calculate_measure(y, yest, c, pm)
