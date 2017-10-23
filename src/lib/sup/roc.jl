@@ -87,7 +87,7 @@ module ROC
 
 
 	# Define functions that generate the 'rocdata' i.e. threhsholds, false positive and false negative rates
-	_get_rocdata_(x::AbstractMatrix{T}, y::AbstractVector{S}, yu::AbstractVector{S}, targetclass::S) where {T,S} = begin 
+	_get_rocdata_(x::AbstractMatrix{T}, y::AbstractVector{S}, yu::AbstractVector{S}, targetclass::S, maxops::Int=100) where {T,S} = begin 
 		idx = findin(yu, [targetclass])[1] # find index corresponding to the targetclass 
 		n = size(x,2)
 
@@ -95,15 +95,15 @@ module ROC
 		# and sample thresholds if necessary
 		positives = view(x, idx, y.==targetclass)
 		upositives::Vector{T} = sort(unique(positives))
-		MAXOPS = 1000
-		if length(upositives) + 2 > MAXOPS 
-			upositives =sort( sample(upositives, MAXOPS-2, replace=false))
+		if length(upositives) + 2 > maxops 
+			upositives = sort(sample(upositives, maxops-2, replace=false))
 		end
 		
+		@show length(upositives)
 		# Pre-allocate output and calculate false positives, false negatives for the data
-		rocdata = zeros(Float64, length(upositives)+1,3)
+		rocdata = zeros(Float64, maxops, 3)
 		rocdata[1,:] = [0.0, 1.0, 0.0]						# minimum threshold case
-		rocdata[length(upositives)+1,:] = [1.0, 0.0, 1.0]			# maximum threshold case
+		rocdata[maxops,:] = [1.0, 0.0, 1.0]					# maximum threshold case
 		nP = length(positives)
 		nN = n-nP
 		
@@ -114,7 +114,6 @@ module ROC
 			fn = 0.0
 			# Count false positives and false negatives for the current threshold
 			@simd for j in 1:n
-			
 				fp = fp + ifelse( (y[j]!=targetclass) && (x[idx,j]*(1.0-θ)/θ >= 1.0-x[idx,j]), 1.0, 0.0) 
 				fn = fn + ifelse( (y[j]==targetclass) && (x[idx,j]*(1.0-θ)/θ < 1.0-x[idx,j]), 1.0, 0.0) 
 			end
@@ -125,7 +124,7 @@ module ROC
 		return idx, rocdata 
 	end	
 	
-	_get_rocdata_ra_(x::AbstractMatrix, y::AbstractVector{S}, yu::AbstractVector{S}, targetclass::S) where S = begin
+	_get_rocdata_ra_(x::AbstractMatrix, y::AbstractVector{S}, yu::AbstractVector{S}, targetclass::S, maxops::Int=100) where S = begin
 		# Preprocess the matrix of probabilities (transform from probability to log-likelihood ration scores)
 		idx = findin(yu, [targetclass])[1] 					# find index corresponding to the targetclass 
 		notidx = setdiff(1:length(yu), idx)     				# find indexes corresponding to the other classes 	
@@ -134,18 +133,26 @@ module ROC
 	
 		# Call ROCAnalysis
 		r = ROCAnalysis.roc(positives, negatives)
-		rocdata = [[(1.0+r.θ)/2.0;1.0] r.pfa r.pmiss]
+		
+		# If more ops than needed, limit their number
+		nops = length(r.θ)+1
+		opidx = Vector{Int}(maxops)
+		if nops > maxops
+			opidx[1] = 1; opidx[end] = nops
+			opidx[2:end-1] = sort(sample(2:nops-1, maxops-2, replace=false))
+		end
+		rocdata = [[(1.0+r.θ)/2.0;1.0][opidx] r.pfa[opidx] r.pmiss[opidx]]
 		return idx, rocdata
 	end
 
 	
 	# Define op generation functions
 	findop(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractVector{N}, targetclass::N, 
-			pm::AbstractPerfMetric, threshold::Float64, method::Symbol=:j4pr) where N =
-		findop(x[1], x[2], targetclass, pm, threshold, method) 
+			pm::AbstractPerfMetric, threshold::Float64, method::Symbol=:j4pr, maxops::Int=100) where N =
+		findop(x[1], x[2], targetclass, pm, threshold, method, maxops) 
 
 	findop(x::T where T<:AbstractMatrix, y::S  where S<:AbstractVector{N}, targetclass::N, 
-			pm::AbstractPerfMetric, threshold::Float64, method::Symbol=:j4pr) where N = begin
+			pm::AbstractPerfMetric, threshold::Float64, method::Symbol=:j4pr, maxops::Int=100) where N = begin
 		
 		# Checks
 		yu = sort(unique(y))
@@ -156,12 +163,12 @@ module ROC
 		
 		# Apply appropriate ROC analysis method
 		if method == :j4pr
-			idx, rocdata = _get_rocdata_(x, y, yu, targetclass)
+			idx, rocdata = _get_rocdata_(x, y, yu, targetclass, maxops)
 		elseif method == :ra
-			idx, rocdata = _get_rocdata_ra_(x, y, yu, targetclass)
+			idx, rocdata = _get_rocdata_ra_(x, y, yu, targetclass, maxops)
 		else
 			warn("[findop] Unknown method for op selection, using :j4pr.")
-			idx, rocdata = _get_rocdata_(x, y, yu, targetclass)
+			idx, rocdata = _get_rocdata_(x, y, yu, targetclass, maxops)
 		end
 
 		# Generate op data and create object
@@ -223,7 +230,7 @@ end
 # FunctionCell Interface #
 ##########################
 """
-	findop(class, pm, val, method)
+	findop(class, pm, val, method, maxops)
 
 Constructs an untrained cell that when piped data inside, returns the operating point 
 trying to optimize the performance metric `pm` around the value `val` for class `class`.
@@ -233,6 +240,7 @@ trying to optimize the performance metric `pm` around the value `val` for class 
   * `pm::ROC.AbstractPerfMetric` is the performance metric. Can be `ROC.TPr()`, `ROC.TNr()`, `ROC.FPr()` or `ROC.FNr()`
   * `val::Float64` is the value desired for the metric
   * `method::Symbol` method through which to find the op; available `:j4pr` and `:ra` i.e. `ROCAnalysis.jl` (default `:j4pr`) 
+  * `maxops::Int` is the maximum number of operating points to consider (default `100`)
 
 # Examples
 ```
@@ -275,9 +283,9 @@ reference labels (columns):
        0                                        1
 ```
 """
-findop(class, pm::ROC.AbstractPerfMetric, val::Float64, method::Symbol=:j4pr) = 
-	FunctionCell(findop, (class, pm, clamp(val,0.0,1.0), method), ModelProperties(), 
-	      		"OP finder, on \"$class\", targeting $pm@$val, method=$method") 
+findop(class, pm::ROC.AbstractPerfMetric, val::Float64, method::Symbol=:j4pr, maxops::Int=100) = 
+	FunctionCell(findop, (class, pm, clamp(val,0.0,1.0), method, maxops), ModelProperties(), 
+	      		"OP finder, on \"$class\", targeting $pm@$val, method=$method, maxops=$maxops") 
 
 
 
@@ -286,18 +294,19 @@ findop(class, pm::ROC.AbstractPerfMetric, val::Float64, method::Symbol=:j4pr) =
 ############################
 
 """
-	findop(x, class, pm, val, method)
+	findop(x, class, pm, val, method, maxops)
 
 Searches for the operating point trying to optimize the performance metric `pm` around the value 
 `val` for class `class`. The data `x` is assumed to be either a `Tuple` or a `DataCell` that contain
 class probabilities and true labels.
 """
 # Training
-findop(x::T where T<:CellDataL, class, pm::ROC.AbstractPerfMetric, val::Float64, method::Symbol=:j4pr) = 
-	findop((getx!(x), gety(x)), class, pm, val, method)
-findop(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, class, pm::ROC.AbstractPerfMetric, val::Float64, method::Symbol=:j4pr) = 
-	findop((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), class, pm, val, method)
-findop(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, class, pm::ROC.AbstractPerfMetric, val::Float64, method::Symbol=:j4pr) = begin
+findop(x::T where T<:CellDataL, class, pm::ROC.AbstractPerfMetric, val::Float64, method::Symbol=:j4pr, maxops::Int=100) = 
+	findop((getx!(x), gety(x)), class, pm, val, method, maxops)
+findop(x::Tuple{T,S} where T<:AbstractVector where S<:AbstractVector, class, pm::ROC.AbstractPerfMetric, val::Float64, 
+       method::Symbol=:j4pr, maxops::Int=100) = findop((mat(x[1], LearnBase.ObsDim.Constant{2}()), x[2]), class, pm, val, method, maxops)
+findop(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, class, pm::ROC.AbstractPerfMetric, val::Float64, 
+       method::Symbol=:j4pr, maxops::Int=100) = begin
 	
 	@assert nobs(x[1]) == nobs(x[2]) "[findop] Expected $(nobs(x[1])) labels/values, got $(nobs(x[2]))."
 	
@@ -306,7 +315,7 @@ findop(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractVector, class, pm:
 	origclass = (class isa Int) ? ind2label(class,enc) : class
 	
 	# Get op
-	op = ROC.findop(x, origclass, pm, clamp(val,0.0,1.0), method)
+	op = ROC.findop(x, origclass, pm, clamp(val,0.0,1.0), method, maxops)
 
 	# Build model properties 
 	modelprops = ModelProperties(nvars(x[1]), nvars(x[1]))
