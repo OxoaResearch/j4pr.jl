@@ -27,7 +27,7 @@ include("ext/t_ica.jl")
 include("ext/t_mds.jl")
 include("ext/t_lda.jl")
 include("ext/t_lr.jl")
-include("ext/t_fa.jl")
+### include("ext/t_fa.jl")
 include("ext/t_kmeans.jl")
 include("ext/t_kmedoids.jl")
 include("ext/t_affinityprop.jl")
@@ -44,7 +44,7 @@ Base.Test.@testset "[j4pr: /src/lib/ext]" begin
 	Base.Test.@testset "mds.jl (MDS)" begin t_pca(); end
 	Base.Test.@testset "lda.jl (LDA)" begin t_lda(); end
 	Base.Test.@testset "lr.jl (Linear regression)" begin t_lr(); end
-	Base.Test.@testset "fa.jl (Factor analysis)" begin t_fa(); end
+	### Base.Test.@testset "fa.jl (Factor analysis)" begin t_fa(); end
 	Base.Test.@testset "kmeans.jl (K-means clustering)" begin t_kmeans(); end
 	Base.Test.@testset "kmedoids.jl (K-medoids clustering)" begin t_kmedoids(); end
 	Base.Test.@testset "affinityprop.jl (Affinity propagation clustering)" begin t_affinityprop(); end
