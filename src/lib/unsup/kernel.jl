@@ -4,18 +4,20 @@ function kernelize!(out::AbstractArray, x::AbstractArray, y::AbstractArray, kern
 	n = size(y, 2)
 	
 	if !symmetric   # generic case, x and y are different
-		@simd for j in 1:n
+		@inbounds for j in 1:n
         		yj = view(y,:,j)
-        		for i in 1:m
-				@inbounds out[i,j] = kernel(view(x,:,i), yj)
+        		@simd for i in 1:m
+				xi = view(x,:,i)
+				out[i,j] = kernel(xi, yj)
         		end
 		end
 	else
-    		@simd for j = 1:n
+    		@inbounds for j = 1:n
         		yj = view(y,:,j)
-        		for i in 1:j
-            			@inbounds out[i,j] = kernel(view(x,:,i), yj)
-				@inbounds out[j,i] = out[i,j]
+        		@simd for i in 1:j
+				xi = view(x,:,i)
+            			out[i,j] = kernel(xi, yj)
+				out[j,i] = out[i,j]
         		end
     		end
 	end
