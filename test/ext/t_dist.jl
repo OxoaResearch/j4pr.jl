@@ -48,5 +48,14 @@ for tr in [A04, A05, A06, matrixdata]
 	end
 end
 
+# Test training with tuple and the generic dist(Array,Array)
+Base.Test.@test try 
+	w = j4pr.dist(j4pr.strip(A03),D[1])
+	true
+catch
+	false
+end
+
+
 end
 

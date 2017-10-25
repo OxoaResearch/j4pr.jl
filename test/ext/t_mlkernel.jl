@@ -46,4 +46,14 @@ for tr in [A04, A05, A06, matrixdata]
 	end
 end
 
+# Additional test to cover all methods
+κ = MLKernels.PolynomialKernel()
+Base.Test.@test try
+	A01 |> j4pr.mlkernel(A01,κ)
+	true
+catch
+	false
+end
+
+
 end

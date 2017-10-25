@@ -32,6 +32,16 @@ for tr in [A01, A02, A03, vectordata]
 	end
 end
 
+# Short test for pcar on vector data
+Base.Test.@test try 
+	Wpca = A01 |> j4pr.pca(maxoutdim=1)
+	Wpcar = j4pr.pcar(Wpca)
+	(A01 |> Wpca) |> Wpcar
+	true
+catch 
+	false
+end
+
 for tr in [A04, A05, A06, matrixdata]
 	for ts in [A04, A05, A06, matrixdata]
 		Base.Test.@test try 

@@ -44,4 +44,30 @@ for w in Wde
 	end
 end
 
+# Test classification on a 1-D dataset
+A1d = j4pr.datacell([rand(100);2*rand(100)],[zeros(100);ones(100)])
+Base.Test.@test try 
+	wt1 = A1d |> Wclass[1]
+	result = A1d |> wt1
+	true
+	catch 
+		false
+	end
+
+# Test Printer
+Base.Test.@test try
+	buf = IOBuffer()
+	
+	# test show for classifier
+	wt1 = A1d |> Wclass[1]
+	Base.show(buf,wt1.x.data)
+	
+	# test show for estimator
+	wt1 = +A1d |> Wclass[1]
+	Base.show(buf,wt1.x.data)
+	
+	true #works
+	catch
+		false
+	end
 end

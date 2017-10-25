@@ -240,7 +240,6 @@ function confusionmatrix(predictions::AbstractArray{T}, references::AbstractArra
 			cm[i,j] = sum((yr .== cr) .& (y .== cp))
 		end
 	end
-	
 
 	# Check for normalization
 	if normalize 

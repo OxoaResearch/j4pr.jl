@@ -18,16 +18,16 @@ end
 
 
 # [/lib/ext]
+### include("ext/t_kpca.jl")
+### include("ext/t_fa.jl")
 include("ext/t_dist.jl")
 include("ext/t_pca.jl")
 include("ext/t_whiten.jl")
 include("ext/t_ppca.jl")
-### include("ext/t_kpca.jl")
 include("ext/t_ica.jl")
 include("ext/t_mds.jl")
 include("ext/t_lda.jl")
 include("ext/t_lr.jl")
-### include("ext/t_fa.jl")
 include("ext/t_kmeans.jl")
 include("ext/t_kmedoids.jl")
 include("ext/t_affinityprop.jl")
@@ -35,16 +35,16 @@ include("ext/t_dbscan.jl")
 include("ext/t_decisiontree.jl")
 include("ext/t_mlkernel.jl")
 Base.Test.@testset "[j4pr: /src/lib/ext]" begin
+	### Base.Test.@testset "kpca.jl (KPCA)" begin t_kpca(); end
+	### Base.Test.@testset "fa.jl (Factor analysis)" begin t_fa(); end
 	Base.Test.@testset "dist.jl (Distances)" begin t_dist(); end
 	Base.Test.@testset "whiten.jl (Whitening)" begin t_whiten(); end
 	Base.Test.@testset "pca.jl (PCA)" begin t_pca(); end
 	Base.Test.@testset "ppca.jl (PPCA)" begin t_ppca(); end
-	### Base.Test.@testset "kpca.jl (KPCA)" begin t_kpca(); end
-	Base.Test.@testset "ica.jl (ICA)" begin t_pca(); end
-	Base.Test.@testset "mds.jl (MDS)" begin t_pca(); end
+	Base.Test.@testset "ica.jl (ICA)" begin t_ica(); end
+	Base.Test.@testset "mds.jl (MDS)" begin t_mds(); end
 	Base.Test.@testset "lda.jl (LDA)" begin t_lda(); end
 	Base.Test.@testset "lr.jl (Linear regression)" begin t_lr(); end
-	### Base.Test.@testset "fa.jl (Factor analysis)" begin t_fa(); end
 	Base.Test.@testset "kmeans.jl (K-means clustering)" begin t_kmeans(); end
 	Base.Test.@testset "kmedoids.jl (K-medoids clustering)" begin t_kmedoids(); end
 	Base.Test.@testset "affinityprop.jl (Affinity propagation clustering)" begin t_affinityprop(); end

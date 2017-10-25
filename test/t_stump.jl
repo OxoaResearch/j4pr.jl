@@ -27,8 +27,19 @@ for w in Wclass
 	end
 end
 
-	
-# model=:linear fit is not tested because it is unstable in certain situations  
+# Test classification on a 1-D dataset
+A1d = j4pr.datacell([rand(100);2*rand(100)],[zeros(100);ones(100)])
+Base.Test.@test try 
+	wt1 = A1d |> Wclass[1]
+	result = A1d |> wt1
+	buf = IOBuffer()
+	Base.show(buf,wt1.x.data)
+	true
+	catch 
+		false
+	end
+
+# Test Prin# model=:linear fit is not tested because it is unstable in certain situations  
 Wreg = [j4pr.stumpr(model=m, errcrit=ec, vartypes=v, nthresh=n, split=s, count=c, prop=p) for 
 							m in [:mean, :median],
 						        ec in [(x,y)->mean((x-y).^2), (x,y)->mean(abs.(x-y))],
@@ -52,6 +63,19 @@ for w in Wreg
 		false
 	end
 end
+
+# Test regression on a 1-D dataset
+A1d = j4pr.datacell([rand(100);2*rand(100)],rand(200))
+Base.Test.@test try 
+	wt1 = A1d |> Wreg[1]
+	result = A1d |> wt1
+	buf = IOBuffer()
+	Base.show(buf,wt1.x.data)
+	true
+	catch 
+		false
+	end
+
 
 end
 

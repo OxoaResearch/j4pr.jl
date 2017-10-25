@@ -38,7 +38,7 @@ function t_randomsubspace()
 		Base.Test.@test try 
 			wes=j4pr.randomsubspace(w, L, M, comb, parallel_execution=false) # ensemble of 5 members, 2 variables, serial execution
 			wep=j4pr.randomsubspace(w, L, M, comb, parallel_execution=true)  # ensemble of 5 members, 2 variables, parallel execution
-			
+	
 			# Train
 			west = wes(tr)
 			wept = wep(tr)
@@ -52,6 +52,17 @@ function t_randomsubspace()
 		catch
 			false
 		end
+
+	end
+
+	# Test variable sampling without replacing
+	Base.Test.@test try
+		wes2=j4pr.randomsubspace(w, 2, 1, j4pr.ClassifierCombiner.NoCombiner(),false, parallel_execution=false)
+		west2 = wes2(tr)
+		west2(+ts);
+		true
+	catch
+		false
 	end
 
 end
