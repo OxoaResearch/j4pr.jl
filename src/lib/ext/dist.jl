@@ -49,14 +49,3 @@ dist(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Distances.PreMetric,Ma
 
 
 
-# Wrapper for dist(X,Y)
-"""
-	dist(x, y, d=Distances.Euclidean())
-
-Calculates the pairwise distances between the data contained in the data `x` and `y` using the distance `d`. Here, 
-`x` is the reference dataset, `y` is the test dataset. Implemented as `dist(x,y,d) = y |> dist(x,d)` 
-"""
-dist(x::T where T, y::S where S, d::Distances.PreMetric=Distances.Euclidean()) = begin
-	w = dist(x,d)
-	dist(y,w.x,w.y)
-end
