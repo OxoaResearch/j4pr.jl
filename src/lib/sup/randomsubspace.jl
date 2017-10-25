@@ -58,7 +58,7 @@ module RandomSubspace
 			end
 			return V
 		else
-			@assert L*M <=n "Cannot split $n variables to and ensemble of $L elements with $M distinct variables each."
+			@assert L*M <=n "Cannot split $n variables to an ensemble of $L elements with $M distinct variables each."
 			ro = randperm(n) # random order
 			V=Vector{Vector{Int}}(L)
 			k=1

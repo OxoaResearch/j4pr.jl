@@ -2,10 +2,10 @@
 # FunctionCell Interface #	
 ##########################
 """
-	ica([;kwargs])
+	ica(k [;kwargs])
 
 Constructs an untrained cell that when piped data inside, calculates the ICA
-projection matrix of the input data.
+projection matrix of the input data considering `k` signal components to recover.
 
 # Keyword arguments (same as in `MultivariateStats`)
   * `alg` must be `:fastica` (as of June 2017 at least) 
@@ -27,7 +27,7 @@ ica(k::Int; kwargs...) = FunctionCell(ica, (k,), ModelProperties(), kwtitle("ICA
 # DataCell/Array Interface #	
 ############################
 """
-	ica(x, [;kwargs])
+	ica(x, k, [;kwargs])
 
 Trains a function cell that when receiving data into will compute the idependent components of
 the observations based on the projection matrix W extracted from `x`.
