@@ -55,7 +55,7 @@ lr(x::Tuple{T,S} where T<:AbstractMatrix where S<:AbstractArray, r::Union{Real, 
 		b = tmp[end,:]
 	else
 		a = tmp
-		b = zeros(nvars(x[1]))
+		b = zeros(nvars(x[2]))
 	end
 
 	# Build model properties 
