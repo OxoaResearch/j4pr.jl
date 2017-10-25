@@ -41,7 +41,7 @@ module LinDiscClassifier
 	LinDisc_exec(m::LinDiscModel, x::Matrix{Float64})=begin 
 		C = length(m.classes)
 		out = zeros(Float64, C, size(x,2))
-		@simd for c = 1:C	
+		@simd for c in 1:C	
 		 	# 			Linear term		Constant term log(P(ωᵢ)) - ...
 			@inbounds out[c,:] = (m.icm*m.mean[c])'*x + log(m.priors[m.classes[c]])-1/2*m.mean[c]'*m.icm*m.mean[c]
 		end

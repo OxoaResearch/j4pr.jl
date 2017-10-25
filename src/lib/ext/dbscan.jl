@@ -123,10 +123,10 @@ dbscan(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function, <:Abstract
 	# Pre-allocate
 	R = zeros(Float64, model.properties.odim, nobs(x))
 	f = model.data[1] 
-	for k in 1:model.properties.odim
+	@inbounds for k in 1:model.properties.odim
 		cluster_data = model.data[2][k]
-		for i in 1:nobs(x)
-			@inbounds @fastmath R[k,i] = f(getobs(x,i), cluster_data)
+		@simd for i in 1:nobs(x)
+			@fastmath R[k,i] = f(getobs(x,i), cluster_data)
 		end
 	end
 	return R

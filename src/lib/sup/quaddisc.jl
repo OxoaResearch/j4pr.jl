@@ -30,7 +30,7 @@ module QuadDiscClassifier
 		
 		cv = zeros(C,m,m)
 		dcm = zeros(C)
-		for (i,yi) in enumerate(classes) # iterate through the classes
+		@inbounds for (i,yi) in enumerate(classes) # iterate through the classes
 			
 			# Calculate class covariance
 			cv[i,:,:] = cov(x[:,y.==yi],2)
@@ -52,9 +52,9 @@ module QuadDiscClassifier
 		
 		# Function for calculating the quadratic term: -1/2*xᵀ*inv(Σᵢ)*x (or diag(x'*(-1/2*m.icm[c,:,:])*x)', very slow)  
 		xTwx!(out,x,w) = begin
-			for i = 1:size(x,2)
+			for i in 1:size(x,2)
 				v=view(x,:,i)
-				@simd for c = 1:size(w,1)
+				@simd for c in 1:size(w,1)
 					@inbounds out[c,i] *=v'*view(w,c,:,:)*v
 				end
 			end
@@ -66,13 +66,13 @@ module QuadDiscClassifier
 		out=fill(-0.5, size(m.icm,1), size(x,2))
 		xTwx!(out, x, m.icm)
 		
-		@inbounds @simd for c = 1:C
+		@inbounds @simd for c in 1:C
 					# Linear term: inv(Σᵢ)*μᵀ*x			# Constant term log(P(ωᵢ)) - ...
 			out[c:c,:] += (m.icm[c,:,:]*m.mean[c])'*x + log(m.priors[m.classes[c]])- 1/2*m.mean[c]'*m.icm[c,:,:]*m.mean[c] + m.dcm[c] 
 		end
 	
 		# Apply softmax
-		for j in 1:size(out,2)
+		@inbounds @simd for j in 1:size(out,2)
 			softmax!(view(out,:,j))
 		end
 

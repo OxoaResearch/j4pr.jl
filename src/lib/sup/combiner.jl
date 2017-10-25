@@ -197,7 +197,7 @@ module ClassifierCombiner
 		m = length(x)		# Size of ensemble
 		out = Array{S,3}(1,n,m)	# Output
 		
-		for (i,v) in enumerate(x)
+		@inbounds for (i,v) in enumerate(x)
 			out[1,:,i] = v
 		end
 		
@@ -212,7 +212,7 @@ module ClassifierCombiner
 		m = length(x)		# Size of ensemble
 		out = Array{S,3}(size(x[1],1),n,m) # Output
 		
-		for (i,v) in enumerate(x)
+		@inbounds for (i,v) in enumerate(x)
 			out[:,:,i] = v
 		end
 		
@@ -227,7 +227,7 @@ module ClassifierCombiner
 		m = div(size(x,1),C)	# Size of ensemble
 		out = Array{S,3}(C,n,m)	# Output
 		
-		for (i,ki) in enumerate(1:C:size(x,1))
+		@inbounds for (i,ki) in enumerate(1:C:size(x,1))
 			out[:,:,i] = x[ki:ki+C-1,:]
 		end
 		
@@ -267,9 +267,9 @@ module ClassifierCombiner
 		
 		@assert n==length(labels) "[Classifier Combiner] The size of the training labels must match the number of output samples."
 		
-		@inbounds @fastmath for i in 1:m
-			p = sum(isequal.(ip[i,:], labels))/n # individual ensemble member accuracy
-			w[i] = log((p+eps())/(1-p+eps()))
+		@inbounds @simd for i in 1:m
+			@fastmath p = sum(isequal.(ip[i,:], labels))/n # individual ensemble member accuracy
+			@fastmath w[i] = log((p+eps())/(1-p+eps()))
 		end
 		return WeightedVoteCombiner(m, c, w)
 	end
@@ -286,10 +286,10 @@ module ClassifierCombiner
 		@assert n==length(labels) "[Classifier Combiner] The size of the training labels must match the number of output samples."
 		
 		# Build confusion matrices 
-		@inbounds @fastmath for i in 1:m 	# for each ensemble memeber
+		@inbounds @simd for i in 1:m 		# for each ensemble memeber
 			for s in 1:C			# for each "estimated" class
 				for k in 1:C		# for each "true" class 
-					CM[k,s,i] = 1.0/(labelcount[k]+1.0) * (sum( isequal.(labels, ulabels[k]) .& isequal.(ip[i,:], ulabels[s]) ) + 1.0/C)
+					@fastmath CM[k,s,i] = 1.0/(labelcount[k]+1.0) * (sum( isequal.(labels, ulabels[k]) .& isequal.(ip[i,:], ulabels[s]) ) + 1.0/C)
 				end
 			end
 		end

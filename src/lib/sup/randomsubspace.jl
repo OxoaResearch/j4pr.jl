@@ -53,7 +53,7 @@ module RandomSubspace
 		# Generate V based on n,L,M 
 		if replace
 			V=Vector{Vector{Int}}(L)
-			for i =1:L
+			@inbounds for i in 1:L
 				V[i] = randperm(n)[1:M]
 			end
 			return V
@@ -62,7 +62,7 @@ module RandomSubspace
 			ro = randperm(n) # random order
 			V=Vector{Vector{Int}}(L)
 			k=1
-			for i=1:M:L*M
+			@inbounds for i in 1:M:L*M
 				V[k] = ro[i:i+M-1]
 				k+=1
 			end

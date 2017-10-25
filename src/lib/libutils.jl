@@ -98,7 +98,7 @@ Compute the gini impurity of an array `p`.
 """
 function gini(p::AbstractArray{T}) where T<:Real
 	s = zero(T)
-	for i = 1:length(p)
+	@inbounds @simd for i in 1:length(p)
 		s += p[i]^2
 	end
 	return 1-s
@@ -113,7 +113,7 @@ Compute  the misclassification impurity of an array `p`.
 """
 function misclassification(p::AbstractArray{T}) where T<:Real
 	m = zero(T)
-	for i = 1:length(p)
+	@inbounds for i in 1:length(p)
 		if p[i] > m m=p[i] end
 	end
 	return 1-m

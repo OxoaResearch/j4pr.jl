@@ -12,7 +12,7 @@ coefficients of the data based on the responses and regularization parameter
 The parameter `r` can be a real scalar, a vector or symetric matrix.
 
 # Keyword arguments (same as in `MultivariateStats`)
-  * `trans` whether to use the trasposed form, (default `true` e.g. rows arevariables, columns are observations) 
+  * `trans` whether to use the trasposed form, (default `true` e.g. rows are variables, columns are observations) 
   * `bias` whether to include a bias term (default `true`)
 
 Read the `MultivariateStats.jl` documentation for more information.  
