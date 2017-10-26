@@ -70,7 +70,7 @@ module j4pr
 		functioncell, datacell,                                                         # Functions to create cells 
 	   	getx, getx!, gety, gety!, getf, getf!,                               		# Functions the get various cell fields
 	   	nvars, size, start, next, done, eltype, length, ndims, endof,			# Various useful functions for data cells	
-	   	uniquenn, classsizes, nclasssizes, classnames, countmapn,
+	   	classsizes, nclasssizes, classnames, countmapn,
 		nclass, deleteat!, deleteat, idx, 
 		varsubset, labelencn,								# Lazy subset of variables 
 	   	strip, 										# Return tuple from data cell

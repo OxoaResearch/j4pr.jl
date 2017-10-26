@@ -7,12 +7,14 @@ include("t_interfaces.jl");
 include("t_operators.jl");
 include("t_pipe_creation.jl");
 include("t_data_access_patterns.jl");
+include("t_coreutils.jl");
 Base.Test.@testset "[j4pr: /src/core]" begin
 	Base.Test.@testset "Data cells: types, aliases" begin t_data_cells(); end
 	Base.Test.@testset "Interfaces: interation, types" begin t_interfaces(); end
 	Base.Test.@testset "Operators: piping, concatenation" begin t_operators(); end
 	Base.Test.@testset "Pipe creation: types and results" begin t_pipe_creation(); end
 	Base.Test.@testset "Data access patterns: geting/modifying observations/variables" begin t_data_access_patterns(); end
+	Base.Test.@testset "coreutils.jl (utility functions)" begin t_coreutils(); end
 end
 
 

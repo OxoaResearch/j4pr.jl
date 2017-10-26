@@ -77,43 +77,6 @@ isvoid(x) = x isa Void
 
 
 
-# Function to remove NaNs or NAs or both
-"""
-	uniquenn(v; keep_NA=false, keep_NaN=false)	
-
-Function similar to `unique` that discards `NA`s, `NaN`s or both from the distinct values returned,
-according to the values of the parameters `keep_NA` and `keep_NaN`. If the values are `false`, 
-these values are discarded.
-"""
-function uniquenn(v::T where T<:AbstractArray; keep_NA = false, keep_NaN = false)::T
-	
-	# Keep both NA and NaN
-	if (keep_NA && keep_NaN)
-		return unique(v)			# Behaviour identical to unique
-	
-	# Remove NA, keep NaN
-	elseif (~keep_NA && keep_NaN)
-		uv = unique(v)				# Get unique values (might contain NA, NaN)
-		return uv[find(find(.~isna.(uv)))]	# Remove only NAs
-	
-	# Keep NA, remove NaN
-	elseif (keep_NA && ~keep_NaN)
-		uv = unique(v)
-		NaNpos = find(isnan.(uv))
-		deleteat!(uv, NaNpos)
-
-	# Remove both NA, NaN
-	elseif (~keep_NA && ~keep_NaN)
-		uv = unique(v)				# Get unique values (might contain NA, NaN)
-		tmp = uv[find(.~isna.(uv))]		# First remove NAs
-		return tmp[find(.~isnan.(tmp))] 	# Second, remove NaNs
-	end
-
-end
-
-
-
-
 # Class related functions for DataCells (e.g. class sizes - normalized or not, class names)
 """
 Returns a `SortedDict` with the label and associated sample count.
