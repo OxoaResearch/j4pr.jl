@@ -19,6 +19,14 @@ end
 
 
 
+# [/lib]
+include("t_libutils.jl")
+Base.Test.@testset "[j4pr: /src/lib]" begin
+	Base.Test.@testset "libutils.jl (utility functions for libraries)" begin t_libutils(); end
+end
+
+
+
 # [/lib/ext]
 ### include("ext/t_kpca.jl")
 ### include("ext/t_fa.jl")
