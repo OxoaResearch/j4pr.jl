@@ -170,12 +170,12 @@ densityplot1d(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractVector, xidx
 	
 	# search first to find maximum height for plot
 	for c in classes
-		h = fit(Histogram, data[labels.==c], nbins=nbins)
+		h = fit(Histogram, data[labels.==c], nbins=nbins, closed=:left)
 		maxy = max(maxy,maximum(h.weights))
 	end
 	
 	# Plot 1-st class
-	h = fit(Histogram, data[cmask], nbins=nbins)
+	h = fit(Histogram, data[cmask], nbins=nbins, closed=:left)
 	r = h.edges[1]
 	x = r[1:length(r)-1]+0.5*step(r)
 	y = h.weights
@@ -185,7 +185,7 @@ densityplot1d(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractVector, xidx
 	# Plot the rest of the classes
 	for i in 2:length(classes)
 		cmask = labels .== classes[i]
-		h = fit(Histogram, data[cmask], nbins=nbins)
+		h = fit(Histogram, data[cmask], nbins=nbins, closed=:left)
 		r = h.edges[1]
 		x = r[1:length(r)-1]+0.5*step(r)
 		y = h.weights

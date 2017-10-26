@@ -91,3 +91,9 @@ include("t_kernel.jl")
 Base.Test.@testset "[j4pr: /src/lib/unsup]" begin
 	Base.Test.@testset "kernel.jl (kernels)" begin t_kernel(); end
 end
+
+# [/exp]
+include("exp/t_plotting.jl")
+Base.Test.@testset "[j4pr: /src/exp]" begin
+	Base.Test.@testset "plotting.jl" begin t_plotting(); end
+end
