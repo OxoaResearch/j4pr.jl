@@ -2,7 +2,7 @@
 # FunctionCell Interface #	
 ##########################
 """
-	mlkernel([σ,] κ; center=true)
+	mlkernel([σ,] κ; center=false)
 
 Constructs an untrained function cell using the memory layout `σ` and kernel `κ`.  
 
@@ -12,7 +12,7 @@ Constructs an untrained function cell using the memory layout `σ` and kernel `�
   * `κ::MLKernels.Kernel` is the kernel object 
 
 # Keyword arguments
-  * `center::Bool=true` specifies whether to center the kernel or not
+  * `center::Bool=false` specifies whether to center the kernel or not
 
 A list of common used kernels in `MLKernels.jl` can be found below (definitions from the documentation of to MLKernels.jl):
 
@@ -46,10 +46,10 @@ julia> y |> K(x)
  14.0  17.0  20.0  23.0
 ``
 """
-mlkernel(κ::MLKernels.Kernel; center::Bool=true) = 
+mlkernel(κ::MLKernels.Kernel; center::Bool=false) = 
 	mlkernel(MLKernels.PairwiseFunctions.ColumnMajor(), κ; center=center)	
 
-mlkernel(σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; center::Bool=true) = 
+mlkernel(σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; center::Bool=false) = 
 	FunctionCell(mlkernel, (σ,κ), ModelProperties(), "ML Kernel σ=$(σ), κ=$(κ), center=$center"; center=center) 
 
 
@@ -58,24 +58,24 @@ mlkernel(σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; cen
 # DataCell/Array Interface #	
 ############################
 """
-	mlkernel(x, [σ,] κ; center=true)
+	mlkernel(x, [σ,] κ; center=false)
 
 Trains the function cell using the memory layout `σ`, kernel `κ` and data `x` for future kernel calculations.
 """
 # Training
-mlkernel(x::T where T<:CellData, κ::MLKernels.Kernel; center::Bool=true) = 
+mlkernel(x::T where T<:CellData, κ::MLKernels.Kernel; center::Bool=false) = 
 	mlkernel(x, MLKernels.PairwiseFunctions.ColumnMajor(), κ; center=center)
 
-mlkernel(x::T where T<:CellData, σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; center::Bool=true) = 
+mlkernel(x::T where T<:CellData, σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; center::Bool=false) = 
 	mlkernel(getx!(x), MLKernels.PairwiseFunctions.ColumnMajor(), κ; center=center)
 
-mlkernel(x::T where T<:AbstractArray, κ::MLKernels.Kernel; center::Bool=true) = 
+mlkernel(x::T where T<:AbstractArray, κ::MLKernels.Kernel; center::Bool=false) = 
 	mlkernel(x, MLKernels.PairwiseFunctions.ColumnMajor(), κ; center=center)
 
-mlkernel(x::T where T<:AbstractVector, σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; center::Bool=true) = 
+mlkernel(x::T where T<:AbstractVector, σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; center::Bool=false) = 
 	mlkernel(mat(x, LearnBase.ObsDim.Constant{2}()), σ, κ; center=center)
 
-mlkernel(x::T where T<:AbstractMatrix, σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; center::Bool=true) = 
+mlkernel(x::T where T<:AbstractMatrix, σ::MLKernels.PairwiseFunctions.MemoryLayout, κ::MLKernels.Kernel; center::Bool=false) = 
 begin	
 	# Build model properties
 	modelprops = ModelProperties(nvars(x),nobs(x))
