@@ -1,5 +1,6 @@
 # Simplistic kernel calculation
-function kernelize!(out::AbstractArray, x::AbstractArray, y::AbstractArray, kernel::Function; symmetric::Bool=false)
+function kernelize!(out::AbstractArray, x::AbstractArray, y::AbstractArray, kernel::Function; 
+		    center::Bool=false, symmetric::Bool=false)
 	m = size(x, 2)
 	n = size(y, 2)
 	
@@ -21,21 +22,32 @@ function kernelize!(out::AbstractArray, x::AbstractArray, y::AbstractArray, kern
         		end
     		end
 	end
+
+	if center
+		μi = mean(out, 2)	# kernel mean of individual rows
+		μj = mean(out, 1)	# kernel mean of individual columns
+		μ = mean(out)		# overall mean
+		@inbounds @simd for i in 1:m
+			for j in 1:n
+				out[i,j] = out[i,j] - μi[i] - μj[j] + μ
+			end
+		end
+	end
 	return out
 end
 
-kernelize!(out::AbstractArray, x::AbstractArray, kernel::Function; symmetric::Bool=true) =
-	kernelize!(out, x, x, kernel; symmetric=symmetric)
+kernelize!(out::AbstractArray, x::AbstractArray, kernel::Function; center::Bool=false, symmetric::Bool=true) =
+	kernelize!(out, x, x, kernel; center=center, symmetric=symmetric)
 
-function kernelize(x::AbstractArray, y::AbstractArray, kernel::Function; symmetric::Bool=false)
+function kernelize(x::AbstractArray, y::AbstractArray, kernel::Function; center::Bool=false, symmetric::Bool=false)
 	m = size(x, 2)
 	n = size(y, 2)
 	out = similar(x, m, n)
-	kernelize!(out, x, y, kernel; symmetric=symmetric)
+	kernelize!(out, x, y, kernel; center=center, symmetric=symmetric)
 end
 
-kernelize(x::AbstractArray, kernel::Function; symmetric::Bool=true) = 
-	kernelize(x, x, kernel; symmetric=symmetric)
+kernelize(x::AbstractArray, kernel::Function; center::Bool=false, symmetric::Bool=true) = 
+	kernelize(x, x, kernel; center=center, symmetric=symmetric)
 
 
 
@@ -43,7 +55,7 @@ kernelize(x::AbstractArray, kernel::Function; symmetric::Bool=true) =
 # FunctionCell Interface #	
 ##########################
 """
-	kernel([f];[symmetric=false])
+	kernel([f];[center=false, symmetric=false])
 
 Constructs an untrained function cell using the kernel function `f` that accepts two vector arguments `x` and `y`, 
 and returns a scalar value (default `(x,y)->x'y`). When piped data into, the untrained function cell returns a
@@ -51,6 +63,7 @@ trained function cell, retaining the training data.
 
 # Keyword arguments
   * `symmetric::Bool` specifies whether the kernel should be symmetric i.e. calculated using the same observations (default `false`)
+  * `center::Bool` specifies whether the center the kernel (default `false`)
 
 A list of common used kernels can be found below (definitions from the documentation of to MLKernels.jl):
 # Kernels
@@ -84,8 +97,9 @@ julia> y |> K(x)
  14  17  20  23   
 ```
 """
-kernel(f::Function=(x,y)->x'y; symmetric::Bool=false) = 
-	FunctionCell(kernel, (f,), ModelProperties(), "Kernel: symmetric=$symmetric"; symmetric=symmetric) 
+kernel(f::Function=(x,y)->x'y; center::Bool=false, symmetric::Bool=false) = 
+	FunctionCell(kernel, (f,), ModelProperties(), "Kernel: center=$center, symmetric=$symmetric"; 
+	      center=center, symmetric=symmetric) 
 
 
 
@@ -99,27 +113,28 @@ Trains the function cell using the kernel function `f` and data `x` which will b
 for future kernel calculations.
 """
 # Training
-kernel(x::T where T<:CellData, f::Function=(x,y)->x'y; symmetric::Bool=false) = 
-	kernel(getx!(x), f; symmetric=symmetric)
-kernel(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, f::Function=(x,y)->x'y; symmetric::Bool=false) = 
-	kernel(x[1], f; symmetric=symmetric)
-kernel(x::T where T<:AbstractVector, f::Function=(x,y)->x'y; symmetric::Bool=false) = 
-	kernel(mat(x, LearnBase.ObsDim.Constant{2}()), f; symmetric=symmetric)
-kernel(x::T where T<:AbstractMatrix, f::Function=(x,y)->x'y; symmetric::Bool=false) = begin
+kernel(x::T where T<:CellData, f::Function=(x,y)->x'y; center::Bool=false, symmetric::Bool=false) = 
+	kernel(getx!(x), f; center=center, symmetric=symmetric)
+kernel(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, f::Function=(x,y)->x'y; 
+       center::Bool=false, symmetric::Bool=false) = kernel(x[1], f; center=center, symmetric=symmetric)
+kernel(x::T where T<:AbstractVector, f::Function=(x,y)->x'y; center::Bool=false, symmetric::Bool=false) = 
+	kernel(mat(x, LearnBase.ObsDim.Constant{2}()), f; center=center, symmetric=symmetric)
+kernel(x::T where T<:AbstractMatrix, f::Function=(x,y)->x'y; center::Bool=false, symmetric::Bool=false) = begin
 	
 	# Build model properties
 	modelprops = ModelProperties(nvars(x),nobs(x))
 	
 	# Returned trained cell
-	FunctionCell(kernel, Model((f, getobs(x), symmetric), modelprops), "Kernel: symmetric=$symmetric")	 
+	FunctionCell(kernel, Model((f, getobs(x), center, symmetric), modelprops), 
+	      "Kernel: center=$center, symmetric=$symmetric")	 
 end
 
 
 
 # Execution
-kernel(x::T where T<:CellData, model::Model{<:Tuple{<:Function,Matrix,Bool}}) =
+kernel(x::T where T<:CellData, model::Model{<:Tuple{<:Function,Matrix,Bool,Bool}}) =
 	datacell(kernel(getx!(x), model), gety(x)) 	
-kernel(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Function,Matrix,Bool}}) =
+kernel(x::T where T<:AbstractVector, model::Model{<:Tuple{<:Function,Matrix,Bool,Bool}}) =
 	kernel(mat(x, LearnBase.ObsDim.Constant{2}()), model) 	
-kernel(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function,Matrix,Bool}}) =
-	kernelize(model.data[2], getobs(x), model.data[1] ;symmetric=model.data[3])
+kernel(x::T where T<:AbstractMatrix, model::Model{<:Tuple{<:Function,Matrix,Bool,Bool}}) =
+	kernelize(model.data[2], getobs(x), model.data[1] ;center=model.data[3], symmetric=model.data[4])

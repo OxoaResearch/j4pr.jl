@@ -27,6 +27,7 @@ for tr in [A01, A02, A03, vectordata]
 		for f in F
 			Base.Test.@test try 
 				ts |> (tr |> j4pr.kernel(f)); 
+				ts |> (tr |> j4pr.kernel(f,center=true)); 
 				true
 			catch 
 				false
@@ -40,6 +41,7 @@ for tr in [A04, A05, A06, matrixdata]
 		for f in F
 			Base.Test.@test try 
 				ts |> (tr |> j4pr.kernel(f));
+				ts |> (tr |> j4pr.kernel(f,center=true));
 				true
 			catch
 				false
@@ -51,6 +53,7 @@ end
 # Make small test for kernelize with symmetric=false (call with one argument)
 Base.Test.@test try 
 	j4pr.kernelize(rand(10,2), F[1])
+	j4pr.kernelize(rand(10,2), F[1], center=true)
 	true
 catch
 	false
