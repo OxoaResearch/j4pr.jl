@@ -73,7 +73,7 @@ isnan(x::T where T<:Array) = isnan.(x)
 
 # Function to check for voids
 isvoid(::Void) = true
-isvoid(x) = x isa Void
+isvoid(x) = (x isa Void)
 
 
 
@@ -143,10 +143,10 @@ classnames(c::T where T<:CellDataL) = begin
 end
 classnames(c::T where T<:CellDataLL) = begin
 	try	
-		[sort(unique(gety!(c)[i,:])) for i = 1:nvars(gety!(c))] 
+		[sort(unique(gety!(c)[i,:])) for i in 1:nvars(gety!(c))] 
 	catch
 	
-		[unique(gety!(c)[i,:]) for i = 1:nvars(gety!(c))] 
+		[unique(gety!(c)[i,:]) for i in 1:nvars(gety!(c))] 
 	end
 end
 
@@ -156,8 +156,8 @@ end
 Return the number of classes present in a `DataCell`.
 """
 nclass(x::T where T<:CellDataU) = 0
-nclass(x::T where T<:CellDataL) = size(classnames(x),1)
-nclass(x::T where T<:CellDataLL) = [size(i,1) for i = 1:classnames(x)]
+nclass(x::T where T<:CellDataL) = length(classnames(x))
+nclass(x::T where T<:CellDataLL) = [length(c) for c in classnames(x)]
 
 
 
