@@ -23,7 +23,7 @@ function t_plotting()
 		end
 	end
 
-	if (VERSION <= v"0.6")
+	if v"0.6" <= VERSION < v"0.7-"
 	Test.@test try
 		j4pr.rocplot((X./sum(X,1),y)|>j4pr.findop(1,j4pr.ROC.TPr(),1.));
 		true

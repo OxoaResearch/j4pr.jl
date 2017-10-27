@@ -2,7 +2,7 @@
 using j4pr
 using DataStructures, DataArrays, MLKernels, MLLabelUtils, Distances
 
-if (VERSION > v"0.6")
+if (VERSION > v"0.7-")
 	using Test
 end
 
@@ -88,7 +88,7 @@ Test.@testset "[j4pr: /src/lib/sup]" begin
 	Test.@testset "stump.jl (Decision stump classifier and regressor)" begin t_stump(); end
 end
 
-if (VERSION <= v"0.6")
+if v"0.6" <= VERSION < v"0.7-"
 	include("ext/t_dbscan.jl")
 	include("ext/t_libsvm.jl")
 	Test.@testset "[j4pr: /src/lib/ext] (Julia 0.6 ONLY)" begin

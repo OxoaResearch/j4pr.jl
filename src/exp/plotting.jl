@@ -198,7 +198,7 @@ end
 
 
 # ROC curve plots 
-if (VERSION <= v"0.6") 
+if v"0.6" <= VERSION < v"0.7-"
 
 using j4pr.ROC: ComplexOP, AbstractPerfMetric, TPr, FPr, TNr, FNr 
 

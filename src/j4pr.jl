@@ -37,7 +37,7 @@ module j4pr
 	import MLDataPattern: nobs, getobs, datasubset, targets, gettargets 
 	import UnicodePlots, LossFunctions, Distances, MultivariateStats, Clustering, DecisionTree
 
-	if (VERSION <= v"0.6") 
+	if v"0.6" <= VERSION < v"0.7-"
 		import LIBSVM
 		using RDatasets, Images, ImageInTerminal
 	end
@@ -52,7 +52,7 @@ module j4pr
     	##############################################################################################################################
     	# Global variables and logging configuration										     #
 	##############################################################################################################################
-	global const j4pr_version = "0.1.1-beta" 	                      			# The current version of j4pr
+	global const j4pr_version = "0.1.1" 	                      				# The current version of j4pr
 
 	oinfoglobal = j4pr_version*Dates.format(Dates.now(), " dd-mm-YYYY")			# Define information string
 		
@@ -63,11 +63,12 @@ module j4pr
 	@reexport using MLDataPattern
 	
 	# Some packages do not work for Julia > 0.6
-	if (VERSION <= v"0.6") 
+	if v"0.6" <= VERSION < v"0.7-"
     		export 
-		libsvm,										# LIBSVM classifier/regressor 
 		rdataset,									# R datasets
 		im2targets, targets2im,								# From Images.jl Arrays to DataCells and back	
+		libsvm,										# LIBSVM classifier/regressor 
+		kNNClassifier, knn, knnr,							# k-nearest neighbours classifier and regressor
 		ROC, findop, changeop!, simpleop,						# Operating point optimization
 		rocplot
 	end
@@ -130,7 +131,6 @@ module j4pr
 		
 		# [lib/sup]
 		loss,										# Calculate losses based on MLLabelUtils.jl and LossFunctions.jl
-		kNNClassifier, knn, knnr,							# k-nearest neighbours classifier and regressor
 		LinDiscClassifier, lindisc,							# Linear discriminant classifier
 		QuadDiscClassifier, quaddisc,							# Quadratic discriminant classifier
 		ParzenClassifier, parzen,							# Parzen window density estimator/regressor/classifier
@@ -201,7 +201,6 @@ module j4pr
 		include("lib/unsup/kernel.jl")							# Lightweight way of constructing kernels
 
 	# [lib/sup] e.g. supervised learning
-		include("lib/sup/knn.jl")							# kNN classifier/regressor/density estimator
 		include("lib/sup/lindisc.jl")							# Linear discriminant classifier
 		include("lib/sup/quaddisc.jl")							# Quadratic discriminant classifier
 		include("lib/sup/parzen.jl")							# Parzen window density estimator/regressor/classifier
@@ -212,10 +211,11 @@ module j4pr
 		include("lib/sup/stump.jl")							# Decision stump classifier and regressor
 	
 	# Some packages do not work for Julia > 0.6
-	if (VERSION <= v"0.6")
+	if v"0.6" <= VERSION < v"0.7-"
 		include("lib/data/images_interface.jl")						# Functions to transform to/from Images.jl representations from/to DataCells 
 		include("lib/data/rdataset.jl")							# Loads different R datasets
 		include("lib/ext/libsvm.jl")							# LIBSVM classifier/regressor (LIBSVM.jl)
+		include("lib/sup/knn.jl")							# kNN classifier/regressor/density estimator
 		include("lib/sup/roc.jl")							# ROC Analysis and operating point related functionality
 	end
 

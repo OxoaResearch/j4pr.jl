@@ -9,10 +9,10 @@ function version(vstr::String=j4pr_version)
 	date = ""
 	try 
 		readmehtod = x->nothing
-		if (VERSION > v"0.6")
-			readmethod = x->read(x,String) 			# Julia 0.7+
-		else
+		if v"0.6" <= VERSION < v"0.7-"
 			readmethod = x->readstring(x) 			# Julia 0.6
+		else
+			readmethod = x->read(x,String) 			# Julia 0.7+
 		end
 		commit = open(`git show --oneline -s`) do x
 				readmethod(x)[1:7]
@@ -22,8 +22,8 @@ function version(vstr::String=j4pr_version)
 			readmethod(x)[1:10]
 		end
 	catch
-		commit = "c25847d+"
-		date = "2017-09-26"
+		commit = "67a5c10+"
+		date = "2017-10-27"
 	end
 
 	vers ="
