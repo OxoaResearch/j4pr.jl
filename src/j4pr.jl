@@ -210,14 +210,7 @@ module j4pr
 		include("lib/sup/randomsubspace.jl")						# Random subspace ensemble framework
 		include("lib/sup/adaboost.jl")							# AdaBoost ensemble framework
 		include("lib/sup/stump.jl")							# Decision stump classifier and regressor
-
-	# [exp] e.g. Experimental stuff
-		#include("exp/benchmark.jl")							# Benchmark infrastructure (not really good, provides a very
-		include("exp/plotting.jl")							# Plots for labeled/unlabeled datasets (UnicodePlots.jl)
-												# limited and biased view on the library's performance)	
-	# [tool] Tools not related to j4pr. Include manually.
-		# "tool/REPL.jl"								# Apply REPL colorscheme and prompt
-
+	
 	# Some packages do not work for Julia > 0.6
 	if (VERSION <= v"0.6")
 		include("lib/data/images_interface.jl")						# Functions to transform to/from Images.jl representations from/to DataCells 
@@ -225,6 +218,13 @@ module j4pr
 		include("lib/ext/libsvm.jl")							# LIBSVM classifier/regressor (LIBSVM.jl)
 		include("lib/sup/roc.jl")							# ROC Analysis and operating point related functionality
 	end
+
+	# [exp] e.g. Experimental stuff
+		#include("exp/benchmark.jl")							# Benchmark infrastructure (not really good, provides a very
+		include("exp/plotting.jl")							# Plots for labeled/unlabeled datasets (UnicodePlots.jl)
+												# limited and biased view on the library's performance)	
+	# [tool] Tools not related to j4pr. Include manually.
+		# "tool/REPL.jl"								# Apply REPL colorscheme and prompt
 
     	##############################################################################################################################
     	# Post-loading steps 													     #		
