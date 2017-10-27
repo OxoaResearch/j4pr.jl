@@ -195,50 +195,6 @@ countlayers(x::T where T<:PTuple{AbstractCell}) = maximum(xi.layer for xi in x)
 
 
 
-# Function that generates integers based on  priors, that sum up to a given number N;
-# N random numbers are generated and the cumulative distribution is thresholded so that
-# a fraction of the total sum (given by the priors) falls closely to a cardinal in the 
-# cumulative distribution
-# 
-# Input:
-# 	N 	- sum of the numbers
-# 	priors 	- prior probabilities (must sum up to one)
-# Output:
-#	out 	- vector of integers that sum up to N and has the same size as the priors vector 
-function pintgen(n::Int, priors::Vector{T} where T<:Real)
-	if (checkpriors(priors) != true)
-		error("[pintgen] Priors must summate to one and be >=0, <=1.")
-	end
-	m = length(priors)									# Length of the priors vector (and also of output vector)
-	out = zeros(m) 										# Initialize output
-	v = rand(n) 										# Generate random variable vector
-	csv = cumsum(v)
-	sv = csv[n]
-	csp = cumsum(priors)
-	for i = 1 : m
-		pos = find(csv .<= csp[i] * sv);						# Find positions where the cumulative sum is smaller
-		if isempty(pos)  								# than the total sum multiplied by the prior
-			out[i] = 0
-		else
-			out[i] = maximum(pos)							# Return the last position or 0, depending wether any
-		end 										# position has been found or not
-		if (i > 1) out[i] = out[i] - sum(out[1:i-1]) end				# Compensate positions for using the cumulative priors
-	end	
-	return round.(Int,out)
-end
-
-
-
-# Version of the function that ignores priors and returns whatever the first argument is;
-# Basically a wrapper so that both specifying class numbers and total sample size works transparently
-function pintgen(n::Vector{Int}, priors::Vector{T} where T<:Real)
-	@assert checkpriors(priors) && (size(n) == size(priors)) 
-		"[pintgen] Priors are not correct or size mismatch between class sizes and priors."
-	return n
-end
-
-
-
 # Small function that builds the titles out of keywork argumens
 kwtitle(root::String, kwargs)::String = begin
 	title = root 

@@ -62,5 +62,4 @@ function t_coreutils()
 	Base.Test.@test j4pr.nclass(D) == 2
 	Base.Test.@test j4pr.nclass(j4pr.datacell(Xv,y2)) == [2,2]
 
-	Base.Test.@test sum(j4pr.pintgen(23,[0.3,0.7])) == 23
 end

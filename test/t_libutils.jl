@@ -24,4 +24,6 @@ function t_libutils()
 
 	# the 'showmatrix' option is not tested.
 	#confusionmatrix(predictions,references;normalize=true,positive="a",showmatrix=true);
+	
+	Base.Test.@test sum(j4pr.pintgen(23,[0.3,0.7])) == 23
 end
