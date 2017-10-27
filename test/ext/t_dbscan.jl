@@ -5,7 +5,7 @@ function t_dbscan()
 
 X = [randn(10,200)*2+rand(10,200) rand(10,200)+10 -5+randn(10,400)]
 
-Base.Test.@test try
+Test.@test try
 	
 	f1(x,y) = Distances.pairwise(Distances.Euclidean(),x,y)
 	f2(dist,agg)= (p,S) -> agg([dist(p, j4pr.getobs(S,i)) for i in j4pr.nobs(S)])

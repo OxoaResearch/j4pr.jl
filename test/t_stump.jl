@@ -1,8 +1,8 @@
 # Tests for the Decision stump classifier and regressor 
 function t_stump()
 
-Ac = j4pr.DataGenerator.iris()   # classification dataset
-Ar = j4pr.DataGenerator.fishr(20)# regression dataset
+Ac = j4pr.DataGenerator.fish(20)  # classification dataset
+Ar = j4pr.DataGenerator.fishr(20) # regression dataset
 
 
 tol  = 1e-6; # tolerance when comparing results
@@ -17,7 +17,7 @@ Wclass = [j4pr.stump(vartypes=v, nthresh=n, split=s, count=c, prop=p, crit=cr ) 
 
 # Test classification
 for w in Wclass
-	Base.Test.@test try 
+	Test.@test try 
 		wt = Ac |> w
 		result = Ac |> wt
 		result2 = +Ac |> wt
@@ -29,7 +29,7 @@ end
 
 # Test classification on a 1-D dataset
 A1d = j4pr.datacell([rand(100);2*rand(100)],[zeros(100);ones(100)])
-Base.Test.@test try 
+Test.@test try 
 	wt1 = A1d |> Wclass[1]
 	result = A1d |> wt1
 	buf = IOBuffer()
@@ -52,7 +52,7 @@ Wreg = [j4pr.stumpr(model=m, errcrit=ec, vartypes=v, nthresh=n, split=s, count=c
 
 # Test regression 
 for w in Wreg
-	Base.Test.@test try 
+	Test.@test try 
 		wt = Ar |> w
 
 		result = Ar |> wt
@@ -66,7 +66,7 @@ end
 
 # Test regression on a 1-D dataset
 A1d = j4pr.datacell([rand(100);2*rand(100)],rand(200))
-Base.Test.@test try 
+Test.@test try 
 	wt1 = A1d |> Wreg[1]
 	result = A1d |> wt1
 	buf = IOBuffer()

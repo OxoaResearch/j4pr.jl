@@ -1,7 +1,7 @@
 # Tests for knn classification/regression 
 function t_knn()
 
-Ac = j4pr.DataGenerator.iris()   # classification dataset
+Ac = j4pr.DataGenerator.fish(20)   # classification dataset
 Ar = j4pr.DataGenerator.fishr(20)# regression dataset
 
 
@@ -32,7 +32,7 @@ Wreg_r = [j4pr.knnr(k, smooth=s, leafsize=l, metric=m) for k in [1.0,5.0,10.0],
 
 # Test classification
 for w in Wclass_nn
-	Base.Test.@test try 
+	Test.@test try 
 		wt = Ac |> w
 		result = Ac |> wt
 		true
@@ -42,7 +42,7 @@ for w in Wclass_nn
 end
 
 for w in Wclass_r
-	Base.Test.@test try 
+	Test.@test try 
 		wt = Ac |> w
 		result = Ac |> wt
 		true
@@ -53,7 +53,7 @@ end
 
 # Test regression 
 for w in Wreg_nn
-	Base.Test.@test try 
+	Test.@test try 
 		wt = Ar |> w
 		result = Ar |> wt
 		true
@@ -63,7 +63,7 @@ for w in Wreg_nn
 end
 
 for w in Wreg_r
-	Base.Test.@test try 
+	Test.@test try 
 		wt = Ar |> w
 		result = Ar |> wt
 		true

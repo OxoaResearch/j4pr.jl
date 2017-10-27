@@ -2,7 +2,7 @@ module benchmark
 
 __precompile__(true)
 reload("j4pr")	
-using DataFrames
+using DataArrays
 import j4pr
 
 function benchmark_training(a::T where T<:j4pr.CellData, w::S where S<:j4pr.CellFun)

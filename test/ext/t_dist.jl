@@ -25,7 +25,7 @@ D = [Distances.Euclidean(),
 for tr in [A01, A02, A03, vectordata]
 	for ts in [A01, A02, A03, vectordata]
 		for d in D
-			Base.Test.@test try 
+			Test.@test try 
 				ts |> (tr |> j4pr.dist(d)); 
 				true
 			catch 
@@ -38,7 +38,7 @@ end
 for tr in [A04, A05, A06, matrixdata]
 	for ts in [A04, A05, A06, matrixdata]
 		for d in D
-			Base.Test.@test try 
+			Test.@test try 
 				ts |> (tr |> j4pr.dist(d));
 				true
 			catch
@@ -49,7 +49,7 @@ for tr in [A04, A05, A06, matrixdata]
 end
 
 # Test training with tuple and the generic dist(Array,Array)
-Base.Test.@test try 
+Test.@test try 
 	w = j4pr.dist(j4pr.strip(A03),D[1])
 	true
 catch

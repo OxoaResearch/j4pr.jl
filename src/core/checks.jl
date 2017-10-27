@@ -11,10 +11,10 @@ function checktargets(x::T where T<:AbstractArray, y::S where S<:AbstractArray)
 	# If it is not empty, enforce the fact that it should not contain fewer points than the data
 	@assert nobs(x) <= nobs(y) "[checktargets] Data size larger than targets size. Resize accordingly." 
    	
-	@inline _trunc_(y::T where T<:SubArray{S,1} where S, n::Int) = view(y,1:n)
-	@inline _trunc_(y::T where T<:SubArray{S,2} where S, n::Int) = view(y,:,1:n)
-	@inline _trunc_(y::T where T<:AbstractArray{S,1} where S, n::Int) = y[1:n]
-	@inline _trunc_(y::T where T<:AbstractArray{S,2} where S, n::Int) = y[:,1:n]
+	@inline _trunc_(y::T, n::Int) where T<:SubArray{S,1} where S = view(y,1:n)
+	@inline _trunc_(y::T, n::Int) where T<:SubArray{S,2} where S = view(y,:,1:n)
+	@inline _trunc_(y::T, n::Int) where T<:AbstractArray{S,1} where S = y[1:n]
+	@inline _trunc_(y::T, n::Int) where T<:AbstractArray{S,2} where S = y[:,1:n]
 	if (nobs(x) < nobs(y))
 		warn("[checktargets] Data size size smaller than targets size; taking only the first $(nobs(x)) elements." )
 		return _trunc_(y, nobs(x))                                                  	# Truncate label list to data size

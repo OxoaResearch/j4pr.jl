@@ -68,8 +68,8 @@ scaler!(x::T where T<:Union{AbstractArray, CellData}, f::Function, opts) = begin
 	
 	# Get dictionary or construct a proper one from original;
 	# Inputs: scaling option and total number of variables 
-	_sdict_(x::T where T<:String, m) = Dict(i=>x for i in 1:m) 
-	_sdict_(x::T where T<:Dict, m) = begin
+	_sdict_(x::T, m) where T<:String = Dict(i=>x for i in 1:m) 
+	_sdict_(x::T, m) where T<:Dict = begin
 		out = Dict{Int, String}()
 		for (k,v) in x 
 			if(k isa Int)
@@ -115,21 +115,21 @@ scaler!(x::T where T<:Union{AbstractArray, CellData}, f::Function, opts) = begin
 	# - Scalers not based on class information have also an overloaded version for labeled datasets which reverts to one where 
 	#   no labels are present
 	# - Class based scalers expect targets to be a vector (not matrix) or default to non-class versions if possible
-	_mean_(x::T where T<:AbstractVector, ::Void) = (1.0, -mean(x), false)
-	_mean_(x::T where T<:AbstractVector, t::S where S<:AbstractArray) = _mean_(x,nothing)
+	_mean_(x::T, ::Void) where T<:AbstractVector = (1.0, -mean(x), false)
+	_mean_(x::T, t::S) where T<:AbstractVector where S<:AbstractArray = _mean_(x,nothing)
 
-	_variance_(x::T where T<:AbstractVector, ::Void) = (1/std(x), -mean(x)/std(x), false)
-	_variance_(x::T where T<:AbstractVector, t::S where S<:AbstractArray) = _variance_(x,nothing)
+	_variance_(x::T, ::Void) where T<:AbstractVector = (1/std(x), -mean(x)/std(x), false)
+	_variance_(x::T, t::S) where T<:AbstractVector where S<:AbstractArray = _variance_(x,nothing)
 
-	_domain_(x::T where T<:AbstractVector, ::Void) = begin 
+	_domain_(x::T, ::Void) where T<:AbstractVector = begin 
 		maxv = maximum(x)
 		minv = minimum(x)
 		return (1/(maxv-minv+eps()), -minv/(maxv-minv+eps()), false)
 	end
-	_domain_(x::T where T<:AbstractVector, t::S where S<:AbstractArray) = _domain_(x,nothing)
+	_domain_(x::T, t::S) where T<:AbstractVector where S<:AbstractArray = _domain_(x,nothing)
 
-	_cmean_(x::T where T<:AbstractVector, ::Void, p) = _mean_(x,nothing)
-	_cmean_(x::T where T<:AbstractVector, t::S where S<:AbstractVector, p) = begin 
+	_cmean_(x::T, ::Void, p) where T<:AbstractVector = _mean_(x,nothing)
+	_cmean_(x::T, t::S, p) where T<:AbstractVector where S<:AbstractVector = begin 
 		offset = 0.0
 		for c in keys(p)
 			@inbounds @fastmath d = x[find(isequal.(t,c))]
@@ -138,8 +138,8 @@ scaler!(x::T where T<:Union{AbstractArray, CellData}, f::Function, opts) = begin
 		return (1.0, -offset, false)
 	end
 
-	_cvariance_(x::T where T<:AbstractVector, ::Void, p) = _variance_(x,nothing)
-	_cvariance_(x::T where T<:AbstractVector, t::S where S<:AbstractArray, p) = begin 
+	_cvariance_(x::T, ::Void, p) where T<:AbstractVector = _variance_(x,nothing)
+	_cvariance_(x::T, t::S, p) where T<:AbstractVector where S<:AbstractArray = begin 
 		offset = 0.0
 		scale = 0.0
 		for c in keys(p)
@@ -150,8 +150,8 @@ scaler!(x::T where T<:Union{AbstractArray, CellData}, f::Function, opts) = begin
 		return (1.0/scale, -offset/scale, false)
 	end
 
-	_2sigma_(x::T where T<:AbstractVector, ::Void, p) = error("[scaler!] 2-sigma scaling needs labels")
-	_2sigma_(x::T where T<:AbstractVector, t::S where S<:AbstractVector, p) = begin 
+	_2sigma_(x::T, ::Void, p) where T<:AbstractVector = error("[scaler!] 2-sigma scaling needs labels")
+	_2sigma_(x::T, t::S, p) where T<:AbstractVector where S<:AbstractVector = begin 
 		offset = 0.0
 		scale = 0.0
 		for c in keys(p)

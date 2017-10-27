@@ -20,7 +20,7 @@ A06 = j4pr.datacell(matrixdata, multilabels)
 
 for tr in [A01, A02, A03, vectordata]
 	for ts in [A01, A02, A03, vectordata]
-		Base.Test.@test try 
+		Test.@test try 
 			ts |> (tr |> j4pr.whiten()); 
 			true
 		catch 
@@ -31,7 +31,7 @@ end
 
 for tr in [A04, A05, A06, matrixdata]
 	for ts in [A04, A05, A06, matrixdata]
-		Base.Test.@test try 
+		Test.@test try 
 			ts |> (tr |> j4pr.whiten()); 
 			true
 		catch 

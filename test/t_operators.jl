@@ -23,9 +23,9 @@ for (i,a) in enumerate(AV)
 	for (j,b) in enumerate(AV)
 		try
 			a|>b
-			Base.Test.@test true	
+			Test.@test true	
 		catch
-			Base.Test.@test false
+			Test.@test false
 		end
 	end
 end
@@ -36,9 +36,9 @@ for (i,a) in enumerate(AV)
 	for (j,b) in enumerate(AV)
 		try
 			[a;b]
-			Base.Test.@test true	
+			Test.@test true	
 		catch
-			Base.Test.@test false
+			Test.@test false
 		end
 	end
 end
@@ -49,9 +49,9 @@ for (i,a) in enumerate(AV)
 	for (j,b) in enumerate(AV)
 		try
 			[a;b]
-			Base.Test.@test true	
+			Test.@test true	
 		catch
-			Base.Test.@test false
+			Test.@test false
 		end
 	end
 end
@@ -71,9 +71,9 @@ PS = W+W
 for (i,a) in enumerate(AV)
 	try
 		a |> PT
-		Base.Test.@test true
+		Test.@test true
 	catch
-		Base.Test.@test false
+		Test.@test false
 	end
 end
 #println("PASSED")
@@ -86,9 +86,9 @@ for (i,a) in enumerate(AV)
 		else 
 			a |> PPM # Send data cells with matrix content to their corresponding parallel pipe
 		end
-		Base.Test.@test true
+		Test.@test true
 	catch
-		Base.Test.@test false
+		Test.@test false
 	end
 end
 #println("PASSED")
@@ -97,9 +97,9 @@ end
 for (i,a) in enumerate(AV)
 	try
 		a |> PS
-		Base.Test.@test true
+		Test.@test true
 	catch
-		Base.Test.@test false
+		Test.@test false
 	end
 end
 #println("PASSED")

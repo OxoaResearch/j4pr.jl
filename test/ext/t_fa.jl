@@ -16,7 +16,7 @@ A03 = j4pr.datacell(matrixdata, multilabels)
 
 for tr in [A01, A02, A03, matrixdata]
 	for ts in [A01, A02, A03, matrixdata]
-		Base.Test.@test try 
+		Test.@test try 
 			Wfa = tr |> j4pr.fa()
 			Wfar = j4pr.far(Wfa)
 			ts |> Wfa 

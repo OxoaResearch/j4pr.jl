@@ -72,8 +72,8 @@ ohenc(x::T where T<:Union{AbstractArray, CellData}, opts) = begin
 	
 	# Get dictionary or construct a proper one from original;
 	# Inputs: encoding option and total number of variables 
-	_sdict_(x::T where T<:String, m) = Dict(i=>x for i in 1:m) 
-	_sdict_(x::T where T<:Dict, m) = begin
+	_sdict_(x::T, m) where T<:String = Dict(i=>x for i in 1:m) 
+	_sdict_(x::T, m) where T<:Dict = begin
 		out = Dict{Int, String}()
 		for (k,v) in x 
 			if(k isa Int)

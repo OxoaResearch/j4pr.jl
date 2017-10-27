@@ -146,7 +146,7 @@ as in `StatsBase.trim`.
 """
 function densitysplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, count::Int=0)
 	if length(v)/length(unique(v)) < n
-		v .+= 10.*rand(length(v))*eps()
+		v .+= 10*rand(length(v))*eps()
 	end
 	vt = trim(v, prop=prop, count=count)		# trim 
 	n = min(n, length(unique(vt)))			# number of points

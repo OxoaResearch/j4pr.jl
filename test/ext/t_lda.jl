@@ -18,7 +18,7 @@ A05 = j4pr.datacell(matrixdata, labels)
 A06 = j4pr.datacell(matrixdata, multilabels)
 
 
-Base.Test.@test try 
+Test.@test try 
 	A05 |> (A05 |> j4pr.lda(true) )
 	+A05 |> (A05 |> j4pr.lda(true) )
 	

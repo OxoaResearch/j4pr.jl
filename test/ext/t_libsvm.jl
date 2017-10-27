@@ -21,7 +21,7 @@ Wreg = [j4pr.libsvm(svmtype=LIBSVM.NuSVR, probability=false),
 
 # Test classification
 for w in Wclass
-	Base.Test.@test try 
+	Test.@test try 
 		wt1 = iris_class |> w
 		wt2 = j4pr.strip(iris_class) |> w
 
@@ -37,7 +37,7 @@ end
 
 # Test regression
 for w in Wreg
-	Base.Test.@test try 
+	Test.@test try 
 		wt1 = iris_reg |> w
 		wt2 = j4pr.strip(iris_reg) |> w
 

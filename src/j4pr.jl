@@ -37,16 +37,16 @@ module j4pr
 	import MLDataPattern: nobs, getobs, datasubset, targets, gettargets 
 	import UnicodePlots, LossFunctions, Distances, MultivariateStats, Clustering, DecisionTree
 
-	if (VERSION <= v"0.6") # LIBSVM does not work with Julia 0.7
+	if (VERSION <= v"0.6") 
 		import LIBSVM
+		using RDatasets, Images, ImageInTerminal
 	end
 
 	# No method extension
 	using StaticArrays
 	using DataStructures: SortedDict
 	using StatsBase: countmap, fit, Histogram
-	using Reexport, StaticArrays, DataArrays, Compat, RDatasets, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, 
-		MLKernels, Images, ImageInTerminal
+	using Reexport, StaticArrays, DataArrays, Compat, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, MLKernels
 
 
     	##############################################################################################################################
@@ -61,12 +61,23 @@ module j4pr
     	# Export														     #
     	##############################################################################################################################
 	@reexport using MLDataPattern
-    	export
+	
+	# Some packages do not work for Julia > 0.6
+	if (VERSION <= v"0.6") 
+    		export 
+		libsvm,										# LIBSVM classifier/regressor 
+		rdataset,									# R datasets
+		im2targets, targets2im,								# From Images.jl Arrays to DataCells and back	
+		ROC, findop, changeop!, simpleop,						# Operating point optimization
+		rocplot
+	end
+
+	export
 		# [core]
 		@async_cell, @remote_cell,							# Macros
 	   	AbstractCell, DataCell, FunctionCell, PipeCell,					# The basic types and constructors 
 		Model, ModelProperties,								# Model related types	
-	   	DataGenerator,									# Data generators submodule
+	   	DataGenerator,									# Data generator submodule
 		functioncell, datacell,                                                         # Functions to create cells 
 	   	getx, getx!, gety, gety!, getf, getf!,                               		# Functions the get various cell fields
 	   	nvars, size, start, next, done, eltype, length, ndims, endof,			# Various useful functions for data cells	
@@ -77,11 +88,11 @@ module j4pr
 	   	pipestack, pipeparallel, pipeserial,                                          	# Create pipes	   
 	   	flatten, mat, 		                                                       	# Flatten a pipe made out of data
 	   	addlabels, unlabel, labelize,							# Label-related functionality
-	  	pintgen, rdataset,								# Data generators
 	   	interrupt,
 		
 		# [lib]	
 		countapp, countapp!, countappw, countappw!, 					# Counting utils 
+	  	pintgen,									# Generate numbers based on priors	
 		gini, misclassification,							# Purity utility functions
 		linearsplit, densitysplit,							# Split vectors according to different criteria	
 		confusionmatrix,								# Confusion matrix
@@ -95,25 +106,23 @@ module j4pr
 	   	filterdomain!,									# Data domain filtering
 	   	ohenc, ohenc_integer, ohenc_binary,						# One hot encoder
 	   	lineplot, scatterplot, densityplot1d, 						# Plots
-		densityplot2d, rocplot,
-		im2targets, targets2im,								# From Images.jl Arrays to DataCells and back	
+		densityplot2d, 
 
 		# [lib/ext]
+		### fa, far,									# Factor Analysis and reconstruction
+		### kpca, kpcar,								# Kernel-PCA and reconstruction
 		dist,										# Distances
 		whiten,										# Data Whitening
 		pca, pcar,									# PCA and reconstruction
-		### kpca, kpcar,								# Kernel-PCA and reconstruction
 		ppca, ppcar,									# Probabilistic PCA and reconstruction
 		ica,										# ICA
 		mds,										# MDS
 		lda, ldasub,									# Multiclass LDA, Subspace LDA
 		lr,										# Linear regression (Linear+Ridge)
-		### fa, far,									# Factor Analysis and reconstruction
 		kmeans, kmeans!,								# K-means clustering 
 		kmedoids, kmedoids!,								# K-medoids clustering 
 		affinityprop,									# Affinity propagation clustering
 		dbscan,										# DBSCAN clustering  
-		libsvm,										# LIBSVM classifier/regressor 
 		tree, randomforest,								# Decision tree, random forest classifiers
 		treer, randomforestr,								# Decisiontree, random forest regression
 		aboostump,									# Adaptively boosted stump classifier
@@ -132,7 +141,6 @@ module j4pr
 		RandomSubspace, randomsubspace,							# Random sub-space ensemble
 		AdaBoost, adaboost,								# AdaBoost ensemble
 		DecisionStump, stump, stumpr,							# Decision stump classifier and regressor
-		ROC, findop, changeop!, simpleop,						# Operating point optimization
 
 		# [lib/unsup]
 		kernelize!, kernelize, kernel							# Construct kernels
@@ -140,7 +148,7 @@ module j4pr
     	##############################################################################################################################
     	# Include														     #
     	##############################################################################################################################
-
+	
     	# [core]
     	include("core/abstractcell.jl")                                                         # AbstractCell related  
     	include("core/datacell.jl")                                                         	# DataCell related  
@@ -162,38 +170,32 @@ module j4pr
 	# [lib/data] e.g. data manipulation
 		include("lib/data/cslice.jl")							# Class slicing (e.g. select classes)
 		include("lib/data/labelutils.jl")                                               # Manipulation of datacell labels
-		include("lib/data/rdataset.jl")							# Loads different R datasets
 		include("lib/data/datagen.jl")							# Datasets in datacell format
 		include("lib/data/sample.jl")							# Data sampling
 		include("lib/data/scale.jl")							# Data scaling
 		include("lib/data/filter.jl")							# Data filter: generic, can be used for missing values
 		include("lib/data/filterdomain.jl")						# Data domain filtering
 		include("lib/data/ohenc.jl")							# One-hot encoding
-		include("lib/data/images_interface.jl")						# Functions to transform to/from Images.jl representations from/to DataCells 
 		include("lib/data/textanalysis_interface.jl")					# TextAnalysis.jl interface (so far empty) 
 		include("lib/data/videoio_interface.jl")					# VideoIO.jl interface (so far empty) 
 
 	# [lib/ext] e.g external algorithms
+		### include("lib/ext/kpca.jl")							# Kernel-PCA (MultivariateStats.jl)
+		### include("lib/ext/fa.jl")							# Factor Analysis (MultivariateStats.jl)
 		include("lib/ext/dist.jl")							# Distances (Distances.jl)
 		include("lib/ext/whiten.jl")							# Data whitening (MultivariateStats.jl)
 		include("lib/ext/pca.jl")							# PCA (MultivariateStats.jl)
-		### include("lib/ext/kpca.jl")							# Kernel-PCA (MultivariateStats.jl)
 		include("lib/ext/ppca.jl")							# Probabilistic PCA (MultivariateStats.jl)
 		include("lib/ext/ica.jl")							# ICA (MultivariateStats.jl)
 		include("lib/ext/mds.jl")							# MDS (MultivariateStats.jl)
 		include("lib/ext/lda.jl")							# Multiclass LDA, Subspace LDA (MultivariateStats.jl)
 		include("lib/ext/lr.jl")							# Linear regression (MultivariateStats.jl)
-		### include("lib/ext/fa.jl")							# Factor Analysis (MultivariateStats.jl)
 		include("lib/ext/kmeans.jl")							# K-means clustering (Clustering.jl)
 		include("lib/ext/kmedoids.jl")							# K-medoids clustering (Clustering.jl)
 		include("lib/ext/affinityprop.jl")						# Affinity propagation clustering (Clustering.jl)
 		include("lib/ext/dbscan.jl")							# DBSCAN clustering (Clustering.jl)	
 		include("lib/ext/decisiontree.jl")						# DecisionTree, Random Forest, Boosted stumps (DecisionTree.jl) 
-		include("lib/ext/mlkernel.jl") 							# Machine Learning kernels (MLKernels.jl)	
-		
-		if (VERSION <= v"0.6") # LIBSVM does not work with Julia 0.7
-			include("lib/ext/libsvm.jl")						# LIBSVM classifier/regressor (LIBSVM.jl)
-		end
+		include("lib/ext/mlkernel.jl") 							# Machine Learning kernels (MLKernels.jl)			
 	
 	# [lib/unsup] e.g. unsupervised learning
 		include("lib/unsup/kernel.jl")							# Lightweight way of constructing kernels
@@ -208,16 +210,21 @@ module j4pr
 		include("lib/sup/randomsubspace.jl")						# Random subspace ensemble framework
 		include("lib/sup/adaboost.jl")							# AdaBoost ensemble framework
 		include("lib/sup/stump.jl")							# Decision stump classifier and regressor
-		include("lib/sup/roc.jl")							# ROC Analysis and operating point related functionality
 
 	# [exp] e.g. Experimental stuff
-		include("exp/plotting.jl")							# Plots for labeled/unlabeled datasets (UnicodePlots.jl)
 		#include("exp/benchmark.jl")							# Benchmark infrastructure (not really good, provides a very
+		include("exp/plotting.jl")							# Plots for labeled/unlabeled datasets (UnicodePlots.jl)
 												# limited and biased view on the library's performance)	
 	# [tool] Tools not related to j4pr. Include manually.
-		# "tool/REPL.jl"								# Apply REPL colorscheme and prompt is j4pr is not yet loaded
-	
+		# "tool/REPL.jl"								# Apply REPL colorscheme and prompt
 
+	# Some packages do not work for Julia > 0.6
+	if (VERSION <= v"0.6")
+		include("lib/data/images_interface.jl")						# Functions to transform to/from Images.jl representations from/to DataCells 
+		include("lib/data/rdataset.jl")							# Loads different R datasets
+		include("lib/ext/libsvm.jl")							# LIBSVM classifier/regressor (LIBSVM.jl)
+		include("lib/sup/roc.jl")							# ROC Analysis and operating point related functionality
+	end
 
     	##############################################################################################################################
     	# Post-loading steps 													     #		

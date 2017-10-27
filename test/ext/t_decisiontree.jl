@@ -1,8 +1,8 @@
 # Tests for Decision trees/ Random forest
 function t_decisiontree()
 
-Ac = j4pr.DataGenerator.iris()   # classification dataset
-Ar = j4pr.DataGenerator.fishr(20)# regression dataset
+Ac = j4pr.DataGenerator.fish(20)  # classification dataset
+Ar = j4pr.DataGenerator.fishr(20) # regression dataset
 
 
 Wclass = [j4pr.tree(), j4pr.randomforest(), j4pr.adaboostump()] # only default arguments
@@ -12,7 +12,7 @@ Wreg = [j4pr.treer(), j4pr.randomforestr()]			# only default arguments
 
 # Test classification
 for w in Wclass
-	Base.Test.@test try 
+	Test.@test try 
 		wt1 = Ac |> w
 		wt2 = j4pr.strip(Ac) |> w
 
@@ -28,7 +28,7 @@ end
 
 # Test regression 
 for w in Wreg
-	Base.Test.@test try 
+	Test.@test try 
 		wt1 = Ar |> w
 		wt2 = j4pr.strip(Ar) |> w
 

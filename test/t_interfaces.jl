@@ -20,49 +20,49 @@ AV = [A01, A02, A03, A04, A05, A06]
 #print("Checking getindex type stability for data cells... ")
 
 # Index for ::Void and empty index
-Base.Test.@test nothing[1] isa Void
-Base.Test.@test nothing[:,1] isa Void
-Base.Test.@test nothing[:,[1,2]] isa Void
-Base.Test.@test nothing[:,1:2] isa Void
+Test.@test nothing[1] isa Void
+Test.@test nothing[:,1] isa Void
+Test.@test nothing[:,[1,2]] isa Void
+Test.@test nothing[:,1:2] isa Void
 
 # Index with single integer (works for all data types e.g. vector and matrix)
 for A in AV
-	Base.Test.@test A[5] isa typeof(A)
+	Test.@test A[5] isa typeof(A)
 end
 
 # Integer + Colon (works only for matrix data) 
 for A in AV[4:end]
-	Base.Test.@test A[5,:] isa typeof(A)
+	Test.@test A[5,:] isa typeof(A)
 end
 
 # Colon + Integer (works only for matrix data)
 for A in AV[4:end]
-	Base.Test.@test A[:,5] isa typeof(A)
+	Test.@test A[:,5] isa typeof(A)
 end
 
 # Range/Vector (works only for vector data)
 for A in AV[1:3]
-	Base.Test.@test A[[1,2,3]] isa typeof(A)
-	Base.Test.@test A[1:3] isa typeof(A)
+	Test.@test A[[1,2,3]] isa typeof(A)
+	Test.@test A[1:3] isa typeof(A)
 end
 
 # Range/Vector + Colon (works only for matrix data)
 for A in AV[4:end]
-	Base.Test.@test A[[1,2,3],:] isa typeof(A)
-	Base.Test.@test A[1:3,:] isa typeof(A)
+	Test.@test A[[1,2,3],:] isa typeof(A)
+	Test.@test A[1:3,:] isa typeof(A)
 end
 
 # Colon + Range/Vector (works only for matrix data)
 for A in AV[4:end]
-	Base.Test.@test A[:,[1,2,3]] isa typeof(A)
-	Base.Test.@test A[:,1:3] isa typeof(A)
+	Test.@test A[:,[1,2,3]] isa typeof(A)
+	Test.@test A[:,1:3] isa typeof(A)
 end
 # Range/Vector + Range Vector (works only for matrix data)
 for A in AV[4:end]
-	Base.Test.@test A[[1,2,3],[1,2,3]] isa typeof(A)
-	Base.Test.@test A[1:3,[1,2,3]] isa typeof(A)
-	Base.Test.@test A[1:3,[1,2,3]] isa typeof(A)
-	Base.Test.@test A[1:3,1:3] isa typeof(A)
+	Test.@test A[[1,2,3],[1,2,3]] isa typeof(A)
+	Test.@test A[1:3,[1,2,3]] isa typeof(A)
+	Test.@test A[1:3,[1,2,3]] isa typeof(A)
+	Test.@test A[1:3,1:3] isa typeof(A)
 end
 #println("PASSED")
 
@@ -76,12 +76,12 @@ Xmat = rand(2,2)
 
 for A in AV[1:3]
 	A[1:length(Xvec)] = Xvec
-	Base.Test.@test A.x[1:length(Xvec)] == Xvec
+	Test.@test A.x[1:length(Xvec)] == Xvec
 end
 
 for A in AV[4:end]
 	A[1:size(Xmat,1),1:size(Xmat,2)] = Xmat
-	Base.Test.@test A.x[1:size(Xmat,1),1:size(Xmat,2)]  == Xmat
+	Test.@test A.x[1:size(Xmat,1),1:size(Xmat,2)]  == Xmat
 end
 #println("PASSED")
 
@@ -102,13 +102,13 @@ PC = [PT [PS;PP]]
 for P in [PT, PP, PS]
 	i = 1
 	for W in P
-		Base.Test.@test W == P.x[i]
+		Test.@test W == P.x[i]
 		i+=1
 	end
 end
 
 for (i,P) in enumerate(PC) 
-	Base.Test.@test P == PC.x[i] 
+	Test.@test P == PC.x[i] 
 end
 #println("PASSED")
 

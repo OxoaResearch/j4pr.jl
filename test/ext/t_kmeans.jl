@@ -5,7 +5,7 @@ function t_kmeans()
 
 X = [randn(10,200)*2+rand(10,200) rand(10,200)+10 -5+randn(10,400)]
 
-Base.Test.@test try 
+Test.@test try 
 	W = [	j4pr.kmeans(2),
       		j4pr.kmeans(3,Distances.Jaccard()), 
 		j4pr.kmeans!(rand(10,3)),

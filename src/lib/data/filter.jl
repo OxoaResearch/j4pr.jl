@@ -105,9 +105,9 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, 
 	
 	# Get dictionary or construct a proper one from original;
 	# Inputs: filtering options and total number of variables 
-	_sdict_(x::T where T<:String, m) = Dict(i=>x for i in 1:m) 
-	_sdict_(x::T where T<:Function, m) = Dict(i=>x for i in 1:m) 
-	_sdict_(x::T where T<:Dict, m) = begin
+	_sdict_(x::T, m) where T<:String = Dict(i=>x for i in 1:m) 
+	_sdict_(x::T, m) where T<:Function = Dict(i=>x for i in 1:m) 
+	_sdict_(x::T, m) where T<:Dict = begin
 		out = Dict{Int,Any}()
 		for (k,v) in x 
 			if(k isa Int)
@@ -155,38 +155,41 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, 
 	)
 	
 	# Define filtering functions (v - train data vector, t - train targets array, x - runtime data, y - runtime label) 
-	_mean_(v::T where T<:AbstractVector, ::Void) = begin m = mean(v); return (x,y)->m; end
-	_mean_(v::T where T<:AbstractVector, t::S where S<:AbstractArray) = _mean_(v,nothing)
+	_mean_(v::T, ::Void) where T<:AbstractVector = begin m = mean(v); return (x,y)->m; end
+	_mean_(v::T, t::S) where T<:AbstractVector where S<:AbstractArray = _mean_(v,nothing)
 	
-	_median_(v::T where T<:AbstractVector, ::Void) = begin m = median(v); (x,y)->m; end
-	_median_(v::T where T<:AbstractVector, t::S where S<:AbstractArray) = _median_(v,nothing)
+	_median_(v::T, ::Void) where T<:AbstractVector = begin m = median(v); (x,y)->m; end
+	_median_(v::T, t::S) where T<:AbstractVector where S<:AbstractArray = _median_(v,nothing)
 	
-	_majority_(v::T where T<:AbstractVector, ::Void) = begin 
-			cm = countmap(v)
-			_, idx = findmax(values(cm))
-			m = collect(keys(cm))[idx]
+	_majority_(v::T, ::Void) where T<:AbstractVector = begin 
+			u = unique(v)
+			cm = countapp(v,u)
+			_, idx = findmax(cm)
+			m = u[idx]
 			return (x,y)->m
 		end
-	_majority_(v::T where T<:AbstractVector, t::S where S<:AbstractArray) = _majority_(v,nothing)
+	_majority_(v::T, t::S) where T<:AbstractVector where S<:AbstractArray = _majority_(v,nothing)
 	
-	_cmean_(v::T where T<:AbstractVector, ::Void) = _mean_(v,nothing)
-	_cmean_(v::T where T<:AbstractVector, t::S where S<:AbstractVector) = begin
+	_cmean_(v::T, ::Void) where T<:AbstractVector = _mean_(v,nothing)
+	_cmean_(v::T, t::S) where T<:AbstractVector where S<:AbstractVector = begin
 		d = Dict(ti=>mean(v[t.==ti]) for ti in unique(t))
 		(x,y) -> d[y]
 	end
-	_cmedian_(v::T where T<:AbstractVector, ::Void) = _median_(v,nothing)
-	_cmedian_(v::T where T<:AbstractVector, t::S where S<:AbstractVector) = begin 
+	_cmedian_(v::T, ::Void) where T<:AbstractVector = _median_(v,nothing)
+	_cmedian_(v::T, t::S) where T<:AbstractVector where S<:AbstractVector = begin 
 		d = Dict(ti=>median(v[t.==ti]) for ti in unique(t))
 		(x,y) -> d[y]
 	end
-	_cmajority_(v::T where T<:AbstractVector, ::Void) = _majority_(v, nothing) 
-	_cmajority_(v::T where T<:AbstractVector, t::S where S<:AbstractArray) = begin
+	_cmajority_(v::T, ::Void) where T<:AbstractVector = _majority_(v, nothing) 
+	_cmajority_(v::T, t::S) where T<:AbstractVector where S<:AbstractArray = begin
 		#(x,y) -> Dict(k=>_majority_(v[t.==k], nothing) for k in unique(t))[y]
 		d = Dict{eltype(t), eltype(v)}()
 		for ti in unique(t)
-			cm = countmap(v[t.==ti])
-			_, idx = findmax(values(cm))
-			m = collect(keys(cm))[idx]
+			vt = view(v,t.==ti)
+			u = unique(vt)
+			cm = countapp(vt,u)
+			_, idx = findmax(cm)
+			m = u[idx]
 			push!(d, ti=>m)
 		end
 		return (x,y)->d[y]

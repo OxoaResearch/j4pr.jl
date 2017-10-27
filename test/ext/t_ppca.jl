@@ -20,7 +20,7 @@ A06 = j4pr.datacell(matrixdata, multilabels)
 
 for tr in [A01, A02, A03, vectordata]
 	for ts in [A01, A02, A03, vectordata]
-		Base.Test.@test try 
+		Test.@test try 
 			Wppca = tr |> j4pr.ppca(maxoutdim=1)
 			Wppcar = j4pr.ppcar(Wppca)
 			ts |> Wppca 
@@ -33,7 +33,7 @@ for tr in [A01, A02, A03, vectordata]
 end
 
 # Short test for ppcar on vector data
-Base.Test.@test try 
+Test.@test try 
 	Wppca = A01 |> j4pr.ppca(maxoutdim=1)
 	Wppcar = j4pr.ppcar(Wppca)
 	(A01 |> Wppca) |> Wppcar
@@ -44,7 +44,7 @@ end
 
 for tr in [A04, A05, A06, matrixdata]
 	for ts in [A04, A05, A06, matrixdata]
-		Base.Test.@test try
+		Test.@test try
 			Wppca = tr |> j4pr.ppca()
 			Wppcar = j4pr.ppcar(Wppca)
 			ts |> Wppca 

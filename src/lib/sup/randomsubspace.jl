@@ -2,7 +2,7 @@
 module RandomSubspace
 
 	using j4pr.ClassifierCombiner
-	using MLDataUtils: getobs, datasubset, ObsDim
+	using MLDataPattern: getobs, datasubset, ObsDim
 	export SubspaceEnsemble, randomsubspace_train, randomsubspace_exec
 
 	"""

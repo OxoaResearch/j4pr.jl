@@ -40,12 +40,12 @@ AVm = [A04, A05, A06]
 for idx in [1,1:1,1:2,[1,2]]
 	# Test for vector data
 	for A in AVv
-		Base.Test.@test all(+j4pr.datasubset(A,idx) .== +A[idx] .== j4pr.getx(A)[idx] .== j4pr.getx!(A)[idx])
+		Test.@test all(+j4pr.datasubset(A,idx) .== +A[idx] .== j4pr.getx(A)[idx] .== j4pr.getx!(A)[idx])
 	end
 	
 	# Test for matrix data
 	for A in AVm
-		Base.Test.@test all(+j4pr.datasubset(A,idx) .== +A[:,idx] .== j4pr.getx(A)[:,idx] .== j4pr.getx!(A)[:,idx])
+		Test.@test all(+j4pr.datasubset(A,idx) .== +A[:,idx] .== j4pr.getx(A)[:,idx] .== j4pr.getx!(A)[:,idx])
 	end
 end
 #println("PASSED")
@@ -57,7 +57,7 @@ for idx in [1,1:1,1:2,[1,2]]
 	for A in AVv
 		if idx isa Int 	# idx has to be 1 otherwise most of the variable access methods fail, as they should; 
 				# Note that there is no getindex method for A
-			Base.Test.@test all(+j4pr.varsubset(A,idx) .== j4pr._variable_(A,idx) .== +A .== j4pr.getx(A)[:,idx] .== j4pr.getx!(A)[:,idx])
+			Test.@test all(+j4pr.varsubset(A,idx) .== j4pr._variable_(A,idx) .== +A .== j4pr.getx(A)[:,idx] .== j4pr.getx!(A)[:,idx])
 		end
 	end
 	
@@ -65,9 +65,9 @@ for idx in [1,1:1,1:2,[1,2]]
 	for A in AVm
 		if idx isa Int
 			# data cell indexing returns a matrix data if single row selected, result must be transposed as all the other methods use vectors
-			Base.Test.@test all(+j4pr.varsubset(A,idx) .== j4pr._variable_(A,idx) .== (+A[idx,:])' .== j4pr.getx(A)[idx,:] .== j4pr.getx!(A)[idx,:])
+			Test.@test all(+j4pr.varsubset(A,idx) .== j4pr._variable_(A,idx) .== (+A[idx,:])' .== j4pr.getx(A)[idx,:] .== j4pr.getx!(A)[idx,:])
 		else
-			Base.Test.@test all(+j4pr.varsubset(A,idx) .== j4pr._variable_(A,idx) .== +A[idx,:] .== j4pr.getx(A)[idx,:] .== j4pr.getx!(A)[idx,:])
+			Test.@test all(+j4pr.varsubset(A,idx) .== j4pr._variable_(A,idx) .== +A[idx,:] .== j4pr.getx(A)[idx,:] .== j4pr.getx!(A)[idx,:])
 		end
 	end
 end
@@ -90,26 +90,26 @@ for idx in [1,1:1,1:2,[1,2]]
 		Ac = deepcopy(A)
 		newvals = idx isa Int ? rand() : rand(length(idx))
 		j4pr.datasubset(Ac,idx)[:] = newvals;
-		Base.Test.@test all(+j4pr.datasubset(Ac,idx) .== newvals)
+		Test.@test all(+j4pr.datasubset(Ac,idx) .== newvals)
 
 		# setindex! approach
 		Ac = deepcopy(A)
 		newvals = idx isa Int ? rand() : rand(length(idx))
 		Ac[idx] = newvals;
-		Base.Test.@test all(+Ac[idx] .== newvals)
+		Test.@test all(+Ac[idx] .== newvals)
 
 		# getx! approach
 		Ac = deepcopy(A)
 		newvals = idx isa Int ? rand() : rand(length(idx))
 		j4pr.getx!(Ac)[idx] = newvals;
-		Base.Test.@test all(j4pr.getx!(Ac)[idx] .== newvals)
+		Test.@test all(j4pr.getx!(Ac)[idx] .== newvals)
 		
 		# getx approach (MUST NOT MODIDY)
 		Ac = deepcopy(A)
 		newvals = idx isa Int ? rand() : rand(length(idx))
 		j4pr.getx(Ac)[idx] = newvals;
-		Base.Test.@test all(j4pr.getx!(Ac)[idx] .!= newvals)
-		Base.Test.@test all(j4pr.getx!(Ac)[idx] .== j4pr.getx!(A)[idx])
+		Test.@test all(j4pr.getx!(Ac)[idx] .!= newvals)
+		Test.@test all(j4pr.getx!(Ac)[idx] .== j4pr.getx!(A)[idx])
 	end
 	
 	# Test for matrix data
@@ -118,26 +118,26 @@ for idx in [1,1:1,1:2,[1,2]]
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nvars(Ac), length(idx))
 		j4pr.datasubset(Ac,idx)[:] = newvals;
-		Base.Test.@test all(+j4pr.datasubset(Ac,idx) .== newvals)
+		Test.@test all(+j4pr.datasubset(Ac,idx) .== newvals)
 
 		# setindex! approach
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nvars(Ac), length(idx))
 		Ac[:,idx] = newvals;
-		Base.Test.@test all(+Ac[:,idx] .== newvals)
+		Test.@test all(+Ac[:,idx] .== newvals)
 
 		# getx! approach
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nvars(Ac), length(idx))
 		j4pr.getx!(Ac)[:,idx] = newvals;
-		Base.Test.@test all(j4pr.getx!(Ac)[:,idx] .== newvals)
+		Test.@test all(j4pr.getx!(Ac)[:,idx] .== newvals)
 		
 		# getx approach (MUST NOT MODIDY)
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nvars(Ac), length(idx))
 		j4pr.getx(Ac)[:,idx] = newvals;
-		Base.Test.@test all(j4pr.getx!(Ac)[:,idx] .!= newvals)
-		Base.Test.@test all(j4pr.getx!(Ac)[:,idx] .== j4pr.getx!(A)[:,idx])
+		Test.@test all(j4pr.getx!(Ac)[:,idx] .!= newvals)
+		Test.@test all(j4pr.getx!(Ac)[:,idx] .== j4pr.getx!(A)[:,idx])
 	end
 end
 #println("PASSED")
@@ -152,32 +152,32 @@ for idx in [1,1:1,1:2,[1,2]]
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nobs(A))
 		j4pr.varsubset(Ac,idx)[:] = newvals;
-		Base.Test.@test all(+j4pr.varsubset(Ac,idx) .== newvals)
+		Test.@test all(+j4pr.varsubset(Ac,idx) .== newvals)
 
 		# _variable_ approach
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nobs(A))
 		j4pr._variable_(Ac,idx)[:] = newvals;
-		Base.Test.@test all(+j4pr._variable_(Ac,idx) .== newvals)
+		Test.@test all(+j4pr._variable_(Ac,idx) .== newvals)
 		
 		# setindex! approach
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nobs(A))
 		Ac[:] = newvals;
-		Base.Test.@test all(+Ac .== newvals)
+		Test.@test all(+Ac .== newvals)
 
 		# getx! approach
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nobs(A))
 		j4pr.getx!(Ac)[:,idx] = newvals;
-		Base.Test.@test all(j4pr.getx!(Ac)[:,idx] .== newvals)
+		Test.@test all(j4pr.getx!(Ac)[:,idx] .== newvals)
 		
 		# getx approach (MUST NOT MODIDY)
 		Ac = deepcopy(A)
 		newvals = rand(j4pr.nobs(A))
 		j4pr.getx(Ac)[:,idx] = newvals;
-		Base.Test.@test all(j4pr.getx!(Ac)[:,idx] .!= newvals)
-		Base.Test.@test all(j4pr.getx!(Ac)[:,idx] .== j4pr.getx!(A)[:,idx])
+		Test.@test all(j4pr.getx!(Ac)[:,idx] .!= newvals)
+		Test.@test all(j4pr.getx!(Ac)[:,idx] .== j4pr.getx!(A)[:,idx])
 		end
 	end
 	# Test for matrix data
@@ -186,32 +186,32 @@ for idx in [1,1:1,1:2,[1,2]]
 		Ac = deepcopy(A)
 		newvals = rand(size(j4pr.varsubset(Ac,idx)[:]))
 		j4pr.varsubset(Ac,idx)[:] = newvals;
-		Base.Test.@test all(+j4pr.varsubset(Ac,idx) .== newvals)
+		Test.@test all(+j4pr.varsubset(Ac,idx) .== newvals)
 
 		# _variable_ approach
 		Ac = deepcopy(A)
 		newvals = rand(size(j4pr._variable_(Ac,idx)))
 		j4pr._variable_(Ac,idx)[:] = newvals;
-		Base.Test.@test all(+j4pr._variable_(Ac,idx) .== newvals)
+		Test.@test all(+j4pr._variable_(Ac,idx) .== newvals)
 		
 		# setindex! approach
 		Ac = deepcopy(A)
 		newvals = rand(size(Ac[idx,:]))
 		Ac[idx,:] = newvals;
-		Base.Test.@test all(+Ac[idx,:] .== newvals)
+		Test.@test all(+Ac[idx,:] .== newvals)
 
 		# getx! approach
 		Ac = deepcopy(A)
 		newvals = rand(size(j4pr.getx!(Ac)[idx,:]))
 		j4pr.getx!(Ac)[idx,:] = newvals;
-		Base.Test.@test all(j4pr.getx!(Ac)[idx,:] .== newvals)
+		Test.@test all(j4pr.getx!(Ac)[idx,:] .== newvals)
 		
 		# getx approach (MUST NOT MODIDY)
 		Ac = deepcopy(A)
 		newvals = rand(size(j4pr.getx!(Ac)[idx,:]))
 		j4pr.getx(Ac)[idx,:] = newvals;
-		Base.Test.@test all(j4pr.getx!(Ac)[idx,:] .!= newvals)
-		Base.Test.@test all(j4pr.getx!(Ac)[idx,:] .== j4pr.getx!(A)[idx,:])
+		Test.@test all(j4pr.getx!(Ac)[idx,:] .!= newvals)
+		Test.@test all(j4pr.getx!(Ac)[idx,:] .== j4pr.getx!(A)[idx,:])
 	end
 end
 #println("PASSED")

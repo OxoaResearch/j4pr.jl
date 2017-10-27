@@ -17,22 +17,22 @@ A06 = j4pr.datacell(matrixdata, multilabels)
 
 # Simple cell checks
 #print("Checking data cell generated through their aliases ... ")
-Base.Test.@test A01 isa j4pr.CellDataVec
-Base.Test.@test A02 isa j4pr.CellDataVecVec
-Base.Test.@test A03 isa j4pr.CellDataVecMat
+Test.@test A01 isa j4pr.CellDataVec
+Test.@test A02 isa j4pr.CellDataVecVec
+Test.@test A03 isa j4pr.CellDataVecMat
 
-Base.Test.@test A04 isa j4pr.CellDataMat
-Base.Test.@test A05 isa j4pr.CellDataMatVec
-Base.Test.@test A06 isa j4pr.CellDataMatMat
+Test.@test A04 isa j4pr.CellDataMat
+Test.@test A05 isa j4pr.CellDataMatVec
+Test.@test A06 isa j4pr.CellDataMatMat
 
-Base.Test.@test (A01 isa j4pr.CellDataU) && !(A01 isa j4pr.CellDataL) && !(A01 isa j4pr.CellDataLL) 
-Base.Test.@test (A04 isa j4pr.CellDataU) && !(A04 isa j4pr.CellDataL) && !(A04 isa j4pr.CellDataLL) 
+Test.@test (A01 isa j4pr.CellDataU) && !(A01 isa j4pr.CellDataL) && !(A01 isa j4pr.CellDataLL) 
+Test.@test (A04 isa j4pr.CellDataU) && !(A04 isa j4pr.CellDataL) && !(A04 isa j4pr.CellDataLL) 
 
-Base.Test.@test !(A02 isa j4pr.CellDataU) && (A02 isa j4pr.CellDataL) && !(A02 isa j4pr.CellDataLL) 
-Base.Test.@test !(A05 isa j4pr.CellDataU) && (A05 isa j4pr.CellDataL) && !(A05 isa j4pr.CellDataLL) 
+Test.@test !(A02 isa j4pr.CellDataU) && (A02 isa j4pr.CellDataL) && !(A02 isa j4pr.CellDataLL) 
+Test.@test !(A05 isa j4pr.CellDataU) && (A05 isa j4pr.CellDataL) && !(A05 isa j4pr.CellDataLL) 
 
-Base.Test.@test !(A03 isa j4pr.CellDataU) && !(A03 isa j4pr.CellDataL) && (A03 isa j4pr.CellDataLL) 
-Base.Test.@test !(A06 isa j4pr.CellDataU) && !(A06 isa j4pr.CellDataL) && (A06 isa j4pr.CellDataLL) 
+Test.@test !(A03 isa j4pr.CellDataU) && !(A03 isa j4pr.CellDataL) && (A03 isa j4pr.CellDataLL) 
+Test.@test !(A06 isa j4pr.CellDataU) && !(A06 isa j4pr.CellDataL) && (A06 isa j4pr.CellDataLL) 
 #println("PASSED")
 
 end

@@ -23,7 +23,7 @@ A06 = j4pr.datacell(matrixdata, multilabels)
 for tr in [A01, A02, A03, vectordata]
 	for ts in [A01, A02, A03, vectordata]
 		for κ in Κ
-			Base.Test.@test try 
+			Test.@test try 
 				ts |> (tr |> j4pr.mlkernel(κ)); 
 				true
 			catch 
@@ -36,7 +36,7 @@ end
 for tr in [A04, A05, A06, matrixdata]
 	for ts in [A04, A05, A06, matrixdata]
 		for κ in Κ
-			Base.Test.@test try 
+			Test.@test try 
 				ts |> (tr |> j4pr.mlkernel(κ));
 				true
 			catch
@@ -48,7 +48,7 @@ end
 
 # Additional test to cover all methods
 κ = MLKernels.PolynomialKernel()
-Base.Test.@test try
+Test.@test try
 	A01 |> j4pr.mlkernel(A01,κ)
 	true
 catch

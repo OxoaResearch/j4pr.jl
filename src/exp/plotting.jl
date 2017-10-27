@@ -198,6 +198,8 @@ end
 
 
 # ROC curve plots 
+if (VERSION <= v"0.6") 
+
 using j4pr.ROC: ComplexOP, AbstractPerfMetric, TPr, FPr, TNr, FNr 
 
 rocplot(x::CellFunT{<:Model{<:ComplexOP}}, xmetric::AbstractPerfMetric=FPr(), 
@@ -221,4 +223,5 @@ begin
 	y = _get_data_(ymetric, op)
 
 	p = UnicodePlots.lineplot(x, y; color=color, kwargs...) 
+end
 end

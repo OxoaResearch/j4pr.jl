@@ -6,7 +6,7 @@ function t_kmedoids()
 X = [randn(10,200)*2+rand(10,200) rand(10,200)+10 -5+randn(10,400)]
 C = X |> j4pr.dist(X)
 
-Base.Test.@test try 
+Test.@test try 
 	W = [	j4pr.kmedoids(2),
       		j4pr.kmedoids(3,Distances.Jaccard()), 
 		j4pr.kmedoids!([1,2,3]),

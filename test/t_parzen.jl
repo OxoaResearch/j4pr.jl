@@ -1,7 +1,7 @@
 # Tests for the parzen density estimator and classifier 
 function t_parzen()
 
-Ac = j4pr.DataGenerator.iris()   	# classification dataset
+Ac = j4pr.DataGenerator.fish(20)   	# classification dataset
 Ade = j4pr.datacell(collect(-1:0.1:1)) 	# density estimation dataset
 
 Wclass = [j4pr.parzen(h, window=Φ, metric=m) for h in [0.1,1,3], 
@@ -18,7 +18,7 @@ Wde = [j4pr.parzen(h, window=Φ, metric=m) for h in [0.1,1,3],
 
 # Test classification
 for w in Wclass
-	Base.Test.@test try 
+	Test.@test try 
 		wt1 = Ac |> w
 		wt2 = j4pr.strip(Ac) |> w
 
@@ -32,7 +32,7 @@ end
 
 # Test density estimation 
 for w in Wde
-	Base.Test.@test try 
+	Test.@test try 
 		wt1 = Ade |> w
 		wt2 = +Ade |> w
 
@@ -46,7 +46,7 @@ end
 
 # Test classification on a 1-D dataset
 A1d = j4pr.datacell([rand(100);2*rand(100)],[zeros(100);ones(100)])
-Base.Test.@test try 
+Test.@test try 
 	wt1 = A1d |> Wclass[1]
 	result = A1d |> wt1
 	true
@@ -55,7 +55,7 @@ Base.Test.@test try
 	end
 
 # Test Printer
-Base.Test.@test try
+Test.@test try
 	buf = IOBuffer()
 	
 	# test show for classifier

@@ -38,7 +38,7 @@ function t_roc()
 					Xop = op.weights*X;
 					yest = yu[j4pr.targets(indmax,Xop)];
 					ev = calculate_measure(y, yest, c, pm)
-					Base.Test.@test abs(dv-ev) <=tol
+					Test.@test abs(dv-ev) <=tol
 				end
 			end
 		end
@@ -49,14 +49,14 @@ function t_roc()
 	# Test changing an op
 	pos = 2
 	j4pr.ROC.changeop!(op,pos)
-	Base.Test.@test op.pos == pos
+	Test.@test op.pos == pos
 
 	j4pr.ROC.changeop!(op,j4pr.ROC.FPr(),0.0)
-	Base.Test.@test op.pos == size(op.rocdata,1)
+	Test.@test op.pos == size(op.rocdata,1)
 	
 	# Test simple op
-	sop = j4pr.ROC.simpleop(op); Base.Test.@test sop.weights == op.weights
-	sop = j4pr.ROC.simpleop([1,2,3]); Base.Test.@test sop.weights == diagm([1.0,2.0,3.0])
+	sop = j4pr.ROC.simpleop(op); Test.@test sop.weights == op.weights
+	sop = j4pr.ROC.simpleop([1,2,3]); Test.@test sop.weights == diagm([1.0,2.0,3.0])
 	
 	
 	
@@ -68,7 +68,7 @@ function t_roc()
 	out=tr|>wt;
 	
 	# Test op search
-	Base.Test.@test try
+	Test.@test try
 		uop=j4pr.findop("virginica",j4pr.ROC.FPr(),0.3);
 		cop = uop(out); 
 		pt=wt + cop;
@@ -81,19 +81,19 @@ function t_roc()
 	# Test changing an op
 	pos = 2
 	j4pr.changeop!(cop,pos)
-	Base.Test.@test cop.x.data.pos == pos
+	Test.@test cop.x.data.pos == pos
 
 	j4pr.changeop!(cop,j4pr.ROC.FPr(),0.0)
-	Base.Test.@test cop.x.data.pos == size(cop.x.data.rocdata,1)
+	Test.@test cop.x.data.pos == size(cop.x.data.rocdata,1)
 	
 	
 	# Test simple op
 	uop=j4pr.findop("virginica",j4pr.ROC.FPr(),0.3);
 	cop = uop(out)
 	sop = j4pr.simpleop(cop)
-	Base.Test.@test sop.x.data.weights == cop.x.data.weights
+	Test.@test sop.x.data.weights == cop.x.data.weights
 	
 	sop = j4pr.simpleop([1,2,3]); 
-	Base.Test.@test sop.x.data.weights == diagm([1.0,2.0,3.0])
+	Test.@test sop.x.data.weights == diagm([1.0,2.0,3.0])
 	
 end

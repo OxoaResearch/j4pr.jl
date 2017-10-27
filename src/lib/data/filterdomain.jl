@@ -68,13 +68,13 @@ filterdomain!(x::T where T<:Union{AbstractArray,CellData}, opts::S where S) = be
 	
 	# Construct methods for each domain processing option
 	_filter_(v::Function) = v
-	_filter_(v::Vector{T} where T) = (x)->(x in v) ? x : _obvals_(x)::typeof(x)
- 	_filter_(v::Matrix{T} where T) = 	
+	_filter_(v::AbstractVector) = (x)->(x in v) ? x : _obvals_(x)::typeof(x)
+ 	_filter_(v::AbstractMatrix) = 	
 		(x)->begin
 			any( (x >= v[i,1])&(x < v[i,2]) for i in 1:size(v,1) ) && return x
 			_obvals_(x)::typeof(x)
 		end
-	_filter_(v::T where T<:DataElement) = (x)->(x == v) ? x : _obvals_(x)
+	_filter_(v::T) where T<:DataElement = (x)->(x == v) ? x : _obvals_(x)
 	
 	# Apply the filters to the each variable
 	for (idx, method) in opts

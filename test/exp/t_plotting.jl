@@ -14,7 +14,7 @@ function t_plotting()
 	pd2 = j4pr.densityplot2d() 	# plots densityplot 2d
 
 	for p in [pl, pl2, psc, pd1, pd2]
-		Base.Test.@test try 
+		Test.@test try 
 			Du |> p;
 			Dl |> p;
 			true
@@ -23,11 +23,13 @@ function t_plotting()
 		end
 	end
 
-	Base.Test.@test try
+	if (VERSION <= v"0.6")
+	Test.@test try
 		j4pr.rocplot((X./sum(X,1),y)|>j4pr.findop(1,j4pr.ROC.TPr(),1.));
 		true
 	catch
 		false
+	end
 	end
 
 end

@@ -4,7 +4,7 @@ module AdaBoost
 	using j4pr.ClassifierCombiner
 	using j4pr: countapp, ohenc_integer
 	using Distances: colwise, Euclidean 
-	using MLDataUtils: nobs, getobs, datasubset, undersample, targets, convertlabel, LabelEnc
+	using MLDataPattern: nobs, getobs, datasubset, undersample, targets 
 	using StatsBase: sample!,weights
 	using StatsFuns: softmax!
 	using UnicodePlots: lineplot
@@ -127,7 +127,7 @@ module AdaBoost
 				break
 			end
 		end	
-		return AdaBoostEnsemble(log.(1./(beta+eps())), f_train, f_exec, members, AdaBoostM1(), WeightedVoteCombiner(L, C, log.(1./(beta+eps()))))
+		return AdaBoostEnsemble(log.(1 ./(beta+eps())), f_train, f_exec, members, AdaBoostM1(), WeightedVoteCombiner(L, C, log.(1 ./(beta+eps()))))
 	end
 
 
@@ -211,7 +211,7 @@ module AdaBoost
 				break
 			end
 		end	
-		return AdaBoostEnsemble(log.(1./(beta+eps())), f_train, f_exec, members, AdaBoostM2(), WeightedMeanCombiner(L,C,1.0,log.(1./(beta+eps()))))
+		return AdaBoostEnsemble(log.(1 ./(beta+eps())), f_train, f_exec, members, AdaBoostM2(), WeightedMeanCombiner(L,C,1.0,log.(1 ./(beta+eps()))))
 	end
 
 	"""
@@ -228,7 +228,7 @@ module AdaBoost
 		return combiner_exec(ensemble.combiner, out) 
 		
 		# If results have to be of matrix form: 
-		#return float(convertlabel(LabelEnc.OneOfK(Val{ensemble.combiner.C}), combiner_exec(out, ensemble.combiner))) 
+		#return float(MLLabelUtils.convertlabel(MLLabelUtils.LabelEnc.OneOfK(Val{ensemble.combiner.C}), combiner_exec(out, ensemble.combiner))) 
 	end
 	
 	function adaboost_exec(ensemble::AdaBoostEnsembleM2Classic, X::T where T<:AbstractMatrix) 
@@ -246,7 +246,7 @@ module AdaBoost
 		return combiner_exec(ensemble.combiner, out)   
 
 		# If results have to be of matrix form:
-		#return float(convertlabel(LabelEnc.OneOfK(Val{ensemble.combiner.C}), combiner_exec(out, ensemble.combiner)))   
+		#return float(MLLabelUtils.convertlabel(MLLabelUtils.LabelEnc.OneOfK(Val{ensemble.combiner.C}), combiner_exec(out, ensemble.combiner)))   
 	end
 	
 	function adaboost_exec(ensemble::AdaBoostEnsembleM2Cell, X::T where T<:AbstractMatrix)
