@@ -2,7 +2,7 @@
 using j4pr
 using DataStructures, DataArrays, MLKernels, MLLabelUtils, Distances
 
-if (VERSION > v"0.6")
+if (VERSION >= v"0.7")
 	using Test
 end
 
