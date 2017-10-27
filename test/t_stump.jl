@@ -2,7 +2,7 @@
 function t_stump()
 
 Ac = j4pr.DataGenerator.iris()   # classification dataset
-Ar = j4pr.DataGenerator.boston() # regression dataset
+Ar = j4pr.DataGenerator.fishr(20)# regression dataset
 
 
 tol  = 1e-6; # tolerance when comparing results

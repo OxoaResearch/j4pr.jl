@@ -1,7 +1,7 @@
 # Module that exports a few functions that when called return DataCell datasets
 module DataGenerator
 	import j4pr;
-	export iris, quakes, boston, normal2d;
+	export iris, quakes, boston, normal2d, fish, fishr, fnoise;
 
 	"""
 		iris()
@@ -98,7 +98,66 @@ module DataGenerator
 		end
 
 		labels = map(x->x ? "fish" : "background", l)
-		return j4pr.datacell(data, labels[:], name="Fish Dataset")
+		return j4pr.datacell(data, labels[:], name="Fish Dataset, classification")
+	end
+
+
+
+	"""
+		fishr(N::Int=100, noise::Float64=0.1)
+	
+	Version of the `fish` dataset for regression problems. 
+
+	Dataset based on the "Fish data" from `Kuncheva L. "Combining Pattern Classifiers", 2-nd Ed. ISBN 978-1-118-31523-1`
+	"""
+	function fishr(N::Int=100, noise::Float64=0.01)
+		
+		data = zeros(2,N^2)
+
+		# generate the 2-D grid
+		lab1 = falses(N*N);
+		lab2 = falses(N*N);
+		for (i,y) in enumerate(1:N), (j,x) in enumerate(1:N)
+			xn = x/N; yn = y/N;
+			lab1[(i-1)*N+j] = xn^3 -2xn*yn + 1.6yn^2 < 0.4
+			lab2[(i-1)*N+j] = -xn^3 + 2*sin(xn)*yn + yn < 0.7
+			data[1,(i-1)*N+j] = x	# x dimension 1'st variable
+			data[2,(i-1)*N+j] = y	# y dimension 2'nd variable
+		end
+		l = xor.(lab1, lab2)
+		nnoisy = round(Int, N^2*noise)
+		labels = map(x->x ? 1.0 : 0.0, l)
+		if nnoisy > 0.0
+			nidx = randperm(N^2)[1:nnoisy] # get indexes of noisy samples
+			labels[nidx]+=rand(nnoisy)
+		end
+
+		return j4pr.datacell(data, labels[:], name="Fish Dataset, regression")
+	end
+
+
+
+	"""
+		fnoise(points, f, fnoise)
+	
+	Generates a dataset containing the `points` as data and the function `f` 
+	applied to these points as values. Noise is added through `fnoise`. The
+	full formula for data generation is `y = f.(points) + fnoise.(f.(points))`
+
+	# Arguments
+	  * `points::AbstractVector` is the vector of points
+	  * `f` is a function applied to each point (default `sin`)
+	  * `fnoise` is a function applied to each value of the function (default `x->x+rand()`)
+
+	# Examples
+	```
+	```
+	"""
+	function fnoise(points::AbstractVector, f::Function=sin, fnoise::Function=x->x+rand())
+		X = points
+		y = f.(points)
+		y = y + fnoise.(y)
+		return j4pr.datacell(X,y, name="Function $f, with noise")
 	end
 
 end

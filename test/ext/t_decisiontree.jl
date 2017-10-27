@@ -2,7 +2,7 @@
 function t_decisiontree()
 
 Ac = j4pr.DataGenerator.iris()   # classification dataset
-Ar = j4pr.DataGenerator.boston() # regression dataset
+Ar = j4pr.DataGenerator.fishr(20)# regression dataset
 
 
 Wclass = [j4pr.tree(), j4pr.randomforest(), j4pr.adaboostump()] # only default arguments

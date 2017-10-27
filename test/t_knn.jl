@@ -2,7 +2,7 @@
 function t_knn()
 
 Ac = j4pr.DataGenerator.iris()   # classification dataset
-Ar = j4pr.DataGenerator.boston() # regression dataset
+Ar = j4pr.DataGenerator.fishr(20)# regression dataset
 
 
 Wclass_nn = [j4pr.knn(k, smooth=s, leafsize=l, metric=m) for k in [1,5,10], 

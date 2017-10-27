@@ -2,7 +2,7 @@
 function t_loss()
 
 Ac = j4pr.DataGenerator.iris()   # classification dataset
-Ar = j4pr.DataGenerator.boston() # regression dataset
+Ar = j4pr.DataGenerator.fishr(20)# regression dataset
 
 
 # Test losses for classification
