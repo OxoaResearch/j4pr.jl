@@ -2,9 +2,21 @@
 
 ## Data Processing
 	* Unsupervised
+		- Filter (data-based)						[OK][v.0.1.0]
+		- Domain filtering 						[OK][v.0.1.0]
+		- Scaling (data-based)						[OK][v.0.1.0]
+		- Sampling (data-based)						[OK][v.0.1.0]
+		- One-hot encoding (binary, integer)				[OK][v.0.1.0]
 	
 	* Supervised
-
+		- Filter (class-based)						[OK][v.0.1.0]
+		- Scaling (class-based)						[OK][v.0.1.0]
+		- Sampling (class-based)					[OK][v.0.1.0]
+		- Class slicing							[OK][v.0.1.0]
+		- Label processing i.e. adding, removing 			[OK][v.0.1.0]
+	
+	* Data generation							
+		- Various datasets, artificial and not so artificial		[OK][v.0.1.0]
 
 ## Unsupervised Learning
 	* Transforms:	 
@@ -64,17 +76,17 @@
 			- Arc-x4 --> j4pr.jl					[Unknown version]	
 		- Gradient Boosting --> ?					[Unknown version]
 		- Random subspace --> j4pr.jl					[OK][v.0.1.0]
-		- Network classifiers --> j4pr.jl				[v.0.1.4?]
+		- Network classifiers --> j4pr.jl				[TODO][v.0.1.2]
 		- Rotation Forest --> j4pr.jl					[Unknown version]	
 
 	* Evaluation & Optimization 
-		- cross-validation --> MLBase.jl?				[TODO][v.0.1.2] 
+		- cross-validation --> MLBase.jl?				[TODO][v.0.1.2?] 
 		- loss-functions --> MLLabelUtils.jl, LossFunctions.jl		[OK][v.0.1.0]
 		- ROC Analysis --> ROCAnalysis.jl+j4pr.jl			[OK][v.0.1.1]
-		- Hyperparameter optimization --> MLBase.jl?			[TODO][v.0.1.2]
+		- Hyperparameter optimization --> MLBase.jl?			[TODO][v.0.1.2?]
 
 	* Feature Selection
-		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.3]
+		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.2?]
 
 ## Regression
 	* Basic Regression:

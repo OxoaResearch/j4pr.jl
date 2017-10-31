@@ -1,3 +1,7 @@
+0.1.2 / TBD 
+==================
+  * 
+
 0.1.1 / 2017-10-27 
 ==================
   * Moved code relating to different types in separate files

@@ -71,7 +71,7 @@ julia> +(a |> wt)
 2×5 Array{Float64,2}:
  1.0  2.0  2.66667  2.66667  5.0
  6.0  7.0  4.33333  4.33333  0.0
-``
+```
 """
 filterg(f::Function, g::Function, opts::T where T<:AbstractString) = 
 	FunctionCell(filterg, (f,g,opts), ModelProperties(), "Generic filter ("*opts*")")

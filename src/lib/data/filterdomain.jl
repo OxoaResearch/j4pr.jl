@@ -8,7 +8,7 @@ Returns a cell that processes data piped to it according to the domains specifie
 The format of `opts` is `Dict(idx=>domain)` where:
 
   * `idx` can be an `Int`, `Vector{Int}` or `UnitRange` and specifies the variable indices
-  * `domain` can be a vector or admissible values, matrix specifying intervals with the 
+  * `domain` can be a vector or admissible values, matrix specifying intervals with the
 first column specifying the lower bounds and second column the upper bounds, a single value 
 representing the only admissible value or function in which case the function is applied 
 to each element of the variable.
