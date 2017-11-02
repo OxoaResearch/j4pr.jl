@@ -101,11 +101,6 @@
 
 
 
-## Graph algorithms
-	* Investigate LightGraphs.jl, LightGraphsExtras.jl			[Unknown version]
-
-
-	
 ## Data manipulation and I/O (video/audio/text/...)
 	* Data I/O:
 		- JuliaDB							[Unknown version]
