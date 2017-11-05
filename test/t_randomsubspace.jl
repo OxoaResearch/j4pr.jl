@@ -6,7 +6,7 @@ function t_randomsubspace()
 	X = [1 2 3; -1 -2 3; 0 0 3] # data
 	y = [1,1,0]		    # labels
 
-	f_exec(X, model) = X.+model # the execution function adds to the input the value contained in the model
+	f_exec(model,X) = X.+model # the execution function adds to the input the value contained in the model
 	
 	# Create an ensemble that for each variable (i.e. line) of X, takes the maximum, which is '3' in all cases. 'y' is not used as
 	# the maximum function only takes the first argument of the input `x` (`x` is represented in the training function by Tuple(X,y)

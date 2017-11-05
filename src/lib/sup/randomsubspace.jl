@@ -79,7 +79,7 @@ module RandomSubspace
 
 	# Arguments
 	 * `X::AbstractMatrix` is the training data; columns are assumed to be samples, lines variables
-	 * `y::AvstractVector` are the labels
+	 * `y::AbstractVector` are the labels
 	 * `L::Int` is the ensemble size
 	 * `M::Int` is the number of variables for each ensemble member
 	 * `f_train::Function` is the training function for the ensemble members
@@ -99,7 +99,8 @@ module RandomSubspace
 	 * `g(X, arg1, arg2)` where `X==(data,labels)`, one should provide as argument something as `f_train = (x)->g_train(x, arg1, arg2) # MLDataUtils container case`
 	 * `g(args...)::CellFunU`, one can simply provide `g.f` (i.e. the training function of the untrained function cell) since it already contains the training arguments.
 
-	 During execution, `f_exec(ensemble.members[i], Xᵢ)` will be called for all subspace subsets `Xᵢ` of `X` corresponding to the members of the ensemble	
+	 During execution, `f_exec(ensemble.members[i], Xᵢ)` will be called for all subspace subsets `Xᵢ` of `X` corresponding to the members of the ensemble hence `f_exec` must have
+	 a signature `f_exec(M, X)` where `M` is represents the learned model and `X` represents the data.
 	"""
 	function randomsubspace_train(X::T where T<:AbstractMatrix, y::S where S<:AbstractVector, L::Int, M::Int, f_train::Function, f_exec::Union{Function,Void},
 			       		combiner::S where S<:AbstractCombiner, replace::Bool; 
