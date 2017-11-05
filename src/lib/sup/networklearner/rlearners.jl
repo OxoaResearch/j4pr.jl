@@ -39,7 +39,6 @@ end
 
 function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractAdjacency, X::S; normalize::Bool=false) where {T<:AbstractMatrix, S<:AbstractMatrix}	
 	transform!(Xr, Rl, adjacency_matrix(A), X; normalize = normalize)
-	return Xr
 end
 
 function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractMatrix, X::S; normalize::Bool=false) where {T<:AbstractMatrix, S<:AbstractMatrix}

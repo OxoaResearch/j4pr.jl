@@ -47,13 +47,10 @@ Base.show(io::IO, A::NoAdjacency) = print(io, "Adjacency missing function and da
 
 
 # Functions to strip the adjacency infomation (used in training of the NetworkLearner)
-strip_adjacency(A::MatrixAdjacency{T}) where T <:AbstractMatrix = strip_adjacency(A.am)
-strip_adjacency(A::GraphAdjacency{T}) where T = strip_adjacency(A.ag)
-strip_adjacency(A::ComputableAdjacency{T,S}) where {T,S} = strip_adjacency(A.f, A.data)
+strip_adjacency(A::MatrixAdjacency{T}) where T <:AbstractMatrix = adjacency(nothing)
+strip_adjacency(A::GraphAdjacency{T}) where T = adjacency(nothing)
+strip_adjacency(A::ComputableAdjacency{T,S}) where {T,S} = adjacency(A.f)
 strip_adjacency(A::IncomputableAdjacency) = A
-strip_adjacency(am::T) where T <:AbstractMatrix = nothing 
-strip_adjacency(ag::T) where T <:AbstractGraph = nothing
-strip_adjacency(f::T, data::S) where {T,S} = IncomputableAdjacency(f)
 
 
 

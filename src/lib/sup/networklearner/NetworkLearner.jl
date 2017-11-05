@@ -11,21 +11,28 @@ module NetworkLearner
 	abstract type AbstractNetworkLearner end
 	
 	# NetworkLearner for out of graph computations 
-	mutable struct NetworkLearnerOModel{T,S,R,C,U} <: AbstractNetworkLearner 			
-		lmodel::T									# local model
-		rmodel::S									# relational model
-		rlearner::R									# relational learner
-		ci::C										# collective inferer	
-		A::U										# adjacency information
+	mutable struct NetworkLearnerOModel{T,U,S,V,
+				     	    R<:AbstractRelationalLearner,
+					    C<:AbstractCollectiveInferer,
+					    A<:Vector{<:AbstractAdjacency}} <: AbstractNetworkLearner 			
+		Ml::T										# local model
+		f_exec_local::U									# local model execution function
+		Mr::S										# relational model
+		f_exec_rel::V									# relational model execution function
+		Rl::Type{R}										# relational learner
+		Ci::Type{C}										# collective inferer	
+		Adj::A										# adjacency information
 	end
 	
 	# NetworkLearner for ingraph computations
-	mutable struct NetworkLearnerIModel{T,S,R,C,U} <: AbstractNetworkLearner 			
-		lmodel::T									# local model
-		rmodel::S									# relational model
-		rlearner::R									# relational learner
-		ci::C										# collective inferer	
-		A::U										# adjacency information
+	mutable struct NetworkLearnerIModel{T,U,S,V,R,C,A} <: AbstractNetworkLearner 			
+		Ml::T										# local model
+		f_exec_local::U									# local model execution function
+		Mr::S										# relational model
+		f_exec_rel::V									# relational model execution function
+		Rl::R										# relational learner
+		Ci::C										# collective inferer	
+		Adj::A										# adjacency information
 	end
 	
 	# Aliases
@@ -48,13 +55,12 @@ module NetworkLearner
 	#########################
 	# Out-of-graph learning #
 	#########################
-	# X - input data, y - targets (i.e. labels, values), A - list of adjacency strucures, fa - local model, fb - relational model, R - relational learner, CI - collective inferer)
 	function fit(::Type{NetworkLearnerOModel}, X::T, y::S, Adj::A, Rl::R, Ci::C, f_train_local::U, f_exec_local::U2, f_train_rel::U3, f_exec_rel::U4; 
-	      		normalize::Bool=true, use_local_data::Bool=true) where {T<:AbstractArray, 
+	      		normalize::Bool=true, use_local_data::Bool=true) where {T<:AbstractMatrix, 
 	 			S<:AbstractArray, 
-				A<:Vector{AbstractAdjacency}, 
-				R<:Type{AbstractRelationalLearner}, 
-				C<:Type{AbstractCollectiveInferer}, 
+				A<:Vector{<:AbstractAdjacency}, 
+				R<:Type{<:AbstractRelationalLearner}, 
+				C<:Type{<:AbstractCollectiveInferer}, 
 				U, U2, U3, U4 
 			}
 		# Step 0: pre-process input arguments and retrieve sizes
@@ -71,31 +77,37 @@ module NetworkLearner
 		# Pre-allocate relational variables array	
 		if use_local_data					# Local observation variable data is used
 			Xr = zeros(m+size(X,1), n)
-			offset = m					
+			Xr[1:size(X,1),:] = X
+			offset = size(X,1)					
 		else							# Only relational variables are used
 			Xr = zeros(m,n)				
 			offset = 0
 		end
 		
 		# Step 1: train and execute local model
-		D = (X,y)
-		Ml = f_train_local(D); 
+		Dl = (X,y)
+		Ml = f_train_local(Dl); 
 		Xl = f_exec_local(Ml,X);
-
+		
 		# Step 2: Get relational variables 
-		for (i,Ai) in enumerate(Adj)
-			ri = fit(Rl, Ai, Xl)				# train relational learner using adjacency information and local model output
-			Xs = datasubset(Xr, offset+i:offset+i*c-1)	# subset of data to be filled
-			transform!(Xs, ri, Ai, Xl; normalize=normalize) # apply relational learner
+		for (i,Ai) in enumerate(Adj)				# Loop through adjacency vector and
+			ri = fit(Rl, Ai, Xl)				#  - train relational learner using adjacency information and local model output
+			Xs = datasubset(Xr, 
+		   			offset+(i-1)*c+1 : offset+i*c,	#  - subset of data to be filled
+		   			ObsDim.Constant{1}()
+			)	
+			transform!(Xs, ri, Ai, Xl; normalize=normalize) #  - apply relational learner
 		end
 		
 		# Step 3 : train relational model 
-		Mr = f_train_rel(Xr)
+		Dr = (Xr,y)
+		Mr = f_train_rel(Dr)
 
-		# Step 4: analyze adjacency structure and see what to save from it: either nothing or a list of functions, etc.
+		# Step 4: remove adjacency data 
+		sAdj = strip_adjacency.(Adj)	
 		
-		# Step 5: return NetworkLearnerOModel(Ml, Mr, R, CI, A)
-
+		# Step 5: return network learner 
+		return NetworkLearnerOModel(Ml, f_exec_local, Mr, f_exec_rel, Rl, Ci, sAdj)
 	end
 	
 	# It may be necessary to add adjacency information to the model, regarding the test data
