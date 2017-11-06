@@ -33,16 +33,19 @@ fit(::Type{ClassDistributionRN}, args ...) = error("Training for class-distribut
 
 
 # Transform methods
-function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractAdjacency, X::S; normalize::Bool=false) where {T<:AbstractMatrix, S<:AbstractVector}
-	transform!(Xr, Rl, adjacency_matrix(A), X'; normalize=normalize)
+function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractAdjacency, X::S, priors::U; 
+		    normalize::Bool=false) where {T<:AbstractMatrix, S<:AbstractVector, U<:AbstractVector}
+	transform!(Xr, Rl, adjacency_matrix(A), X', priors; normalize=normalize)
 end
 
-function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractAdjacency, X::S; normalize::Bool=false) where {T<:AbstractMatrix, S<:AbstractMatrix}	
-	transform!(Xr, Rl, adjacency_matrix(A), X; normalize = normalize)
+function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractAdjacency, X::S, priors::U; 
+		    normalize::Bool=false) where {T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
+	transform!(Xr, Rl, adjacency_matrix(A), X, priors; normalize = normalize)
 end
 
-function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractMatrix, X::S; normalize::Bool=false) where {T<:AbstractMatrix, S<:AbstractMatrix}
-	Xr[:] = X*A
+function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractMatrix, X::S, priors::U; 
+		    normalize::Bool=false) where {T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
+	Xr[:] = diagm(priors)*X*A
 	if normalize
 		Xr ./= clamp!(sum(A,1),1.0,Inf)
 	end
