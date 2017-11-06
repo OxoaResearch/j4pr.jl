@@ -16,18 +16,21 @@ module NetworkLearner
 					    C<:AbstractCollectiveInferer,
 					    A<:Vector{<:AbstractAdjacency}} <: AbstractNetworkLearner 			
 		Ml::T										# local model
-		f_exec_local::U									# local model execution function
+		fl_exec::U									# local model execution function
 		Mr::S										# relational model
-		f_exec_rel::V									# relational model execution function
+		fr_exec::V									# relational model execution function
 		Rl::Type{R}									# relational learner
 		Ci::Type{C}									# collective inferer	
 		Adj::A										# adjacency information
-		m::Int										# number of relational variables
-		c::Int										# relational variables/adjacency
-		priors::Vector{Float64}								# class priors
 		use_local_data::Bool								# whether to use local data
-		normalize::Bool									# whether to normalize local estimates 
-												#   in the relational learners
+		# TODO: Remove fields below, move to relation rl, ci objects	
+		# TODO: Change fields from Type{T} to T i.e. NetworkLearner uses instances not types, 
+		#  this implies changing the the fit methods as well.
+		m::Int										# number of relational variables
+		c::Int										# number of relational variables / adjacency
+		priors::Vector{Float64}								# class priors
+		normalize::Bool									# whether to normalize local estimates for the relational learners 
+		f_targets::Function								# function employed to obtain decisions
 	end
 	
 	
@@ -68,38 +71,50 @@ module NetworkLearner
 	#########################
 	# Out-of-graph learning #
 	#########################
-	function fit(::Type{NetworkLearnerOModel}, X::T, y::S, Adj::A, Rl::R, Ci::C, f_train_local::U, f_exec_local::U2, f_train_rel::U3, f_exec_rel::U4, 
-	      		priors=getpriors(y); normalize::Bool=true, use_local_data::Bool=true) where {T<:AbstractMatrix, 
+	function fit(::Type{NetworkLearnerOModel}, X::AbstractMatrix, y::AbstractArray, Adj::A where A<:Vector{<:AbstractAdjacency}, 
+	      		fl_train, fl_exec, fr_train, fr_exec; 
+	      		priors::Vector{Float64}=getpriors(y), learner::Symbol=:wvrn, inference::Symbol=:rl, 
+			normalize::Bool=true, use_local_data::Bool=true, f_targets::Function=x->targets(indmax,x), 
+			tol::Float64=1e-6, κ::Float64=1.0, α::Float64=0.99, maxiter::Int=1000) 
+
+		# TODO: Write argument parsing, add aditional keyword arguments ...
+
+	end
+	
+	
+	function fit(::Type{NetworkLearnerOModel}, X::T, y::S, Adj::A, Rl::R, Ci::C, fl_train::U, fl_exec::U2, fr_train::U3, fr_exec::U4, 
+	      		priors::Vector{Float64}=getpriors(y); normalize::Bool=true, use_local_data::Bool=true, f_targets::Function=x->targets(indmax,x)) where {
+				T<:AbstractMatrix, 
 	 			S<:AbstractArray, 
 				A<:Vector{<:AbstractAdjacency}, 
 				R<:Type{<:AbstractRelationalLearner}, 
 				C<:Type{<:AbstractCollectiveInferer}, 
 				U, U2, U3, U4 
 			}
-		# Step 0: pre-process input arguments and retrieve sizes
 		
-		n = nobs(X)						# number of observations
-		c = get_width_rv(y)					# number of relational variables / adjacency
-		m = c * length(Adj)					# number of relational variables
+		# Step 0: pre-process input arguments and retrieve sizes
+		n = nobs(X)									# number of observations
+		c = get_width_rv(y)								# number of relational variables / adjacency
+		m = c * length(Adj)								# number of relational variables
 
 		@assert c == length(priors) "Found $c classes, the priors indicate $(length(priors))."
 		
 		# Pre-allocate relational variables array	
-		if use_local_data					# Local observation variable data is used
+		if use_local_data								# Local observation variable data is used
 			Xr = zeros(m+size(X,1), n)
 			Xr[1:size(X,1),:] = X
 			offset = size(X,1)					
-		else							# Only relational variables are used
+		else										# Only relational variables are used
 			Xr = zeros(m,n)				
 			offset = 0
 		end
 		
 		# Step 1: train and execute local model
 		Dl = (X,y)
-		Ml = f_train_local(Dl); 
-		Xl = f_exec_local(Ml,X);
+		Ml = fl_train(Dl); 
+		Xl = fl_exec(Ml,X);
 		
-		# Step 2: Get relational variables 
+		# Step 2: Get relational variables by training and executing the relational learner 
 		for (i,Ai) in enumerate(Adj)		
 			
 			# Train relational learner using adjacency information and local model output
@@ -114,7 +129,7 @@ module NetworkLearner
 		
 		# Step 3 : train relational model 
 		Dr = (Xr,y)
-		Mr = f_train_rel(Dr)
+		Mr = fr_train(Dr)
 
 		# Step 4: remove adjacency data 
 		sAdj = AbstractAdjacency[];
@@ -123,21 +138,38 @@ module NetworkLearner
 		end
 
 		# Step 5: return network learner 
-		return NetworkLearnerOModel(Ml, f_exec_local, Mr, f_exec_rel, Rl, Ci, sAdj, 
-			      		m, c, priors, use_local_data, normalize)
+		return NetworkLearnerOModel(Ml, fl_exec, Mr, fr_exec, Rl, Ci, sAdj, m, c, 
+			      			priors, use_local_data, normalize, f_targets)
 	end
 	
 
 	# Execution methods 
 	function transform(m::NetworkLearnerOModel, X::T) where T<:AbstractMatrix
 		# Step 0: Make initializations and pre-allocations 	
-		# out = ...
+		C = nobs(m.priors)								# number of output variables i.e. estimates
+		m = size(X,1)
+		n = nobs(X)									# number of observations
+		out = zeros(C,n)
+		
+		# Pre-allocate relational dataset
+		if m.use_local_data
+			Xr = zeros(m.m+m, n)							# relational variables number + local variable number
+			Xr[1:m,:] = X								# allocate current data to relational dataset	
+			offset = m
+		else										# Only relational variables are used
+			Xr = zeros(m.m,n)				
+			offset = 0
+		end
 
 		# Step 1: Apply local model, get initial estimates, decisions
+		Xl = m.fl_exec(m.Ml, X)
 		
 		# Step 2: Apply collective inference
+		transform!(out, m.Ci, m.Rl, m.Adj, X)	
+	     	# transform!(out, CI, R, A, X)
 		
-		# transform!(out, CI, R, A, X)
+	     	# Step 3: Return output estimates
+		return out
 	end
 
 
@@ -172,9 +204,9 @@ module NetworkLearner
 					    C<:AbstractCollectiveInferer,
 					    A<:Vector{<:AbstractAdjacency}} <: AbstractNetworkLearner 			
 		Ml::T										# local model
-		f_exec_local::U									# local model execution function
+		fl_exec::U									# local model execution function
 		Mr::S										# relational model
-		f_exec_rel::V									# relational model execution function
+		fr_exec::V									# relational model execution function
 		Rl::Type{R}									# relational learner
 		Ci::Type{C}									# collective inferer	
 		Adj::A										# adjacency information
