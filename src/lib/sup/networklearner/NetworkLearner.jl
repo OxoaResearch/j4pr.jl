@@ -19,35 +19,29 @@ module NetworkLearner
 		f_exec_local::U									# local model execution function
 		Mr::S										# relational model
 		f_exec_rel::V									# relational model execution function
-		Rl::Type{R}										# relational learner
-		Ci::Type{C}										# collective inferer	
+		Rl::Type{R}									# relational learner
+		Ci::Type{C}									# collective inferer	
 		Adj::A										# adjacency information
 	end
 	
-	# NetworkLearner for ingraph computations
-	mutable struct NetworkLearnerIModel{T,U,S,V,R,C,A} <: AbstractNetworkLearner 			
-		Ml::T										# local model
-		f_exec_local::U									# local model execution function
-		Mr::S										# relational model
-		f_exec_rel::V									# relational model execution function
-		Rl::R										# relational learner
-		Ci::C										# collective inferer	
-		Adj::A										# adjacency information
-	end
+	
 	
 	# Aliases
+	const NetworkLearnerOModelEmptyAdj{T,U,S,V,R,C,A<:Vector{<:EmptyAdjacency}} = NetworkLearnerOModel{T,U,S,V,R,C,A}
+	const NetworkLearnerOModelPartialAdj{T,U,S,V,R,C,A<:Vector{<:PartialAdjacency}} = NetworkLearnerOModel{T,U,S,V,R,C,A}
+	
+
 
 	# Printers
-	Base.show(io::IO, m::NetworkLearnerOModel) = println("Network learner, out-of-graph computation")
+	#Base.show(io::IO, m::NetworkLearnerOModel) = println("Network learner, out-of-graph computation")
 	
-	Base.dump(io::IO, m::NetworkLearnerOModel) = begin 
+	Base.show(io::IO, m::NetworkLearnerOModel) = begin 
 		println("Network learner, out-of-graph computation")
-		print(io,"`- local model: $(m.lmodel)")
-		print(io,"`- relational model: $(m.rmodel)")
-		print(io,"`- relational learner: $(m.rlearner)")
-		print(io,"`- collective inferer: $(m.ci)")
-		print(io,"`- adjacency: $(m.A)")
-	
+		print(io,"`- local model: "); println(io, m.Ml)
+		print(io,"`- relational model: "); println(io, m.Mr)
+		print(io,"`- relational learner: "); println(io, m.Rl)
+		print(io,"`- collective inferer: "); println(io, m.Ci)
+		print(io,"`- adjacency: "); println(io, m.Adj)	
 	end
 
 
@@ -68,7 +62,7 @@ module NetworkLearner
 		# Function that calculates the number of  relational variables / each adjacency structure
 		_width_rv_(y::AbstractVector{T}) where T<:Float64 = 1			# regression case
 		_width_rv_(y::AbstractVector{T}) where T = length(unique(y))::Int	# classification case
-		_width_rv_(y::AbstractArray) = error("Only vectors supported as targets in relational learning")
+		_width_rv_(y::AbstractArray) = error("Only vectors supported as targets in relational learning.")
 
 		n = nobs(X)						# number of observations
 		c = _width_rv_(y)					# number of relational variables / adjacency
@@ -104,21 +98,45 @@ module NetworkLearner
 		Mr = f_train_rel(Dr)
 
 		# Step 4: remove adjacency data 
-		sAdj = strip_adjacency.(Adj)	
-		
+		sAdj = AbstractAdjacency[];
+		for i in 1:length(Adj)
+			push!(sAdj, strip_adjacency(Adj[i]))	
+		end
+
 		# Step 5: return network learner 
 		return NetworkLearnerOModel(Ml, f_exec_local, Mr, f_exec_rel, Rl, Ci, sAdj)
 	end
 	
-	# It may be necessary to add adjacency information to the model, regarding the test data
 
-	# Execution methods i.e. transform(::AbstractNetworkLearner, X)
-	# function transform(m::NetworkLearnerOModel)
+	# Execution methods 
+	function transform(m::NetworkLearnerOModel, X::T) where T<:AbstractMatrix
 		# Step 0: Make initializations and pre-allocations 	
+		# out = ...
+
 		# Step 1: Apply local model, get initial estimates, decisions
+		
 		# Step 2: Apply collective inference
+		
 		# transform!(out, CI, R, A, X)
-	# end
+	end
+
+
+
+	# It may be necessary to add adjacency information to the model, regarding the test data
+	function add_adjacency!(m::T, A::Vector{S}) where {T<:NetworkLearnerOModel, S<:AbstractAdjacency}
+		@assert length(A) == length(m.Adj) "New adjacency vector must have a length of $(length(m.Adj))."
+		m.Adj = A				
+	end
+		
+	function add_adjacency!(m::T, A::Vector{S}) where {T<:NetworkLearnerOModel, S}
+		@assert length(A) == length(m.Adj) "Adjacency data vector must have a length of $(length(m.Adj))."
+		m.Adj = adjacency.(A)
+	end
+
+
+
+
+
 
 	#####################
 	# In-graph learning #
@@ -128,6 +146,20 @@ module NetworkLearner
 	# - wether new edges can be established if a transitory edge appeared at some point 
 	# ...
 
+	# NetworkLearner for ingraph computations
+	mutable struct NetworkLearnerIModel{T,U,S,V,
+				     	    R<:AbstractRelationalLearner,
+					    C<:AbstractCollectiveInferer,
+					    A<:Vector{<:AbstractAdjacency}} <: AbstractNetworkLearner 			
+		Ml::T										# local model
+		f_exec_local::U									# local model execution function
+		Mr::S										# relational model
+		f_exec_rel::V									# relational model execution function
+		Rl::Type{R}									# relational learner
+		Ci::Type{C}									# collective inferer	
+		Adj::A										# adjacency information
+	end
+	
 end
 
 

@@ -48,3 +48,10 @@ function transform!(Xr::T, Rl::WeightedVoteRN, A::AbstractMatrix, X::S; normaliz
 	end
 	return Xr
 end
+
+
+
+#TODO: transform methods fo BayesRN
+
+#TODO: transform methods fo cdRN
+
