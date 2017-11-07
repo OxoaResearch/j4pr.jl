@@ -1,7 +1,7 @@
 # Function that calculates the number of  relational variables / each adjacency structure
-get_width_rv(y::AbstractVector{T}) where T<:Float64 = 1			# regression case
-get_width_rv(y::AbstractVector{T}) where T = length(unique(y))::Int	# classification case
-get_width_rv(y::AbstractArray) = error("Only vectors supported as targets in relational learning.")
+get_size_out(y::AbstractVector{T}) where T<:Float64 = 1			# regression case
+get_size_out(y::AbstractVector{T}) where T = length(unique(y))::Int	# classification case
+get_size_out(y::AbstractArray) = error("Only vectors supported as targets in relational learning.")
 
 
 

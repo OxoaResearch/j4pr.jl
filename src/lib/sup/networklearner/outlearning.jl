@@ -10,9 +10,9 @@ mutable struct NetworkLearnerOutOfGraph{T,U,S,V,
 	RL::R											# relational learner
 	Ci::C											# collective inferer	
 	Adj::A											# adjacency information
-	m::Int											# number of relational variables
-	c::Int											# number of relational variables / adjacency
 	use_local_data::Bool									# whether to use local data
+	size_in::Int										# expected input dimensionality
+	size_out::Int										# expected output dimensionality
 end
 
 
@@ -27,7 +27,7 @@ end
 #Base.show(io::IO, m::NetworkLearnerOutOfGraph) = println("Network learner, out-of-graph computation")
 
 Base.show(io::IO, m::NetworkLearnerOutOfGraph) = begin 
-	println("Network learner, out-of-graph, $(m.m) relational variables, $(length(m.Adj)) adjacencies")
+	println("Network learner, $size_in×$size_out, out-of-graph, $(length(m.Adj)) adjacencies")
 	print(io,"`- local model: "); println(io, m.Ml)
 	print(io,"`- relational model: "); println(io, m.Mr)
 	print(io,"`- relational learners: "); println(io, m.RL)
@@ -96,17 +96,18 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 		}
 	
 	# Step 0: pre-process input arguments and retrieve sizes
+	size_in = size(X,1)									# number of local variables
+	size_out = get_size_out(y)								# number of relational variables / adjacency
 	n = nobs(X)										# number of observations
-	c = get_width_rv(y)									# number of relational variables / adjacency
-	m = c * length(Adj)									# number of relational variables
+	m = length(Adj) * size_out								# number of relational variables
 
-	@assert c == length(priors) "Found $c classes, the priors indicate $(length(priors))."
+	@assert size_out == length(priors) "Found $c classes, the priors indicate $(length(priors))."
 	
 	# Pre-allocate relational variables array	
 	if use_local_data									# Local observation variable data is used
-		Xr = zeros(m+size(X,1), n)
-		Xr[1:size(X,1),:] = X
-		offset = size(X,1)					
+		Xr = zeros(size_in+m, n)
+		Xr[1:size_in,:] = X
+		offset = size_in					
 	else											# Only relational variables are used
 		Xr = zeros(m,n)				
 		offset = 0
@@ -120,8 +121,12 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 	# Step 2: Get relational variables by training and executing the relational learner 
 	RL = [fit(Rl, Ai, Xl; priors=priors, normalize=normalize) for Ai in Adj]		# Train relational learners				
 	for (i,(RLi,Ai)) in enumerate(zip(RL,Adj))		
-		Xs = datasubset(Xr, offset+(i-1)*c+1 : offset+i*c, ObsDim.Constant{1}())	# Select data subset for relational data output		
-		transform!(Xs, RLi, Ai, Xl) 							# Apply relational learner
+		
+		# Select data subset for relational data output			
+		Xs = datasubset(Xr, offset+(i-1)*size_out+1 : offset+i*size_out, ObsDim.Constant{1}())						
+		
+		# Apply relational learner
+		transform!(Xs, RLi, Ai, Xl) 						
 	end
 	
 	# Step 3 : train relational model 
@@ -134,7 +139,7 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 	end
 
 	# Step 5: return network learner 
-	return NetworkLearnerOutOfGraph(Ml, fl_exec, Mr, fr_exec, RL, Ci, Adj_s, m, c, use_local_data)
+	return NetworkLearnerOutOfGraph(Ml, fl_exec, Mr, fr_exec, RL, Ci, Adj_s, use_local_data, size_in, size_out)
 end
 
 
@@ -142,7 +147,7 @@ end
 # Execution methods #
 #####################
 function transform(model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T<:AbstractMatrix}
-	Xo = zeros(model.c, nobs(X))
+	Xo = zeros(model.size_out, nobs(X))
 	transform!(Xo, model, X)
 	return Xo
 end
@@ -150,17 +155,18 @@ end
 function transform!(Xo::S, model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T<:AbstractMatrix, S<:AbstractMatrix}
 	
 	# Step 0: Make initializations and pre-allocations 	
-	C = model.c										# number of output variables i.e. estimates
 	m = size(X,1)										# number of input variables
 	n = nobs(X)										# number of observations
-	@assert size(Xo) == (C,n) "Output dataset size must be $C×$n."
+	l = length(model.Adj)									# number of adjacencies in the model
+	@assert model.size_in == m "Expected input dimensionality $(model.size_in), got $m."
+	@assert size(Xo) == (model.size_out, n) "Output dataset size must be $(model.size_out)×$n."
 	
 	if model.use_local_data									# Pre-allocate relational dataset based on local data use
-		Xr = zeros(model.m+m, n)							#  - dimensions = relational variables number + local variable number
+		Xr = zeros(model.size_out*l+m, n)						#  - dimensions = relational variables number + local variable number
 		Xr[1:m,:] = X									#  - initialize (local) dimensions	
 		offset = m
 	else											# Skip local dataset dimensions
-		Xr = zeros(model.m,n)				
+		Xr = zeros(model.size_out*l, n)				
 		offset = 0
 	end
 
