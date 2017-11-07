@@ -12,25 +12,19 @@ module NetworkLearner
 	
 	# NetworkLearner for out of graph computations 
 	mutable struct NetworkLearnerOModel{T,U,S,V,
-				     	    R<:AbstractRelationalLearner,
+				     	    R<:Vector{<:AbstractRelationalLearner},
 					    C<:AbstractCollectiveInferer,
 					    A<:Vector{<:AbstractAdjacency}} <: AbstractNetworkLearner 			
 		Ml::T										# local model
 		fl_exec::U									# local model execution function
 		Mr::S										# relational model
 		fr_exec::V									# relational model execution function
-		Rl::Type{R}									# relational learner
-		Ci::Type{C}									# collective inferer	
+		RL::R										# relational learner
+		Ci::C										# collective inferer	
 		Adj::A										# adjacency information
-		use_local_data::Bool								# whether to use local data
-		# TODO: Remove fields below, move to relation rl, ci objects	
-		# TODO: Change fields from Type{T} to T i.e. NetworkLearner uses instances not types, 
-		#  this implies changing the the fit methods as well.
 		m::Int										# number of relational variables
 		c::Int										# number of relational variables / adjacency
-		priors::Vector{Float64}								# class priors
-		normalize::Bool									# whether to normalize local estimates for the relational learners 
-		f_targets::Function								# function employed to obtain decisions
+		use_local_data::Bool								# whether to use local data
 	end
 	
 	
@@ -45,14 +39,13 @@ module NetworkLearner
 	#Base.show(io::IO, m::NetworkLearnerOModel) = println("Network learner, out-of-graph computation")
 	
 	Base.show(io::IO, m::NetworkLearnerOModel) = begin 
-		println("Network learner, out-of-graph, $(m.m) relational variables, $(m.c) adjacencies")
+		println("Network learner, out-of-graph, $(m.m) relational variables, $(length(m.Adj)) adjacencies")
 		print(io,"`- local model: "); println(io, m.Ml)
 		print(io,"`- relational model: "); println(io, m.Mr)
-		print(io,"`- relational learner: "); println(io, m.Rl)
+		print(io,"`- relational learners: "); println(io, m.RL)
 		print(io,"`- collective inferer: "); println(io, m.Ci)
 		print(io,"`- adjacency: "); println(io, m.Adj)	
-		print(io,"`- priors: "); println(io, m.priors)	
-		println(io,"`- use local data: $(m.use_local_data), normalize: $(m.normalize)");
+		println(io,"`- use local data: $(m.use_local_data)");
 	end
 
 
@@ -75,20 +68,53 @@ module NetworkLearner
 	      		fl_train, fl_exec, fr_train, fr_exec; 
 	      		priors::Vector{Float64}=getpriors(y), learner::Symbol=:wvrn, inference::Symbol=:rl, 
 			normalize::Bool=true, use_local_data::Bool=true, f_targets::Function=x->targets(indmax,x), 
-			tol::Float64=1e-6, κ::Float64=1.0, α::Float64=0.99, maxiter::Int=1000) 
+			tol::Float64=1e-6, κ::Float64=1.0, α::Float64=0.99, maxiter::Int=1000, bratio::Float64=0.1) 
 
-		# TODO: Write argument parsing, add aditional keyword arguments ...
+		# Parse, transform input arguments
+		κ = clamp(κ, 1e-6, 1.0)
+		α = clamp(α, 1e-6, 1.0-1e-6)
+		tol = clamp(tol, 0.0, Inf)
+		maxiter = ifelse(maxiter<=0, 1, maxiter)
+		bratio = clamp(bratio, 1e-6, 1.0-1e-6)
+		@assert all((priors.>=0.0) .& (priors .<=1.0)) "All priors have to be between 0.0 and 1.0."
 
+		# Parse relational learner argument and generate relational learner type
+		if learner == :wvrn
+			Rl = WeightedVoteRN
+		elseif learner == :cdrn 
+			Rl = ClassDistributionRN
+		elseif learner == :bayesrn
+			Rl = BayesRN
+		else
+			warn("Unknown relational learner. Defaulting to :wvrn.")
+			Rl = WeightedVoteRN
+		end
+
+		# Parse collective inference argument and generate collective inference objects
+		if inference == :rl
+			Ci = RelaxationLabelingInferer(maxiter, tol, f_targets, κ, α)
+		elseif inference == :ic
+			Ci = IterativeClassificationInferer(maxiter, tol, f_targets)
+		elseif inferece == :gibbs
+			Ci = GibbsSamplingInferer(maxiter, tol, f_targets, ceil(Int, maxiter*bratio))
+		else
+			warn("Unknown collective inferer. Defaulting to :rl.")
+			Ci = RelaxationLabelingInferer(maxiter, tol, f_targets, κ, α)
+		end
+		
+		fit(NetworkLearnerOModel, X, y, Adj, Rl, Ci, fl_train, fl_exec, fr_train, fr_exec; 
+      			priors=priors, normalize=normalize, use_local_data=use_local_data)
 	end
 	
 	
-	function fit(::Type{NetworkLearnerOModel}, X::T, y::S, Adj::A, Rl::R, Ci::C, fl_train::U, fl_exec::U2, fr_train::U3, fr_exec::U4, 
-	      		priors::Vector{Float64}=getpriors(y); normalize::Bool=true, use_local_data::Bool=true, f_targets::Function=x->targets(indmax,x)) where {
+
+	function fit(::Type{NetworkLearnerOModel}, X::T, y::S, Adj::A, Rl::R, Ci::C, fl_train::U, fl_exec::U2, fr_train::U3, fr_exec::U4; 
+	      		priors::Vector{Float64}=getpriors(y), normalize::Bool=true, use_local_data::Bool=true) where {
 				T<:AbstractMatrix, 
 	 			S<:AbstractArray, 
 				A<:Vector{<:AbstractAdjacency}, 
 				R<:Type{<:AbstractRelationalLearner}, 
-				C<:Type{<:AbstractCollectiveInferer}, 
+				C<:AbstractCollectiveInferer, 
 				U, U2, U3, U4 
 			}
 		
@@ -115,16 +141,15 @@ module NetworkLearner
 		Xl = fl_exec(Ml,X);
 		
 		# Step 2: Get relational variables by training and executing the relational learner 
-		for (i,Ai) in enumerate(Adj)		
+		RL = [fit(Rl, Ai, Xl; priors=priors, normalize=normalize) for Ai in Adj]	# Train relational learners				
+		
+		for (i,(RLi,Ai)) in enumerate(zip(RL,Adj))		
 			
-			# Train relational learner using adjacency information and local model output
-			ri = fit(Rl, Ai, Xl)				
-
 			# Get subset from the output where the relational data will go
 			Xs = datasubset(Xr, offset+(i-1)*c+1 : offset+i*c, ObsDim.Constant{1}())	
 			
 			# Apply relational learner
-			transform!(Xs, ri, Ai, Xl, priors; normalize=normalize) 
+			transform!(Xs, RLi, Ai, Xl) 
 		end
 		
 		# Step 3 : train relational model 
@@ -138,51 +163,58 @@ module NetworkLearner
 		end
 
 		# Step 5: return network learner 
-		return NetworkLearnerOModel(Ml, fl_exec, Mr, fr_exec, Rl, Ci, sAdj, m, c, 
-			      			priors, use_local_data, normalize, f_targets)
+		return NetworkLearnerOModel(Ml, fl_exec, Mr, fr_exec, RL, Ci, sAdj, m, c, use_local_data)
 	end
 	
 
-	# Execution methods 
-	function transform(m::NetworkLearnerOModel, X::T) where T<:AbstractMatrix
+	# Execution methods
+	function transform(model::M, X::T) where {M<:NetworkLearnerOModel, T<:AbstractMatrix}
+		Xo = zeros(model.c, nobs(X))
+		transform!(Xo, model, X)
+		return Xo
+	end
+	
+	function transform!(Xo::S, model::M, X::T) where {M<:NetworkLearnerOModel, T<:AbstractMatrix, S<:AbstractMatrix}
 		# Step 0: Make initializations and pre-allocations 	
-		C = nobs(m.priors)								# number of output variables i.e. estimates
+		C = model.c									# number of output variables i.e. estimates
 		m = size(X,1)
 		n = nobs(X)									# number of observations
-		out = zeros(C,n)
+		
+		@assert size(Xo) == (C,n) "Output dataset size must be $C×$n."
 		
 		# Pre-allocate relational dataset
-		if m.use_local_data
-			Xr = zeros(m.m+m, n)							# relational variables number + local variable number
+		if model.use_local_data
+			Xr = zeros(model.m+m, n)						# relational variables number + local variable number
 			Xr[1:m,:] = X								# allocate current data to relational dataset	
 			offset = m
 		else										# Only relational variables are used
-			Xr = zeros(m.m,n)				
+			Xr = zeros(model.m,n)				
 			offset = 0
 		end
 
-		# Step 1: Apply local model, get initial estimates, decisions
-		Xl = m.fl_exec(m.Ml, X)
-		
+		# Step 1: Apply local model, initialize output 
+		Xl = model.fl_exec(model.Ml, X)
+		@assert size(Xo) == size(Xl) "Local model output size is $(size(Xl)) and NetworkLearner expected output size $(size(Xo))." 	
+		Xo[:] = Xl 
+
 		# Step 2: Apply collective inference
-		transform!(out, m.Ci, m.Rl, m.Adj, X)	
-	     	# transform!(out, CI, R, A, X)
+		transform!(Xo, model.Ci, model.RL, model.Adj, X)	
 		
 	     	# Step 3: Return output estimates
-		return out
+		return Xo
 	end
 
 
 
 	# It may be necessary to add adjacency information to the model, regarding the test data
-	function add_adjacency!(m::T, A::Vector{S}) where {T<:NetworkLearnerOModel, S<:AbstractAdjacency}
-		@assert length(A) == length(m.Adj) "New adjacency vector must have a length of $(length(m.Adj))."
-		m.Adj = A				
+	function add_adjacency!(model::M, Av::Vector{T}) where {M<:NetworkLearnerOModel, T<:AbstractAdjacency}
+		@assert length(Av) == length(model.Adj) "New adjacency vector must have a length of $(length(model.Adj))."
+		model.Adj = Av				
 	end
 		
-	function add_adjacency!(m::T, A::Vector{S}) where {T<:NetworkLearnerOModel, S}
-		@assert length(A) == length(m.Adj) "Adjacency data vector must have a length of $(length(m.Adj))."
-		m.Adj = adjacency.(A)
+	function add_adjacency!(model::M, Av::Vector{T}) where {M<:NetworkLearnerOModel, T}
+		@assert length(Av) == length(model.Adj) "Adjacency data vector must have a length of $(length(model.Adj))."
+		model.Adj = adjacency.(Av)
 	end
 
 
@@ -198,20 +230,6 @@ module NetworkLearner
 	# - wether new edges can be established if a transitory edge appeared at some point 
 	# ...
 
-	# NetworkLearner for ingraph computations
-	mutable struct NetworkLearnerIModel{T,U,S,V,
-				     	    R<:AbstractRelationalLearner,
-					    C<:AbstractCollectiveInferer,
-					    A<:Vector{<:AbstractAdjacency}} <: AbstractNetworkLearner 			
-		Ml::T										# local model
-		fl_exec::U									# local model execution function
-		Mr::S										# relational model
-		fr_exec::V									# relational model execution function
-		Rl::Type{R}									# relational learner
-		Ci::Type{C}									# collective inferer	
-		Adj::A										# adjacency information
-	end
-	
 end
 
 
