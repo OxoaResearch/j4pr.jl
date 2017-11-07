@@ -3,16 +3,16 @@ mutable struct NetworkLearnerOutOfGraph{T,U,S,V,
 				    R<:Vector{<:AbstractRelationalLearner},
 				    C<:AbstractCollectiveInferer,
 				    A<:Vector{<:AbstractAdjacency}} <: AbstractNetworkLearner 			
-	Ml::T										# local model
-	fl_exec::U									# local model execution function
-	Mr::S										# relational model
-	fr_exec::V									# relational model execution function
-	RL::R										# relational learner
-	Ci::C										# collective inferer	
-	Adj::A										# adjacency information
-	m::Int										# number of relational variables
-	c::Int										# number of relational variables / adjacency
-	use_local_data::Bool								# whether to use local data
+	Ml::T											# local model
+	fl_exec::U										# local model execution function
+	Mr::S											# relational model
+	fr_exec::V										# relational model execution function
+	RL::R											# relational learner
+	Ci::C											# collective inferer	
+	Adj::A											# adjacency information
+	m::Int											# number of relational variables
+	c::Int											# number of relational variables / adjacency
+	use_local_data::Bool									# whether to use local data
 end
 
 
@@ -72,7 +72,7 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::AbstractMatrix, y::AbstractArr
 		Ci = RelaxationLabelingInferer(maxiter, tol, f_targets, κ, α)
 	elseif inference == :ic
 		Ci = IterativeClassificationInferer(maxiter, tol, f_targets)
-	elseif inferece == :gibbs
+	elseif inferece == :gs
 		Ci = GibbsSamplingInferer(maxiter, tol, f_targets, ceil(Int, maxiter*bratio))
 	else
 		warn("Unknown collective inferer. Defaulting to :rl.")
@@ -96,18 +96,18 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 		}
 	
 	# Step 0: pre-process input arguments and retrieve sizes
-	n = nobs(X)									# number of observations
-	c = get_width_rv(y)								# number of relational variables / adjacency
-	m = c * length(Adj)								# number of relational variables
+	n = nobs(X)										# number of observations
+	c = get_width_rv(y)									# number of relational variables / adjacency
+	m = c * length(Adj)									# number of relational variables
 
 	@assert c == length(priors) "Found $c classes, the priors indicate $(length(priors))."
 	
 	# Pre-allocate relational variables array	
-	if use_local_data								# Local observation variable data is used
+	if use_local_data									# Local observation variable data is used
 		Xr = zeros(m+size(X,1), n)
 		Xr[1:size(X,1),:] = X
 		offset = size(X,1)					
-	else										# Only relational variables are used
+	else											# Only relational variables are used
 		Xr = zeros(m,n)				
 		offset = 0
 	end
@@ -118,29 +118,23 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 	Xl = fl_exec(Ml,X);
 	
 	# Step 2: Get relational variables by training and executing the relational learner 
-	RL = [fit(Rl, Ai, Xl; priors=priors, normalize=normalize) for Ai in Adj]	# Train relational learners				
-	
+	RL = [fit(Rl, Ai, Xl; priors=priors, normalize=normalize) for Ai in Adj]		# Train relational learners				
 	for (i,(RLi,Ai)) in enumerate(zip(RL,Adj))		
-		
-		# Get subset from the output where the relational data will go
-		Xs = datasubset(Xr, offset+(i-1)*c+1 : offset+i*c, ObsDim.Constant{1}())	
-		
-		# Apply relational learner
-		transform!(Xs, RLi, Ai, Xl) 
+		Xs = datasubset(Xr, offset+(i-1)*c+1 : offset+i*c, ObsDim.Constant{1}())	# Select data subset for relational data output		
+		transform!(Xs, RLi, Ai, Xl) 							# Apply relational learner
 	end
 	
 	# Step 3 : train relational model 
-	Dr = (Xr,y)
-	Mr = fr_train(Dr)
+	Mr = fr_train((Xr,y))
 
 	# Step 4: remove adjacency data 
-	sAdj = AbstractAdjacency[];
+	Adj_s = AbstractAdjacency[];
 	for i in 1:length(Adj)
-		push!(sAdj, strip_adjacency(Adj[i]))	
+		push!(Adj_s, strip_adjacency(Adj[i]))	
 	end
 
 	# Step 5: return network learner 
-	return NetworkLearnerOutOfGraph(Ml, fl_exec, Mr, fr_exec, RL, Ci, sAdj, m, c, use_local_data)
+	return NetworkLearnerOutOfGraph(Ml, fl_exec, Mr, fr_exec, RL, Ci, Adj_s, m, c, use_local_data)
 end
 
 
@@ -154,24 +148,23 @@ function transform(model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T<:Abstra
 end
 
 function transform!(Xo::S, model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T<:AbstractMatrix, S<:AbstractMatrix}
-	# Step 0: Make initializations and pre-allocations 	
-	C = model.c									# number of output variables i.e. estimates
-	m = size(X,1)
-	n = nobs(X)									# number of observations
 	
+	# Step 0: Make initializations and pre-allocations 	
+	C = model.c										# number of output variables i.e. estimates
+	m = size(X,1)										# number of input variables
+	n = nobs(X)										# number of observations
 	@assert size(Xo) == (C,n) "Output dataset size must be $C×$n."
 	
-	# Pre-allocate relational dataset
-	if model.use_local_data
-		Xr = zeros(model.m+m, n)						# relational variables number + local variable number
-		Xr[1:m,:] = X								# allocate current data to relational dataset	
+	if model.use_local_data									# Pre-allocate relational dataset based on local data use
+		Xr = zeros(model.m+m, n)							#  - dimensions = relational variables number + local variable number
+		Xr[1:m,:] = X									#  - initialize (local) dimensions	
 		offset = m
-	else										# Only relational variables are used
+	else											# Skip local dataset dimensions
 		Xr = zeros(model.m,n)				
 		offset = 0
 	end
 
-	# Step 1: Apply local model, initialize output 
+	# Step 1: Apply local model, initialize output
 	Xl = model.fl_exec(model.Ml, X)
 	@assert size(Xo) == size(Xl) "Local model output size is $(size(Xl)) and NetworkLearner expected output size $(size(Xo))." 	
 	Xo[:] = Xl 

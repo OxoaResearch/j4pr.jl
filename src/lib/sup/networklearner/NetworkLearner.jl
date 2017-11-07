@@ -16,8 +16,9 @@ module NetworkLearner
 	include("rlearners.jl")									# Relational learners
 	include("cinference.jl")								# Collective inference algorithms		
 	include("utils.jl")
-	include("outlearning.jl")									# Out-of-graph learning
+	include("outlearning.jl")								# Out-of-graph learning
 	include("inlearning.jl")								# In-graph learning
+
 end
 
 
