@@ -1,7 +1,7 @@
 # Network learning
 module NetworkLearner
 	
-	using LearnBase, MLDataPattern, LightGraphs, SimpleWeightedGraphs
+	using LearnBase, MLDataPattern, LightGraphs, SimpleWeightedGraphs, Distances
 	
 	export AbstractNetworkLearner,
 		NetworkLearnerOutOfGraph,

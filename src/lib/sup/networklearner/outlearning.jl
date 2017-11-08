@@ -119,7 +119,7 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 	Xl = fl_exec(Ml,X);
 	
 	# Step 2: Get relational variables by training and executing the relational learner 
-	RL = [fit(Rl, Ai, Xl; priors=priors, normalize=normalize) for Ai in Adj]		# Train relational learners				
+	RL = [fit(Rl, Ai, Xl, y; priors=priors, normalize=normalize) for Ai in Adj]		# Train relational learners				
 	for (i,(RLi,Ai)) in enumerate(zip(RL,Adj))		
 		
 		# Select data subset for relational data output			
