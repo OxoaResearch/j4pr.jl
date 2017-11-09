@@ -29,14 +29,14 @@ end
 #Base.show(io::IO, m::NetworkLearnerOutOfGraph) = println("Network learner, out-of-graph computation")
 
 Base.show(io::IO, m::NetworkLearnerOutOfGraph) = begin 
-	println("Network learner, $size_in×$size_out, out-of-graph, $(length(m.Adj)) adjacencies")
+	println("NetworkLearner, $(m.size_in)×$(m.size_out), out-of-graph, $(length(m.Adj)) adjacencies")
 	print(io,"`- local model: "); println(io, m.Ml)
 	print(io,"`- relational model: "); println(io, m.Mr)
 	print(io,"`- relational learners: "); println(io, m.RL)
 	print(io,"`- collective inferer: "); println(io, m.Ci)
 	print(io,"`- adjacency: "); println(io, m.Adj)	
-	print(io,"`- use local data: $(m.use_local_data)");
-	println(io,"`- targets are $(target_encoding isa Void ? "not encoded" : "encoded")");
+	println(io,"`- use local data: $(m.use_local_data)");
+	println(io,"`- targets: $(m.target_enc isa Void ? "not encoded" : "encoded")");
 end
 
 

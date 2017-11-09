@@ -113,8 +113,9 @@ function transform!(Xr::T, Rl::BayesRN, Am::AbstractMatrix, X::S, ŷ::U) where 
 	 	T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
 	#TODO: Improve performance in this bit
 	for i in 1:nobs(X)
-            	vA = view(Am,i:i,:)		# get weights for current obs neighbors 
-		prod!(view(Xr,:,i), Rl.LM[:,ŷ].^vA) # calculate product of likelihoods of neighbors 
+            	vA = view(Am,i,:)		# get weights for current obs neighbors 
+		idx = vA.!=0
+		prod!(view(Xr,:,i), Rl.LM[:,ŷ[idx]]) # calculate product of likelihoods of neighbors 
         end
 	Xr[:] = diagm(Rl.priors)*Xr
 	Xr ./= clamp!(sum(Am,1),1.0,Inf) # unclear if needed
