@@ -2,7 +2,8 @@
 mutable struct NetworkLearnerOutOfGraph{T,U,S,V,
 				    R<:Vector{<:AbstractRelationalLearner},
 				    C<:AbstractCollectiveInferer,
-				    A<:Vector{<:AbstractAdjacency}} <: AbstractNetworkLearner 			
+				    A<:Vector{<:AbstractAdjacency},
+				    L<:Union{Void, MLLabelUtils.LabelEncoding}} <: AbstractNetworkLearner 			 
 	Ml::T											# local model
 	fl_exec::U										# local model execution function
 	Mr::S											# relational model
@@ -11,6 +12,7 @@ mutable struct NetworkLearnerOutOfGraph{T,U,S,V,
 	Ci::C											# collective inferer	
 	Adj::A											# adjacency information
 	use_local_data::Bool									# whether to use local data
+	target_enc::L										# target encoding
 	size_in::Int										# expected input dimensionality
 	size_out::Int										# expected output dimensionality
 end
@@ -33,7 +35,8 @@ Base.show(io::IO, m::NetworkLearnerOutOfGraph) = begin
 	print(io,"`- relational learners: "); println(io, m.RL)
 	print(io,"`- collective inferer: "); println(io, m.Ci)
 	print(io,"`- adjacency: "); println(io, m.Adj)	
-	println(io,"`- use local data: $(m.use_local_data)");
+	print(io,"`- use local data: $(m.use_local_data)");
+	println(io,"`- targets are $(target_encoding isa Void ? "not encoded" : "encoded")");
 end
 
 
@@ -54,17 +57,17 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::AbstractMatrix, y::AbstractArr
 	maxiter = ifelse(maxiter<=0, 1, maxiter)
 	bratio = clamp(bratio, 1e-6, 1.0-1e-6)
 	@assert all((priors.>=0.0) .& (priors .<=1.0)) "All priors have to be between 0.0 and 1.0."
-
+	
 	# Parse relational learner argument and generate relational learner type
 	if learner == :wvrn
-		Rl = WeightedVoteRN
+		Rl = WeightedRN
 	elseif learner == :cdrn 
 		Rl = ClassDistributionRN
 	elseif learner == :bayesrn
 		Rl = BayesRN
 	else
 		warn("Unknown relational learner. Defaulting to :wvrn.")
-		Rl = WeightedVoteRN
+		Rl = WeightedRN
 	end
 
 	# Parse collective inference argument and generate collective inference objects
@@ -113,24 +116,30 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 		offset = 0
 	end
 	
+	# Encode targets
+	(t_enc, yₑ) = encode_targets(y)
+
+
 	# Step 1: train and execute local model
-	Dl = (X,y)
+	Dl = (X,yₑ)
 	Ml = fl_train(Dl); 
 	Xl = fl_exec(Ml,X);
 	
+
 	# Step 2: Get relational variables by training and executing the relational learner 
-	RL = [fit(Rl, Ai, Xl, y; priors=priors, normalize=normalize) for Ai in Adj]		# Train relational learners				
+	RL = [fit(Rl, Ai, Xl, yₑ; priors=priors, normalize=normalize) for Ai in Adj]		# Train relational learners				
 	for (i,(RLi,Ai)) in enumerate(zip(RL,Adj))		
 		
 		# Select data subset for relational data output			
 		Xs = datasubset(Xr, offset+(i-1)*size_out+1 : offset+i*size_out, ObsDim.Constant{1}())						
 		
 		# Apply relational learner
-		transform!(Xs, RLi, Ai, Xl) 						
+		transform!(Xs, RLi, Ai, Xl, yₑ) 						
 	end
 	
+
 	# Step 3 : train relational model 
-	Mr = fr_train((Xr,y))
+	Mr = fr_train((Xr,yₑ))
 
 	# Step 4: remove adjacency data 
 	Adj_s = AbstractAdjacency[];
@@ -138,8 +147,9 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 		push!(Adj_s, strip_adjacency(Adj[i]))	
 	end
 
+
 	# Step 5: return network learner 
-	return NetworkLearnerOutOfGraph(Ml, fl_exec, Mr, fr_exec, RL, Ci, Adj_s, use_local_data, size_in, size_out)
+	return NetworkLearnerOutOfGraph(Ml, fl_exec, Mr, fr_exec, RL, Ci, Adj_s, use_local_data, t_enc, size_in, size_out)
 end
 
 
@@ -158,6 +168,7 @@ function transform!(Xo::S, model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T
 	m = size(X,1)										# number of input variables
 	n = nobs(X)										# number of observations
 	l = length(model.Adj)									# number of adjacencies in the model
+
 	@assert model.size_in == m "Expected input dimensionality $(model.size_in), got $m."
 	@assert size(Xo) == (model.size_out, n) "Output dataset size must be $(model.size_out)×$n."
 	
@@ -170,14 +181,17 @@ function transform!(Xo::S, model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T
 		offset = 0
 	end
 
+
 	# Step 1: Apply local model, initialize output
 	Xl = model.fl_exec(model.Ml, X)
 	@assert size(Xo) == size(Xl) "Local model output size is $(size(Xl)) and NetworkLearner expected output size $(size(Xo))." 	
 	Xo[:] = Xl 
 
+
 	# Step 2: Apply collective inference
 	transform!(Xo, model.Ci, model.RL, model.Adj, X)	
 	
+
 	# Step 3: Return output estimates
 	return Xo
 end

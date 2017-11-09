@@ -37,7 +37,7 @@ function transform!(Xo::T, Ci::RelaxationLabelingInferer, RL::R, Adj::A, X::S) w
 		T<:AbstractMatrix, R<:Vector{<:AbstractRelationalLearner}, 
 		A<:Vector{<:AbstractAdjacency}, S<:AbstractMatrix}
 	
-	println("Relaxation labeling ... doing nothing")
+	# ...
 	return Xo
 end
 
@@ -45,7 +45,7 @@ function transform!(Xo::T, Ci::IterativeClassificationInferer, RL::R, Adj::A, X:
 		T<:AbstractMatrix, R<:Vector{AbstractRelationalLearner}, 
 		A<:Vector{<:AbstractAdjacency}, S<:AbstractMatrix}
 	
-	println("Iterative classification ... doing nothing")
+	error("Iterative classification not supported.")
 	return Xo
 end
 
@@ -53,6 +53,6 @@ function transform!(Xo::T, Ci::GibbsSamplingInferer, RL::R, Adj::A, X::S) where 
 		T<:AbstractMatrix, R<:Vector{AbstractRelationalLearner}, 
 		A<:Vector{<:AbstractAdjacency}, S<:AbstractMatrix}
 	
-	println("Gibbs sampling ... doint nothing")
+	println("Gibbs sampling not supported.")
 	return Xo
 end
