@@ -191,7 +191,7 @@ function transform!(Xo::S, model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T
 
 
 	# Step 2: Apply collective inference
-	transform!(Xo, model.Mr, model.fr_exec, model.Ci, model.RL, model.Adj, X)	
+	transform!(Xo, model.Mr, model.fr_exec, model.Ci, model.RL, model.Adj, offset, Xr)	
 	
 
 	# Step 3: Return output estimates

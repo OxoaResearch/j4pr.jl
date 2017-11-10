@@ -58,7 +58,7 @@ fit(::Type{ClassDistributionRN}, Ai::AbstractAdjacency, Xl::AbstractMatrix, y::A
     		priors::Vector{Float64}=ones(size(Xl,1)), normalize::Bool=true) = begin
 	yu = sort(unique(y))
 	n = length(priors)
-	RV = zeros(n,n) # RV is a matrix where columns correspond to the class vectors of each class;
+	RV = zeros(n,n) 			# RV is a matrix where columns correspond to the class vectors of each class;
 	
 	# Calculate reference vectors (matrix where each column is a reference vector)
 	Am = adjacency_matrix(Ai)
@@ -123,7 +123,7 @@ function transform!(Xr::T, Rl::BayesRN, Am::AbstractMatrix, X::S, ŷ::U) where 
 	Xt = Xt.+ Rl.priors
 	Xr[:] = Xt
 	if Rl.normalize				# normalize estimates / observation
-		Xr ./= sum(Xr+eps(),1)
+		Xr ./= sum(Xr.+eps(),1)
 	end
 	return Xr
 end
