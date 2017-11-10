@@ -117,7 +117,7 @@ function transform!(Xr::T, Rl::BayesRN, Am::AbstractMatrix, X::S, ŷ::U) where 
 	Swi = zeros(1,nobs(X))
 	@inbounds @simd for i in 1:size(Xt,1)
 		Swi = sum(Am[ŷ.==i,:],1)./Sw 	# get normalized sum of edges of neighbours in class 'i', for all nodes
-		Xt +=log.(Rl.LM[:,i])*Swi	# add weighted class 'i' log likelihoods for all samples 
+		Xt +=log1p.(Rl.LM[:,i])*Swi	# add weighted class 'i' log likelihoods for all samples 
 	end
 		
 	Xt = Xt.+ Rl.priors
