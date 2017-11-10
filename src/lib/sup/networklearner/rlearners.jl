@@ -111,15 +111,17 @@ end
 
 function transform!(Xr::T, Rl::BayesRN, Am::AbstractMatrix, X::S, ŷ::U) where {
 	 	T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
-	#TODO: Improve performance in this bit
-	for i in 1:nobs(X)
-            	vA = view(Am,i,:)		# get weights for current obs neighbors 
-		idx = vA.!=0
-		prod!(view(Xr,:,i), Rl.LM[:,ŷ[idx]]) # calculate product of likelihoods of neighbors 
-        end
-	Xr[:] = diagm(Rl.priors)*Xr
-	Xr ./= clamp!(sum(Am,1),1.0,Inf) # unclear if needed
-
+	
+	Xt = zero(Xr)				# initialize temporary output relational data with 0
+	Sw = clamp!(sum(Am,1),1.0,Inf)		# sum all edge weights for all nodes
+	Swi = zeros(1,nobs(X))
+	@inbounds @simd for i in 1:size(Xt,1)
+		Swi = sum(Am[ŷ.==i,:],1)./Sw 	# get normalized sum of edges of neighbours in class 'i', for all nodes
+		Xt +=log.(Rl.LM[:,i])*Swi	# add weighted class 'i' log likelihoods for all samples 
+	end
+		
+	Xt = Xt.+ Rl.priors
+	Xr[:] = Xt
 	if Rl.normalize				# normalize estimates / observation
 		Xr ./= sum(Xr+eps(),1)
 	end
