@@ -37,7 +37,7 @@ fit(::Type{SimpleRN}, args...; priors::Vector{Float64}=Float64[], normalize::Boo
 fit(::Type{WeightedRN}, args...; priors::Vector{Float64}=Float64[], normalize::Bool=true) = WeightedRN(normalize)
 
 fit(::Type{BayesRN}, Ai::AbstractAdjacency, Xl::AbstractMatrix, y::AbstractVector; 
-    		priors::Vector{Float64}=Float64[], normalize::Bool=true) = begin
+    		priors::Vector{Float64}=ones(size(Xl,1)), normalize::Bool=true) = begin
 	C = size(Xl,1)
 	@assert C == length(priors) "Size of local model estimates is $(C) and prior vector length is $(length(priors))."
 	
@@ -55,9 +55,9 @@ fit(::Type{BayesRN}, Ai::AbstractAdjacency, Xl::AbstractMatrix, y::AbstractVecto
 end
 
 fit(::Type{ClassDistributionRN}, Ai::AbstractAdjacency, Xl::AbstractMatrix, y::AbstractVector; 
-    		priors::Vector{Float64}=Float64[], normalize::Bool=true) = begin
+    		priors::Vector{Float64}=ones(size(Xl,1)), normalize::Bool=true) = begin
 	yu = sort(unique(y))
-	n = length(yu)
+	n = length(priors)
 	RV = zeros(n,n) # RV is a matrix where columns correspond to the class vectors of each class;
 	
 	# Calculate reference vectors (matrix where each column is a reference vector)

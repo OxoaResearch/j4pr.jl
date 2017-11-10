@@ -32,16 +32,20 @@ Base.show(io::IO, vci::T) where T<:AbstractVector{S} where S<:AbstractCollective
 	print(io, "$(length(vci))-element Vector{$S} ...")
 
 
+
 # Transform methods
-function transform!(Xo::T, Ci::RelaxationLabelingInferer, RL::R, Adj::A, X::S) where {
+function transform!(Xo::T, Mr::M, fr_exec::E, Ci::RelaxationLabelingInferer, RL::R, Adj::A, X::S) where {
+		M, E, 
 		T<:AbstractMatrix, R<:Vector{<:AbstractRelationalLearner}, 
 		A<:Vector{<:AbstractAdjacency}, S<:AbstractMatrix}
 	
-	# ...
+	# 
+
 	return Xo
 end
 
-function transform!(Xo::T, Ci::IterativeClassificationInferer, RL::R, Adj::A, X::S) where {
+function transform!(Xo::T, Mr::M, fr_exec::E, Ci::IterativeClassificationInferer, RL::R, Adj::A, X::S) where {
+		M, E, 
 		T<:AbstractMatrix, R<:Vector{AbstractRelationalLearner}, 
 		A<:Vector{<:AbstractAdjacency}, S<:AbstractMatrix}
 	
@@ -49,7 +53,8 @@ function transform!(Xo::T, Ci::IterativeClassificationInferer, RL::R, Adj::A, X:
 	return Xo
 end
 
-function transform!(Xo::T, Ci::GibbsSamplingInferer, RL::R, Adj::A, X::S) where {
+function transform!(Xo::T, Mr::M, fr_exec::E, Ci::GibbsSamplingInferer, RL::R, Adj::A, X::S) where {
+		M, E, 
 		T<:AbstractMatrix, R<:Vector{AbstractRelationalLearner}, 
 		A<:Vector{<:AbstractAdjacency}, S<:AbstractMatrix}
 	

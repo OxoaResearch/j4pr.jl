@@ -59,14 +59,16 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::AbstractMatrix, y::AbstractArr
 	@assert all((priors.>=0.0) .& (priors .<=1.0)) "All priors have to be between 0.0 and 1.0."
 	
 	# Parse relational learner argument and generate relational learner type
-	if learner == :wvrn
+	if learner == :rn
+		Rl = SimpleRN
+	elseif learner == :wrn
 		Rl = WeightedRN
 	elseif learner == :cdrn 
 		Rl = ClassDistributionRN
 	elseif learner == :bayesrn
 		Rl = BayesRN
 	else
-		warn("Unknown relational learner. Defaulting to :wvrn.")
+		warn("Unknown relational learner. Defaulting to :wrn.")
 		Rl = WeightedRN
 	end
 
@@ -189,7 +191,7 @@ function transform!(Xo::S, model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T
 
 
 	# Step 2: Apply collective inference
-	transform!(Xo, model.Ci, model.RL, model.Adj, X)	
+	transform!(Xo, model.Mr, model.fr_exec, model.Ci, model.RL, model.Adj, X)	
 	
 
 	# Step 3: Return output estimates
