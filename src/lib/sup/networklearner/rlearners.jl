@@ -75,20 +75,22 @@ end
 
 
 # Transform methods
-function transform!(Xr::T, Rl::R, Ai::AbstractAdjacency, X::S, ŷ::U) where {
+function transform!(Xr::T, Rl::R, Ai::AbstractAdjacency, X::S, ŷ::U; obs::UnitRange{Int}=1:nobs(X)) where {
 		R<:AbstractRelationalLearner, T<:AbstractMatrix, S<:AbstractVector, U<:AbstractVector}
-	transform!(Xr, Rl, adjacency_matrix(Ai), X', ŷ)
+	Am = adjacency_matrix(Ai)[:,obs]
+	transform!(Xr, Rl, Am, X', ŷ)
 end
 
-function transform!(Xr::T, Rl::R, Ai::AbstractAdjacency, X::S, ŷ::U) where {
+function transform!(Xr::T, Rl::R, Ai::AbstractAdjacency, X::S, ŷ::U; obs::UnitRange{Int}=1:nobs(X)) where {
 		R<:AbstractRelationalLearner, T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}
-	transform!(Xr, Rl, adjacency_matrix(Ai), X, ŷ)
+	Am = adjacency_matrix(Ai)[:,obs]
+	transform!(Xr, Rl, Am, X, ŷ)
 end
 
-function transform!(Xr::T, Rl::SimpleRN, Am::AbstractMatrix, X::S, ŷ::U) where {
-		T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
+function transform!(Xr::T, Rl::SimpleRN, Am::M, X::S, ŷ::U) where {
+		T<:AbstractMatrix, M<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
 	for i in 1:size(Xr,1)
-		Xr[i,:] = Am * (ŷ.==i)		# summate edge weights for neighbours in class 'i'  
+		Xr[i,:] = At_mul_B(ŷ.==i, Am)	# summate edge weights for neighbours in class 'i'  
 	end
 	Xr ./= clamp!(sum(Am,1),1.0,Inf)	# normalize to edge weight sum	
 	
@@ -98,8 +100,8 @@ function transform!(Xr::T, Rl::SimpleRN, Am::AbstractMatrix, X::S, ŷ::U) where
 	return Xr
 end
 
-function transform!(Xr::T, Rl::WeightedRN, Am::AbstractMatrix, X::S, ŷ::U) where {
-		T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
+function transform!(Xr::T, Rl::WeightedRN, Am::M, X::S, ŷ::U) where {
+		T<:AbstractMatrix, M<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
 	Xr[:] = X*Am				# summate edge weighted probabilities of all neighbors
 	Xr ./= clamp!(sum(Am,1),1.0,Inf)	# normalize to edge weight sum
 	
@@ -109,9 +111,8 @@ function transform!(Xr::T, Rl::WeightedRN, Am::AbstractMatrix, X::S, ŷ::U) whe
 	return Xr
 end
 
-function transform!(Xr::T, Rl::BayesRN, Am::AbstractMatrix, X::S, ŷ::U) where {
-	 	T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
-	
+function transform!(Xr::T, Rl::BayesRN, Am::M, X::S, ŷ::U) where {
+		T<:AbstractMatrix, M<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
 	Xt = zero(Xr)				# initialize temporary output relational data with 0
 	Sw = clamp!(sum(Am,1),1.0,Inf)		# sum all edge weights for all nodes
 	Swi = zeros(1,nobs(X))
@@ -128,8 +129,8 @@ function transform!(Xr::T, Rl::BayesRN, Am::AbstractMatrix, X::S, ŷ::U) where 
 	return Xr
 end
 
-function transform!(Xr::T, Rl::ClassDistributionRN, Am::AbstractMatrix, X::S, ŷ::U) where {
-	 	T<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
+function transform!(Xr::T, Rl::ClassDistributionRN, Am::M, X::S, ŷ::U) where {
+		T<:AbstractMatrix, M<:AbstractMatrix, S<:AbstractMatrix, U<:AbstractVector}	
 	d = Distances.Euclidean()
 	Xtmp = X*Am
 	Xtmp ./= clamp!(sum(Am,1),1.0,Inf)	# normalize to edge weight sum	

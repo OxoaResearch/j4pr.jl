@@ -13,7 +13,7 @@ getpriors(y::AbstractArray) = error("Only vectors supported as targets in relati
 encode_targets(labels::T where T<:AbstractVector{S}) where S = begin
 	ulabels::Vector{S} = sort(unique(labels))
 	enc = LabelEnc.NativeLabels(ulabels)
-	return (enc, label2ind.(labels))
+	return (enc, label2ind.(labels,enc))
 end
 
 encode_targets(labels::T where T<:AbstractVector{S}) where S<:AbstractFloat = begin

@@ -48,7 +48,7 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::AbstractMatrix, y::AbstractArr
 		fl_train, fl_exec, fr_train, fr_exec; 
 		priors::Vector{Float64}=getpriors(y), learner::Symbol=:wvrn, inference::Symbol=:rl, 
 		normalize::Bool=true, use_local_data::Bool=true, f_targets::Function=x->targets(indmax,x), 
-		tol::Float64=1e-6, κ::Float64=1.0, α::Float64=0.99, maxiter::Int=1000, bratio::Float64=0.1) 
+		tol::Float64=1e-6, κ::Float64=1.0, α::Float64=0.99, maxiter::Int=100, bratio::Float64=0.1) 
 
 	# Parse, transform input arguments
 	κ = clamp(κ, 1e-6, 1.0)
@@ -77,7 +77,7 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::AbstractMatrix, y::AbstractArr
 		Ci = RelaxationLabelingInferer(maxiter, tol, f_targets, κ, α)
 	elseif inference == :ic
 		Ci = IterativeClassificationInferer(maxiter, tol, f_targets)
-	elseif inferece == :gs
+	elseif inference == :gs
 		Ci = GibbsSamplingInferer(maxiter, tol, f_targets, ceil(Int, maxiter*bratio))
 	else
 		warn("Unknown collective inferer. Defaulting to :rl.")
@@ -191,7 +191,7 @@ function transform!(Xo::S, model::M, X::T) where {M<:NetworkLearnerOutOfGraph, T
 
 
 	# Step 2: Apply collective inference
-	transform!(Xo, model.Mr, model.fr_exec, model.Ci, model.RL, model.Adj, offset, Xr)	
+	transform!(Xo, model.Ci, model.Mr, model.fr_exec, model.RL, model.Adj, offset, Xr)	
 	
 
 	# Step 3: Return output estimates
