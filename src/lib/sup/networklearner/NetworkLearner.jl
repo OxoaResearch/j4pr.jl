@@ -8,7 +8,9 @@ module NetworkLearner
 		NetworkLearnerInGraph,
 		fit, 
 		transform, transform!, 
-		add_adjacency!
+		add_adjacency!, 
+		adjacency_matrix,
+		adjacency_graph
 	
 	abstract type AbstractNetworkLearner end
 	
