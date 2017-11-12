@@ -21,3 +21,5 @@ RDatasets
 DataArrays
 DataStructures
 ROCAnalysis
+LightGraphs
+SimpleWeightedGraphs
