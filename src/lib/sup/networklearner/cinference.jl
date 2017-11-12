@@ -73,10 +73,10 @@ function transform!(Xo::T, Ci::RelaxationLabelingInferer, Mr::M, fr_exec::E, RL:
 
 		# Convergence check
 		if isequal(ŷ,ŷₒ) || mean(abs.(ŷ-ŷₒ))<=tol
-			println("Convergence reached at iteration $it.")
+			# println("Convergence reached at iteration $it.")
 			break
 		else
-			#println("Iteration $it: $(sum(ŷ.!= ŷₒ)) estimates changed")
+			# println("Iteration $it: $(sum(ŷ.!= ŷₒ)) estimates changed")
 	   	end
 		
 		# Replace non-converging estimates with local estimates
@@ -137,10 +137,10 @@ function transform!(Xo::T, Ci::IterativeClassificationInferer, Mr::M, fr_exec::E
 
 		# Convergence check
 		if isequal(ŷ,ŷₒ) || mean(abs.(ŷ-ŷₒ))<=tol
-			println("Convergence reached at iteration $it.")
+			# println("Convergence reached at iteration $it.")
 			break
 		else
-			#println("Iteration $it: $(sum(ŷ.!= ŷₒ)) estimates changed")
+			# println("Iteration $it: $(sum(ŷ.!= ŷₒ)) estimates changed")
 	   	end
 
 		# Replace non-converging estimates with local estimates
@@ -158,6 +158,6 @@ function transform!(Xo::T, Ci::GibbsSamplingInferer, Mr::M, fr_exec::E, RL::R, A
 		T<:AbstractMatrix, R<:Vector{<:AbstractRelationalLearner}, 
 		A<:Vector{<:AbstractAdjacency}, S<:AbstractMatrix}
 	
-	warn("Gibbs sampling not implemented, input estimates.")
+	# warn("Gibbs sampling not implemented, returning input (local model) estimates.")
 	return Xo
 end
