@@ -9,6 +9,7 @@ module NetworkLearner
 		fit, 
 		transform, transform!, 
 		add_adjacency!, 
+		strip_adjacency,
 		adjacency_matrix,
 		adjacency_graph
 	

@@ -40,31 +40,33 @@ function transform!(Xo::T, Ci::RelaxationLabelingInferer, Mr::M, fr_exec::E, RL:
 		A<:Vector{<:AbstractAdjacency}, S<:AbstractMatrix}
 	
 	# Initializations
-	κ = Ci.κ				# a constant between 0 and 1
-	α = Ci.α				# decay
-	β = κ					# weight of current iteration estimates
-	maxiter = Ci.maxiter			# maximum number of iterations
-	tol = Ci.tol				# maximum error 
-	f_targets = Ci.tf			# function used to obtain targets
-	size_out = size(Xo,1)			# ouput size (corresponds to the number of classes)
-	Xl = copy(Xo) 				# local estimates
-	ŷₗ = f_targets(Xo)			# Obtain first the labels corresponding to the local model
-	ŷ = ŷₗ					#   and initialize the current estimates
-	ŷₒ = similar(ŷ)				#   and the 'previous' iteration estimates
+	n = nobs(Xo)										# number of observations
+	κ = Ci.κ										# a constant between 0 and 1
+	α = Ci.α										# decay
+	β = κ											# weight of current iteration estimates
+	maxiter = Ci.maxiter									# maximum number of iterations
+	tol = Ci.tol										# maximum error 
+	f_targets = Ci.tf									# function used to obtain targets
+	size_out = size(Xo,1)									# ouput size (corresponds to the number of classes)
+	Xl = copy(Xo)										# local estimates
+	ŷₗ = f_targets(Xo)									# Obtain first the labels corresponding to the local model
+	ŷ = ŷₗ											#   and initialize the current estimates
+	ŷₒ = similar(ŷ)										#   and the 'previous' iteration estimates
 
 	# Iterate
+	Xrᵢ = zeros(size_out,n)									# Initialize temporary storage	
 	for it in 1:maxiter
-		β = β * α			# Update learning rate
-		copy!(ŷₒ, ŷ);			# Update 'previous iteration' estimates 
+		β = β * α									# Update learning rate
+		copy!(ŷₒ, ŷ);									# Update 'previous iteration' estimates 
 		
 		# Obtain relational dataset for the current iteration
 		@inbounds for (i,(RLᵢ,Aᵢ)) in enumerate(zip(RL,Adj))		
 		
-			# Select data subset for relational data output			
-			Xsᵢ = datasubset(Xr, offset+(i-1)*size_out+1 : offset+i*size_out, ObsDim.Constant{1}())
-
 			# Apply relational learner
-			transform!(Xsᵢ, RLᵢ, Aᵢ, Xo, ŷ)
+			transform!(Xrᵢ, RLᵢ, Aᵢ, Xo, ŷ)
+
+			# Update relational data output
+			Xr[offset+(i-1)*size_out+1 : offset+i*size_out,:] = Xrᵢ
 		end
 		
 		# Update estimates
@@ -107,8 +109,9 @@ function transform!(Xo::T, Ci::IterativeClassificationInferer, Mr::M, fr_exec::E
 	ŷₒ = similar(ŷ)				#   and the 'previous' iteration estimates
 	
 	# Iterate
+	Xrᵢⱼ = zeros(size_out,1)		# Initialize temporary storage	
 	for it in 1:maxiter	
-		randperm!(ordering)		# Randomize observation order
+		shuffle!(ordering)		# Randomize observation order
 		copy!(ŷₒ, ŷ);			# Update 'previous iteration' estimates 
 
 		# Loop over observations and obtain individual estimates
@@ -122,12 +125,12 @@ function transform!(Xo::T, Ci::IterativeClassificationInferer, Mr::M, fr_exec::E
 
 			# Obtain relational data for the current observation
 			@inbounds for (i,(RLᵢ,Aᵢ)) in enumerate(zip(RL,Adj))		
-		
-				# Select observation variable subset for relational data output			
-				Xsᵢⱼ = datasubset(Xrⱼ, offset+(i-1)*size_out+1 : offset+i*size_out, ObsDim.Constant{1}())
 
 				# Apply relational learner
-				transform!(Xsᵢⱼ, RLᵢ, Aᵢ, Xo, ŷ, obs=rⱼ)
+				transform!(Xrᵢⱼ, RLᵢ, Aᵢ, Xo, ŷ, obs=rⱼ)
+				
+				# Update relational data output for the current sample
+				Xrⱼ[offset+(i-1)*size_out+1 : offset+i*size_out,:] = Xrᵢⱼ
 			end
 		
 			# Update estimates

@@ -129,14 +129,16 @@ function fit(::Type{NetworkLearnerOutOfGraph}, X::T, y::S, Adj::A, Rl::R, Ci::C,
 	
 
 	# Step 2: Get relational variables by training and executing the relational learner 
-	RL = [fit(Rl, Ai, Xl, yₑ; priors=priors, normalize=normalize) for Ai in Adj]		# Train relational learners				
-	for (i,(RLi,Ai)) in enumerate(zip(RL,Adj))		
-		
-		# Select data subset for relational data output			
-		Xs = datasubset(Xr, offset+(i-1)*size_out+1 : offset+i*size_out, ObsDim.Constant{1}())						
+	RL = [fit(Rl, Aᵢ, Xl, yₑ; priors=priors, normalize=normalize) for Aᵢ in Adj]		# Train relational learners				
+
+	Xrᵢ = zeros(size_out,n)									# Initialize temporary storage	
+	for (i,(RLᵢ,Aᵢ)) in enumerate(zip(RL,Adj))		
 		
 		# Apply relational learner
-		transform!(Xs, RLi, Ai, Xl, yₑ) 						
+		transform!(Xrᵢ, RLᵢ, Aᵢ, Xl, yₑ)
+
+		# Update relational data output		
+		Xr[offset+(i-1)*size_out+1 : offset+i*size_out, :] = Xrᵢ									
 	end
 	
 
