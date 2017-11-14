@@ -76,17 +76,17 @@
 			- Arc-x4 --> j4pr.jl					[Unknown version]	
 		- Gradient Boosting --> ?					[Unknown version]
 		- Random subspace --> j4pr.jl					[OK][v.0.1.0]
-		- Network classifiers --> j4pr.jl				[TODO][v.0.1.2]
+		- Network classifiers --> NetworkLearning.jl			[TODO][v.0.1.2]
 		- Rotation Forest --> j4pr.jl					[Unknown version]	
 
 	* Evaluation & Optimization 
-		- cross-validation --> MLBase.jl?				[TODO][v.0.1.2?] 
+		- cross-validation --> MLBase.jl?				[TODO][v.0.1.4?] 
 		- loss-functions --> MLLabelUtils.jl, LossFunctions.jl		[OK][v.0.1.0]
 		- ROC Analysis --> ROCAnalysis.jl+j4pr.jl			[OK][v.0.1.1]
-		- Hyperparameter optimization --> MLBase.jl?			[TODO][v.0.1.2?]
+		- Hyperparameter optimization --> MLBase.jl?			[TODO][v.0.1.4?]
 
 	* Feature Selection
-		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.2?]
+		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.4?]
 
 ## Regression
 	* Basic Regression:

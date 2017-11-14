@@ -94,8 +94,8 @@ module RandomSubspace
 	
 	It is important to note that the training method calls internally `x->f_train((x,y))` where `x` are the subsets of `X` constructed using `L`, `M` and the total number of variables of `X`.
 	Considering a generic training function `g` desired to be used in the ensemble, of the following forms:
-	 * `g(X, y, arg1, arg2)`, one should provide as argument something as `f_train = (x)->g_train(x[1],y[2], arg1, arg2) # uses labels` 
-	 * `g(X, arg1, arg2)`, one should provide as argument something as `f_train = (x)->g_train(x[1],arg1, arg2) # ignores labels` 
+	 * `g(X, y, arg1, arg2)`, one should provide as argument something as `f_train = (x)->g_train(x[1], x[2], arg1, arg2) # uses labels` 
+	 * `g(X, arg1, arg2)`, one should provide as argument something as `f_train = (x)->g_train(x[1], arg1, arg2) # ignores labels` 
 	 * `g(X, arg1, arg2)` where `X==(data,labels)`, one should provide as argument something as `f_train = (x)->g_train(x, arg1, arg2) # MLDataUtils container case`
 	 * `g(args...)::CellFunU`, one can simply provide `g.f` (i.e. the training function of the untrained function cell) since it already contains the training arguments.
 

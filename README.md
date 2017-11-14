@@ -593,11 +593,9 @@ estimator can be accessed by writing in the REPL:
 
 ## Installation
 
-This package is not registered in `METADATA.jl` and can cannot 
-be installed from the REPL. It can be downloaded either from 
-GitHub or from [here](https://oxoaresearch.com/wp-content/uploads/2017/09/j4pr.tar.gz). It is recommended to add the
-path to `j4pr.jl` to the `LOAD_PATH` i.e. add
-`push!(LOAD_PATH, "/path/to/j4pr/dot/jl/")` to `~/.juliarc`.
+The package can be installed by running 
+`Pkg.clone("https://github.com/zgornel/j4pr.jl")` in the Julia REPL
+or by downloading it from GitHub.
 
 
 

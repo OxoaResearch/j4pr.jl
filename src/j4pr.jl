@@ -47,6 +47,7 @@ module j4pr
 	using DataStructures: SortedDict
 	using StatsBase: countmap, fit, Histogram
 	using Reexport, StaticArrays, DataArrays, Compat, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, MLKernels
+	#using NetworkLearning
 
 
     	##############################################################################################################################
@@ -141,7 +142,7 @@ module j4pr
 		RandomSubspace, randomsubspace,							# Random sub-space ensemble
 		AdaBoost, adaboost,								# AdaBoost ensemble
 		DecisionStump, stump, stumpr,							# Decision stump classifier and regressor
-		NetworkLearner,									# Network learning
+		# networklearner,								# Network learning
 
 		# [lib/unsup]
 		kernelize!, kernelize, kernel							# Construct kernels
@@ -210,7 +211,7 @@ module j4pr
 		include("lib/sup/randomsubspace.jl")						# Random subspace ensemble framework
 		include("lib/sup/adaboost.jl")							# AdaBoost ensemble framework
 		include("lib/sup/stump.jl")							# Decision stump classifier and regressor
-		include("lib/sup/networklearner/NetworkLearner.jl")				# Network learning 
+		#include("lib/sup/networklearner.jl")						# Network learning 
 	
 	# Some packages do not work for Julia > 0.6
 	if v"0.6" <= VERSION < v"0.7-"
