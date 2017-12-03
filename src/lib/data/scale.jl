@@ -197,14 +197,12 @@ end
 # Execution
 scaler!(x::T where T<:Union{AbstractArray, CellData}, model::Model) = begin
 	
-	for (idx, (scale, offset, clip)) in model.data
+	@inbounds for (idx, (scale, offset, clip)) in model.data
 		variable = _variable_(x,idx) 	# Assign temp variable
 		
 		# Process variable vector
-		@inbounds @fastmath variable[:] = variable .* scale + offset
-		if (clip) 
-			clamp!(variable,0.0,1.0)
-		end
+		@fastmath variable[:] = variable .* scale .+ offset
+		ifelse(clip, clamp!(variable,0.0,1.0), nothing)
 	end
 	return x
 end

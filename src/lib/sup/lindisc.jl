@@ -31,7 +31,7 @@ module LinDiscClassifier
 			cv += priors[yi]*cov(x[:,y.==yi],2)
 		end
 		
-	       	cv = (1-r1-r2)*cv + r1*diagm(diag(cv)) + r2*trace(cv)*eye(m)
+		cv = (1.0-r1-r2)*cv + r1*Matrix(Diagonal(diag(cv))) + r2*trace(cv)*eye(m)
 	
 		return LinDiscModel(mv, inv(cv), priors, classes, r1, r2)
 	end
@@ -43,7 +43,7 @@ module LinDiscClassifier
 		out = zeros(Float64, C, size(x,2))
 		@simd for c in 1:C	
 		 	# 			Linear term		Constant term log(P(ωᵢ)) - ...
-			@inbounds out[c,:] = (m.icm*m.mean[c])'*x + log(m.priors[m.classes[c]])-1/2*m.mean[c]'*m.icm*m.mean[c]
+			@inbounds out[c,:] = (m.icm*m.mean[c])'*x .+ log(m.priors[m.classes[c]]).-1/2*m.mean[c]'*m.icm*m.mean[c]
 		end
 		
 		# Apply softmax

@@ -214,13 +214,12 @@ function ohenc_integer(x::T where T<:AbstractVector, v::S where S<:AbstractVecto
 	
 	# Function that searches fast a value through a vector of unique values
 	function _fastsearch_(v::T,uv::Vector{T})::Int where T
-		i = 0
 		@inbounds for (i,vi) in enumerate(uv)
 			if isequal(vi,v) 
 				return i
 			end
 		end
-		return i
+		return 0
 	end
 	
 	for i in 1:length(vf)

@@ -39,7 +39,7 @@ module QuadDiscClassifier
 			dcm[i] = -1/2*log(det(cv[i,:,:]))
 			
 			# Regularize and invert the covariance matrices
-			cv[i,:,:] = inv( (1-r1-r2)*cv[i,:,:] + r1*diagm(diag(cv[i,:,:])) + r2*trace(cv[i,:,:])*eye(m) )
+			cv[i,:,:] = inv( (1-r1-r2)*cv[i,:,:] + r1*Matrix(Diagonal(diag(cv[i,:,:]))) + r2*trace(cv[i,:,:])*eye(m) )
 			
 		end
 		
@@ -68,7 +68,7 @@ module QuadDiscClassifier
 		
 		@inbounds @simd for c in 1:C
 					# Linear term: inv(Σᵢ)*μᵀ*x			# Constant term log(P(ωᵢ)) - ...
-			out[c:c,:] += (m.icm[c,:,:]*m.mean[c])'*x + log(m.priors[m.classes[c]])- 1/2*m.mean[c]'*m.icm[c,:,:]*m.mean[c] + m.dcm[c] 
+			out[c:c,:] += (m.icm[c,:,:]*m.mean[c])'*x .+ log(m.priors[m.classes[c]]).- 1/2*m.mean[c]'*m.icm[c,:,:]*m.mean[c] .+ m.dcm[c] 
 		end
 	
 		# Apply softmax

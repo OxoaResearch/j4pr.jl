@@ -3,7 +3,7 @@ function t_kmedoids()
 
 
 
-X = [randn(10,200)*2+rand(10,200) rand(10,200)+10 -5+randn(10,400)]
+X = [randn(10,200)*2+rand(10,200) rand(10,200).+10 -5.0 .+ randn(10,400)]
 C = X |> j4pr.dist(X)
 
 Test.@test try 

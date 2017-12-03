@@ -132,7 +132,7 @@ function linearsplit(v::T where T<:AbstractVector, n::Int; prop::Float64=0.0, co
 	vt = trim(v, prop=prop, count=count)		# trim
 	n = min(n, length(unique(vt)))			# number of points 	
 	L = linspace(minimum(vt),maximum(vt),n+1); 	# generate space
-	return collect( (L+L.step.hi/2)[1:end-1] )	# take midpoints
+	return collect( (L.+L.step.hi/2.0)[1:end-1] )	# take midpoints
 end
 
 

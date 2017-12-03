@@ -148,7 +148,7 @@ densityplot1d(x::T where T<:AbstractVector, xidx::Int=1; nbins=100, color=:white
 
 	h = fit(Histogram, x, closed=:left, nbins=nbins)
 	r = h.edges[1]
-	x1 = r[1:length(r)-1]+0.5*step(r)
+	x1 = r[1:length(r)-1].+0.5*step(r)
 	x2 = h.weights
 	
 	p = UnicodePlots.lineplot(x1,x2; color=color, kwargs...) 
@@ -177,7 +177,7 @@ densityplot1d(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractVector, xidx
 	# Plot 1-st class
 	h = fit(Histogram, data[cmask], nbins=nbins, closed=:left)
 	r = h.edges[1]
-	x = r[1:length(r)-1]+0.5*step(r)
+	x = r[1:length(r)-1].+0.5*step(r)
 	y = h.weights
 	maxy = max(maxy,maximum(y))
 	p = UnicodePlots.lineplot(x, y, color=colors[1], xlim=[minx,maxx], ylim=[miny, maxy]; kwargs...) 
@@ -187,7 +187,7 @@ densityplot1d(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractVector, xidx
 		cmask = labels .== classes[i]
 		h = fit(Histogram, data[cmask], nbins=nbins, closed=:left)
 		r = h.edges[1]
-		x = r[1:length(r)-1]+0.5*step(r)
+		x = r[1:length(r)-1].+0.5*step(r)
 		y = h.weights
 		maxy = max(maxy,maximum(y))
 		UnicodePlots.lineplot!(p, x, y, color = colors[(i-1)%length(colors)+1], xlim=[minx,maxx],ylim=[miny,maxy] ; kwargs...)

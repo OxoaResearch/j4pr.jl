@@ -115,7 +115,7 @@ module AdaBoost
 					fill!(w,1.0/n)						# reinitialize weights but do not change iteration
 				else
 					beta[k] = err/(1-err)					# beta is directly proportional with the error
-					w = w .* (beta[k].^(1.0-mismatches)) 			# if mismatch keep weight, if not, decrease weight 
+					w = w .* (beta[k].^(1.0.-mismatches)) 			# if mismatch keep weight, if not, decrease weight 
 					w = w./sum(w)						# normalize
 					k+=1
 				end
@@ -127,7 +127,7 @@ module AdaBoost
 				break
 			end
 		end	
-		return AdaBoostEnsemble(log.(1 ./(beta+eps())), f_train, f_exec, members, AdaBoostM1(), WeightedVoteCombiner(L, C, log.(1 ./(beta+eps()))))
+		return AdaBoostEnsemble(log.(1 ./(beta.+eps())), f_train, f_exec, members, AdaBoostM1(), WeightedVoteCombiner(L, C, log.(1 ./(beta.+eps()))))
 	end
 
 
@@ -211,7 +211,7 @@ module AdaBoost
 				break
 			end
 		end	
-		return AdaBoostEnsemble(log.(1 ./(beta+eps())), f_train, f_exec, members, AdaBoostM2(), WeightedMeanCombiner(L,C,1.0,log.(1 ./(beta+eps()))))
+		return AdaBoostEnsemble(log.(1 ./(beta.+eps())), f_train, f_exec, members, AdaBoostM2(), WeightedMeanCombiner(L,C,1.0,log.(1 ./(beta.+eps()))))
 	end
 
 	"""

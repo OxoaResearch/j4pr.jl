@@ -22,7 +22,7 @@ slower and probably more stable updates
 
 Read the `Clustering.jl` documentation for more information.  
 """
-affinityprop(fs::Function=(x,y)->1-Distances.pairwise(Distances.CosineDist(),x,y); kwargs...) = 
+affinityprop(fs::Function=(x,y)->one(eltype(x)) .- Distances.pairwise(Distances.CosineDist(),x,y); kwargs...) = 
 	FunctionCell(affinityprop, (fs,), ModelProperties(), kwtitle("Affinity propagation", kwargs); kwargs...) 
 
 

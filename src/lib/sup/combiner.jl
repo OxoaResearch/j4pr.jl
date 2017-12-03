@@ -314,7 +314,7 @@ module ClassifierCombiner
 		@inbounds for i in 1:size(ip,2) # i - samples 
 			for j in 1:size(E,2) 	# j - label combinations
 				if view(E,:,j) == view(ip,:,i)
-					labelcount[findin(ulabels,view(labels,i)),j]+=1
+					labelcount[findin(ulabels,view(labels,i)),j].+=1
 					continue # skip search for other combinations
 				end
 			end
@@ -399,13 +399,12 @@ module ClassifierCombiner
 		
 		# Function that searches fast a value through a vector of unique values
 		function _fastsearch_(v::T,uv::Vector{T})::Int where T
-			i = 0
 			@inbounds for (i,vi) in enumerate(uv)
 				if isequal(vi,v) 
 					return i
 				end
 			end
-			return i
+			return 0
 		end
 		
 		tmp = Vector{Float64}(C)		# Temporary class-wise priors
@@ -450,7 +449,7 @@ module ClassifierCombiner
 		@assert size(p,3) == x.L "[Classifier combiner] Mismatch between expected and input ensemble size" 
 
 		alpha::Float64=x.α	
-		return (squeeze(mean((p+eps()).^alpha,3),3)).^(1/alpha)
+		return (squeeze(mean((p.+eps()).^alpha,3),3)).^(1/alpha)
 	end
 
 	function combiner_exec(x::WeightedMeanCombiner, predictions::T where T<:AbstractArray)
@@ -459,7 +458,7 @@ module ClassifierCombiner
 		@assert size(p,3) == x.L "[Classifier combiner] Mismatch between expected and input ensemble size" 
 		@assert size(p,3) == length(x.weights) "[Classifier combiner] Mismatch between ensemble size and weights length" 
 		alpha::Float64=x.α	
-		return mean(((p[:,:,i]*x.weights[i]+eps()).^alpha for i in 1:length(x.weights))).^(1/alpha)
+		return mean(((p[:,:,i]*x.weights[i].+eps()).^alpha for i in 1:length(x.weights))).^(1.0/alpha)
 	end
 	
 	function combiner_exec(x::MedianCombiner, predictions::T where T<:AbstractArray)
@@ -487,7 +486,7 @@ module ClassifierCombiner
 
 		for j in 1:n
 			for i in 1:x.C
-				out[i,j] = 1-1/(x.C*x.L)*Distances.evaluate(x.d, x.DT[:,:,i], p[:,j,:]) 
+				out[i,j] = 1.0 .- 1.0/(x.C*x.L)*Distances.evaluate(x.d, x.DT[:,:,i], p[:,j,:]) 
 			end
 		end
 		return out 
