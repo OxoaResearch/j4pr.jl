@@ -222,8 +222,7 @@ module j4pr
 		include("lib/sup/roc.jl")							# ROC Analysis and operating point related functionality
 	end
 
-	# [exp] e.g. Experimental stuff
-		#include("exp/benchmark.jl")							# Benchmark infrastructure (not really good, provides a very
+	# [exp] Experimental stuff
 		include("exp/plotting.jl")							# Plots for labeled/unlabeled datasets (UnicodePlots.jl)
 												# limited and biased view on the library's performance)	
 	# [tool] Tools not related to j4pr. Include manually.
