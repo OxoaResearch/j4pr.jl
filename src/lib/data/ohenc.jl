@@ -129,8 +129,14 @@ ohenc(x::T where T<:Union{AbstractArray, CellData}, opts) = begin
 	FunctionCell(ohenc, Model(modeldata, modelprops), encodername)
 end
 
+
+
 # Execution
-ohenc(x::T where T<:CellData, model::Model) = DataCell(ohenc(getx!(x), model), gety!(x))
+ohenc(x::T where T<:CellData, model::Model) = datacell(ohenc(strip(x), model))
+
+ohenc(x::Tuple{T} where T<:AbstractArray, model::Model) = (ohenc(x[1], model),)
+
+ohenc(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, model::Model) = (ohenc(x[1], model),x[2])
 
 ohenc(x::T where T<:AbstractVector, model::Model) = ohenc(mat(x, ObsDim.Constant{2}()),model)
 
@@ -143,17 +149,17 @@ ohenc(x::T where T<:AbstractMatrix, model::Model) = begin
 	variables_unprocessed::Vector{Int} = model.properties.other["variables_unprocessed"]
 
 	# Allocate encoding matrix
-	B = Matrix{eltype(1.0)}(size_out - size_unprocessed, nobs(x))
+	B = fill(NaN, size_out - size_unprocessed, nobs(x))
 
 	# Iterate over processing options and write values
 	i = 1 #internal row (e.g. new feature) counter
 	for (idx, (encoding, v)) in model.data
-		variable::Vector{eltype(x)} = _variable_(x,idx)[:] # assign temp variable
+		xv = view(x,idx,:)
 		if (encoding == "integer")
-			B[i, :] = ohenc_integer(variable, v)
+			ohenc_integer!(_variable_(B,i), xv, v)
 			i += 1
 		elseif (encoding == "binary")
-			B[i:i+length(v)-1, :] = ohenc_binary(variable, v)
+			ohenc_binary!(_variable_(B,i:i+length(v)-1), xv, v)
 			i += length(v)
 		else
 			# Should not arrive here, unknown options are removed from start
@@ -178,38 +184,39 @@ end
 
 
 
-
 # Binary encoder 
 function ohenc_binary(x::T where T<:AbstractVector, v::S where S<:AbstractVector, val::Float64=1.0)::Matrix{Float64}
-	
-	m::Int64 = length(v) 		# number of lines - e.g. new dimensionality 
-	n::Int64 = length(x) 		# number of columns - e.g. number of objects
+	B = fill(NaN, length(v), length(x))
+	ohenc_binary!(B, x, v, val)
+	return B
+end
+
+function ohenc_binary!(B::AbstractMatrix{Float64}, x::T where T<:AbstractVector, v::S where S<:AbstractVector, val::Float64=1.0)
 	vf::Vector{Int} = findin(x, v) 	# indices of samples in x found training values
-	
-	B = zeros(eltype(1.0), m, n)
- 	
-	# Iterate through the 2 vectors and construct binary representation 	
-	for j in eachindex(x)
+ 
+	@inbounds for j in vf
 		for i in eachindex(v)
-			if isequal(x[j],v[i]) 
-				@fastmath @inbounds B[i,j] = val 
-				break
-			end
+			B[i,j] = ifelse(x[j]==v[i],val,0.0) 
 		end
 	end
-	B[:, setdiff(1:n, vf)] = NaN
-		
 	return B							
 end
 
+
+
 # Integer encoder
 function ohenc_integer(x::T where T<:AbstractVector, v::S where S<:AbstractVector)
+	n::Int64 = length(x) 		# number of objects
+	B = fill(NaN, n)
+	ohenc_integer!(B, x, v)
+	return B
+end
+
+function ohenc_integer!(B::AbstractVector{Float64}, x::T where T<:AbstractVector, v::S where S<:AbstractVector)
 	
-	n::Int64 = length(x) 		# number of columns - e.g. number of objects
 	m::Int64 = length(v)		# number of distinct values to search in
 	vf::Vector{Int} = findin(x, v) 	# indices of samples in x found training values
 	
-	B = fill(NaN, n)
 	l=1 # keeps track of the last location of x found in v 
 	
 	# Function that searches fast a value through a vector of unique values

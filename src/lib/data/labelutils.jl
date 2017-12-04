@@ -66,7 +66,9 @@ labelize(idx::T where T, remove::Bool=true) = FunctionCell(labelize, (idx,remove
 labelize(f::T where T<:Function, idx::S where S, remove::Bool=true) = FunctionCell(labelize, (f,idx,remove), "Data labeler: f=$f idx=$idx remove=$remove")
 
 
-labelize(x::T where T<:CellDataU, f::Function, remove::Bool=true) = error("[labelize] Targets or the indices of variables from which to create targets required.") 
+labelize(x::T where T<:CellDataU, f::Function, remove::Bool=true) = 
+	error("[labelize] Targets or the indices of variables from which to create targets required.") 
+
 labelize(x::T where T<:CellData, f::Function, remove::Bool=true) = begin 
 	if remove
 		datacell(getx(x), targets(f, gety(x)), name=x.tinfo) 			# replace labels
@@ -74,6 +76,7 @@ labelize(x::T where T<:CellData, f::Function, remove::Bool=true) = begin
 		datacell(getx(x), dcat(targets(f, gety(x)),gety(x)), name=x.tinfo)	# add to existing labels
 	end
 end
+
 labelize(x::T where T<:CellData, v::S where S<:AbstractArray, remove::Bool=true) = begin
 	if remove
 		return datacell( getx(x), getobs(v), name=x.tinfo) 			# replace labels 
@@ -81,7 +84,9 @@ labelize(x::T where T<:CellData, v::S where S<:AbstractArray, remove::Bool=true)
 		return datacell( getx(x), dcat(getobs(v), gety(x)), name=x.tinfo ) 	# add to existing labels
 	end
 end
+
 labelize(x::T where T<:CellData, idx::S where S, remove::Bool=true) = labelize(x, identity, idx, remove) 
+
 labelize(x::T where T<:CellData, f::Function, idx::S where S, remove::Bool=true) = begin 
 	labels = targets(f, getx!(varsubset(x,idx)))
 	if remove

@@ -195,13 +195,20 @@ end
 
 
 # Execution
-scaler!(x::T where T<:Union{AbstractArray, CellData}, model::Model) = begin
+scaler!(x::T where T<:CellData, model::Model) = datacell(scaler!(strip(x), model))
+
+scaler!(x::Tuple{T} where T<:AbstractArray, model::Model) = (scaler!(x[1], model),)
+
+scaler!(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, model::Model) = (scaler!(x[1], model),x[2])
+
+scaler!(x::T where T<:AbstractArray, model::Model) = begin
 	
 	@inbounds for (idx, (scale, offset, clip)) in model.data
 		variable = _variable_(x,idx) 	# Assign temp variable
 		
 		# Process variable vector
-		@fastmath variable[:] = variable .* scale .+ offset
+		variable .*= scale
+		variable .+= offset
 		ifelse(clip, clamp!(variable,0.0,1.0), nothing)
 	end
 	return x

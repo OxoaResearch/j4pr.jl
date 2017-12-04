@@ -48,22 +48,24 @@ cslice(label_list::T where T<:Vector{<:DataElement}, idx::Int=1) = FunctionCell(
 
 Slices `data` according to a vector `labels` provided and `idx`. 
 """
-cslice(x::T where T<:CellDataU, label_list::T where T<:Vector{<:DataElement}, idx::Int=1) = begin 
-	@assert !any(isna.(targets(x)))		
-	@assert !any(isnan.(targets(x)))		
-	return datasubset(x)
+cslice(x::T where T<:CellData, label_list::U where U<:Vector{<:DataElement}, idx::Int=1) = datacell(cslice(strip(x), label_list, idx))
+
+cslice(x::T where T<:AbstractArray, label_list::U where U<:Vector{<:DataElement}, idx::Int=1) = datasubset(x)
+
+cslice(x::Tuple{T} where T<:AbstractArray, label_list::U where U<:Vector{<:DataElement}, idx::Int=1) = datasubset(x[1])
+
+cslice(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractVector, label_list::U where U<:Vector{<:DataElement}, idx::Int=1) = 
+begin
+	@assert !any(isna.(x[2]))
+	@assert !any(isnan.(x[2]))
+	idxs::Vector{Int} = findin(x[2], label_list)
+	return datasubset(x,idxs)
 end
 
-cslice(x::T where T<:CellDataL, label_list::T where T<:Vector{<:DataElement}, idx::Int=1) = begin 
-	@assert !any(isna.(targets(x)))		
-	@assert !any(isnan.(targets(x)))		
-	idxs::Vector{Int} = findin(targets(x), label_list)
-	return datasubset(x, idxs)
-end
-
-cslice(x::T where T<:CellDataLL, label_list::T where T<:Vector{<:DataElement}, idx::Int=1) = begin 
-	@assert !any(isna.(targets(x)))		
-	@assert !any(isnan.(targets(x)))		
-	idxs::Vector{Int} = findin(targets(x)[idx,:], label_list)
-	return datasubset(x, idxs)
+cslice(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractMatrix, label_list::U where U<:Vector{<:DataElement}, idx::Int=1) = 
+begin
+	@assert !any(isna.(x[2]))
+	@assert !any(isnan.(x[2]))
+	idxs::Vector{Int} = findin(x[2][idx,:], label_list)
+	return datasubset(x,idxs)
 end

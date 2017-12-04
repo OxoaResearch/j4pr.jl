@@ -37,6 +37,8 @@ getf!(c::T where T<:AbstractCell) = c.f
 
 
 # Number of variables for data vectors, matrices
+nvars(x::Tuple{T} where T<:AbstractArray) = nvars(x[1])
+nvars(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray) = nvars(x[1]) 
 nvars(x::T where T<:AbstractVector) = 1
 nvars(x::T where T<:AbstractMatrix) = size(x,1)
 

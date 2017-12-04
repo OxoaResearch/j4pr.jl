@@ -228,19 +228,43 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, 
 end
 
 
+
 # Execution
-filterg(x::T where T<:Union{AbstractArray, CellData}, model::Model) = begin
+filterg(x::T where T<:CellData, model::Model) = datacell(filterg(strip(x), model))
+
+filterg(x::Tuple{T} where T<:AbstractArray, model::Model) = (filterg(x[1], model),)
+
+filterg(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, model::Model) = (filterg(x[1], x[2], model),x[2])
+
+filterg(x::T where T<:AbstractArray, y::S where S<:AbstractArray, model::Model) = begin
 	
 	f = model.properties.other["targets_function"]
 	xc = deepcopy(x)				# Create local copy of input
-	labels = _targets_(f, xc)			# Get labels (it is assumed that the labels are readily available)
-						
-	for (idx, (isreplaceable, ff)) in model.data 	# Iterate over variable index, replaceable and filter functions
+	labels = targets(f, y)				# Get labels
+
+	# Iterate over variable index, replaceable and filter functions
+	@inbounds for (idx, (isreplaceable, ff)) in model.data 
 		variable = _variable_(xc,idx) 		# Assign temp variable
 		rmask = isreplaceable.(variable) 
-		
+
 		# Process variable vector
-		@inbounds @fastmath variable[rmask] = ff.(variable[rmask], labels[rmask])
+		variable[rmask] = ff.(variable[rmask], labels[rmask])
+	end
+	return xc
+end
+
+filterg(x::T where T<:AbstractArray, model::Model) = begin
+
+	f = model.properties.other["targets_function"]
+	xc = deepcopy(x)				# Create local copy of input
+
+	# Iterate over variable index, replaceable and filter functions
+	@inbounds for (idx, (isreplaceable, ff)) in model.data
+		variable = _variable_(xc,idx) 		# Assign temp variable
+		rmask = isreplaceable.(variable) 
+
+		# Process variable vector
+		variable[rmask] = ff.(variable[rmask], nothing)
 	end
 	return xc
 end
