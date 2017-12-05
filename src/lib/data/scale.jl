@@ -140,9 +140,9 @@ scaler!(x::T where T<:AbstractArray, y::S where S<: AbstractArray, f::Function, 
 	_cmean_(x::T, ::Void, p) where T<:AbstractVector = _mean_(x,nothing)
 	_cmean_(x::T, t::S, p) where T<:AbstractVector where S<:AbstractVector = begin 
 		offset = 0.0
-		for c in keys(p)
-			@inbounds @fastmath d = x[find(isequal.(t,c))]
-			@inbounds @fastmath offset += p[c] * mean(d)
+		@inbounds for c in keys(p)
+			d = x[isequal.(t,c)]
+			offset += p[c] * mean(d)
 		end
 		return (1.0, -offset, false)
 	end
@@ -151,10 +151,10 @@ scaler!(x::T where T<:AbstractArray, y::S where S<: AbstractArray, f::Function, 
 	_cvariance_(x::T, t::S, p) where T<:AbstractVector where S<:AbstractArray = begin 
 		offset = 0.0
 		scale = 0.0
-		for c in keys(p)
-			@inbounds @fastmath d = x[find(isequal.(t,c))]
-			@inbounds @fastmath offset += p[c] * mean(d)
-			@inbounds @fastmath scale += p[c] * var(d)
+		@inbounds for c in keys(p)
+			d = x[isequal.(t,c)]
+			offset += p[c] * mean(d)
+			scale += p[c] * var(d)
 		end
 		return (1.0/scale, -offset/scale, false)
 	end
@@ -163,10 +163,10 @@ scaler!(x::T where T<:AbstractArray, y::S where S<: AbstractArray, f::Function, 
 	_2sigma_(x::T, t::S, p) where T<:AbstractVector where S<:AbstractVector = begin 
 		offset = 0.0
 		scale = 0.0
-		for c in keys(p)
-			@inbounds @fastmath d = x[find(isequal.(t,c))]
-			@inbounds @fastmath offset += p[c] * mean(d)
-			@inbounds @fastmath scale += p[c] * var(d)
+		@inbounds for c in keys(p)
+			d = x[isequal.(t,c)]
+			offset += p[c] * mean(d)
+			scale += p[c] * var(d)
 		end
 		scale = 4*sqrt(scale)
 		offset = offset - 0.5*scale

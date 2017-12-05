@@ -1,6 +1,6 @@
 # Load j4pr
 using j4pr
-using DataStructures, DataArrays, LearnBase, MLKernels, MLLabelUtils, Distances
+using DataStructures, DataArrays, LearnBase, MLKernels, MLLabelUtils, Distances, Images
 
 if (VERSION > v"0.7-")
 	using Test
@@ -28,6 +28,13 @@ end
 include("t_libutils.jl")
 Test.@testset "[j4pr: /src/lib]" begin
 	Test.@testset "libutils.jl (utility functions for libraries)" begin t_libutils(); end
+end
+
+
+# [/lib/data]
+include("t_libdata.jl")
+Test.@testset "[j4pr: /src/lib/data]" begin
+	Test.@testset "Data container processing functions (class slicing, filtering, encoding)" begin t_libdata(); end
 end
 
 

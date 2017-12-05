@@ -59,16 +59,17 @@ filterdomain!(opts::T where T<:Dict) = FunctionCell(filterdomain!, (opts,), "Dom
 
 Processes `data` according to the domains specified in `opts`.
 """
-filterdomain!(x::T where T<:CellData, opts::U where U<:Dict) = filterdomain!(strip(x),opts)
+filterdomain!(x::T where T<:CellData, opts::U where U<:Dict) = datacell(filterdomain!(strip(x),opts))
 
-filterdomain!(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, opts::U where U<:Dict) = filterdomain!(x[1],opts)
+filterdomain!(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, opts::U where U<:Dict) = (filterdomain!(x[1],opts),x[2])
 
 filterdomain!(x::T where T<:AbstractArray, opts::U where U<:Dict) = begin
 		
 	# Construct out-of-bounds values
-	_obvals_(::AbstractFloat)=NaN
-	_obvals_(::AbstractString)=""
-	_obvals_(::Symbol)=:()
+	_obvals_(x::Number) = NaN
+	_obvals_(::AbstractFloat) = NaN
+	_obvals_(::AbstractString) = ""
+	_obvals_(::Symbol) = :()
 	
 	# Construct methods for each domain processing option
 	_filter_(v::Function) = v

@@ -72,7 +72,7 @@ Returns a `datasubset` and the indices corresponding to the sampled observations
 """
 # Sampling based on number/percentage of samples desired (f is ignored)
 sample(x::T where T<:CellData, opts) = begin
-	d, idx= sample(strip(x), opts)
+	d, idx = sample(strip(x), identity, opts)
 	return (datacell(d), idx)
 end
 
@@ -81,10 +81,7 @@ sample(x::T where T<:CellData, f::Function, opts::S where S<:Real) = begin
 	return (datacell(d), idx)
 end
 
-
-sample(x::T where T<:Union{AbstractArray, Tuple{AbstractArray}, Tuple{<:AbstractArray, <:AbstractArray}}, opts::S where S<:Real) = sample(x, identity, opts) 
-
-sample(x::T where T<:Union{AbstractArray, Tuple{AbstractArray}, Tuple{<:AbstractArray, <:AbstractArray}}, f::Function, opts::S where S<:Real) = begin
+sample(x::T where T<:Union{AbstractArray, Tuple{<:AbstractArray, <:AbstractArray}}, f::Function, opts::S where S<:Real) = begin
 	idx = _sample_(opts)(collect(1:nobs(x)))
 	return (datasubset(x,idx), idx)
 end

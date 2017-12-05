@@ -26,11 +26,7 @@
 Creates a new datacell by adding `labels<:AbstractArray` to the existing labels 
 of data cell `x`. 
 """
-addlabels(x::T where T<:CellDataU, labels::S where S<:AbstractArray) = datacell(x.x, labels, name=x.tinfo)
-addlabels(x::T where T<:CellDataL, labels::S where S<:AbstractVector) = datacell(getx!(x), vcat(gety!(x)', checktargets(getx!(x), labels)'), name=x.tinfo)
-addlabels(x::T where T<:CellDataL, labels::S where S<:AbstractMatrix) = datacell(getx!(x), vcat(gety!(x)', checktargets(getx!(x), labels)), name=x.tinfo)
-addlabels(x::T where T<:CellDataLL, labels::S where S<:AbstractVector) = datacell(getx!(x), vcat(gety!(x), checktargets(getx!(x), labels)'), name=x.tinfo)
-addlabels(x::T where T<:CellDataLL, labels::S where S<:AbstractMatrix) = datacell(getx!(x), vcat(gety!(x), checktargets(getx!(x), labels)), name=x.tinfo)
+addlabels(x::T where T<:CellData, labels::S where S<:AbstractArray) = datacell(getx!(x), dcat(gety!(x), labels), name=x.tinfo)
 
 
 """
@@ -61,7 +57,7 @@ it will add labels/targets and return it.
   variables from `x` from which the new labels/targets were obtained.
 """
 labelize(f::T where T<:Function, remove::Bool=true) = FunctionCell(labelize, (f,remove), "Data labeler: f=$f, remove=$remove")
-labelize(v::T where T<:AbstractArray, remove::Bool=true) = FunctionCell(labelize, (v,), "Data labeler: preloaded targets")
+labelize(v::T where T<:AbstractArray, remove::Bool=true) = FunctionCell(labelize, (v,remove), "Data labeler: preloaded targets, remove=$remove")
 labelize(idx::T where T, remove::Bool=true) = FunctionCell(labelize, (idx,remove), "Data labeler: idx=$idx remove=$remove")
 labelize(f::T where T<:Function, idx::S where S, remove::Bool=true) = FunctionCell(labelize, (f,idx,remove), "Data labeler: f=$f idx=$idx remove=$remove")
 
@@ -73,7 +69,7 @@ labelize(x::T where T<:CellData, f::Function, remove::Bool=true) = begin
 	if remove
 		datacell(getx(x), targets(f, gety(x)), name=x.tinfo) 			# replace labels
 	else
-		datacell(getx(x), dcat(targets(f, gety(x)),gety(x)), name=x.tinfo)	# add to existing labels
+		datacell(getx(x), dcat(gety(x), targets(f, gety(x))), name=x.tinfo)	# add to existing labels
 	end
 end
 
@@ -81,7 +77,7 @@ labelize(x::T where T<:CellData, v::S where S<:AbstractArray, remove::Bool=true)
 	if remove
 		return datacell( getx(x), getobs(v), name=x.tinfo) 			# replace labels 
 	else
-		return datacell( getx(x), dcat(getobs(v), gety(x)), name=x.tinfo ) 	# add to existing labels
+		return datacell( getx(x), dcat(gety(x), getobs(v)), name=x.tinfo ) 	# add to existing labels
 	end
 end
 

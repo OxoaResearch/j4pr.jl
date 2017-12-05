@@ -197,7 +197,7 @@ filterg(x::T where T<:AbstractArray, y::S where S<:AbstractArray, f::Function, g
 	_cmajority_(v::T, t::S) where T<:AbstractVector where S<:AbstractArray = begin
 		#(x,y) -> Dict(k=>_majority_(v[t.==k], nothing) for k in unique(t))[y]
 		d = Dict{eltype(t), eltype(v)}()
-		for ti in unique(t)
+		@inbounds for ti in unique(t)
 			vt = view(v,t.==ti)
 			u = unique(vt)
 			cm = countapp(vt,u)
