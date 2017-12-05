@@ -62,9 +62,16 @@ Scales `data` according to the scaling options specified in `opts`.
 If the dataset is labeled, an additional function `f` can be specified to 
 obtain the labels calling `LearnBase.targets(data,f)`. """
 # Training
-scaler!(x::T where T<:Union{AbstractArray, CellData}, opts) = scaler!(x, identity, opts)
+scaler!(x::T where T<:CellData, opts) = scaler!(strip(x), identity, opts)
+scaler!(x::T where T<:CellData, f::Function, opts) = scaler!(strip(x), f, opts)
 
-scaler!(x::T where T<:Union{AbstractArray, CellData}, f::Function, opts) = begin
+scaler!(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, opts) = scaler!(x[1], x[2], identity, opts)
+scaler!(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, f::Function, opts) = scaler!(x[1], x[2], f, opts)
+
+scaler!(x::T where T<:AbstractArray, opts) = scaler!(x, Void[], identity, opts)
+scaler!(x::T where T<:AbstractArray, f::Function, opts) = scaler!(x, Void[], f, opts)
+
+scaler!(x::T where T<:AbstractArray, y::S where S<: AbstractArray, f::Function, opts) = begin
 	
 	# Get dictionary or construct a proper one from original;
 	# Inputs: scaling option and total number of variables 
@@ -96,7 +103,9 @@ scaler!(x::T where T<:Union{AbstractArray, CellData}, f::Function, opts) = begin
 	scalername = _scalername_(values(dopts))
 	
 	# Get targets (nothing for unlabeled data cells and arrays)
-	labels = _targets_(f,x)
+	_targets_(f,y) = targets(f,y)
+	_targets_(f,::AbstractArray{Void}) = nothing
+	labels = _targets_(f,y)
 	@assert !any(isna.(labels))		
 	@assert !any(isnan.(labels))		
 	@assert (labels isa Vector)||(labels isa Void) "[scaler!] Labels need to be a Vector or ::Void." 
@@ -196,8 +205,6 @@ end
 
 # Execution
 scaler!(x::T where T<:CellData, model::Model) = datacell(scaler!(strip(x), model))
-
-scaler!(x::Tuple{T} where T<:AbstractArray, model::Model) = (scaler!(x[1], model),)
 
 scaler!(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, model::Model) = (scaler!(x[1], model),x[2])
 

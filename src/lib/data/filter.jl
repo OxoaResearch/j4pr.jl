@@ -97,11 +97,20 @@ filterg(opts) = filterg(identity, _isreplaceable_, opts)
 Generates a trained filter.
 """
 # Training
-filterg(x::T where T<:Union{AbstractArray, CellData}, opts) = filterg(x, identity, _isreplaceable_, opts)
 
-filterg(x::T where T<:Union{AbstractArray, CellData}, g::Function, opts) = filterg(x, identity, g, opts)
+filterg(x::T where T<:CellData, opts) = filterg(strip(x), identity, _isreplaceable_, opts)
+filterg(x::T where T<:CellData, g::Function, opts) = filterg(strip(x), identity, g, opts)
+filterg(x::T where T<:CellData, f::Function, g::Function, opts) = filterg(strip(x), f, g, opts)
 
-filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, opts) = begin
+filterg(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, opts) = filterg(x[1], x[2], identity, _isreplaceable_, opts)
+filterg(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, g::Function, opts) = filterg(x[1], x[2], identity, g, opts)
+filterg(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, f::Function, g::Function, opts) = filterg(x[1], x[2], f, g, opts)
+
+filterg(x::T where T<:AbstractArray, opts) = filterg(x, Void[], identity, _isreplaceable_, opts)
+filterg(x::T where T<:AbstractArray, g::Function, opts) = filterg(x, Void[], identity, g, opts)
+filterg(x::T where T<:AbstractArray, f::Function, g::Function, opts) = filterg(x, Void[], f, g, opts) 
+
+filterg(x::T where T<:AbstractArray, y::S where S<:AbstractArray, f::Function, g::Function, opts) = begin
 	
 	# Get dictionary or construct a proper one from original;
 	# Inputs: filtering options and total number of variables 
@@ -137,7 +146,9 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, 
 	filtername = _filtername_(values(dopts))
 
 	# Get targets (nothing for unlabeled data cells and arrays)
-	labels = _targets_(f,x)
+	_targets_(f,y) = targets(f,y)
+	_targets_(f,::AbstractArray{Void}) = nothing
+	labels = _targets_(f,y)
 	@assert !any(isna.(labels))		
 	@assert !any(isnan.(labels))		
 	@assert (labels isa Vector)||(labels isa Void) "[filterg] Labels need to be a Vector or ::Void." 
@@ -175,11 +186,13 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, 
 		d = Dict(ti=>mean(v[t.==ti]) for ti in unique(t))
 		(x,y) -> d[y]
 	end
+
 	_cmedian_(v::T, ::Void) where T<:AbstractVector = _median_(v,nothing)
 	_cmedian_(v::T, t::S) where T<:AbstractVector where S<:AbstractVector = begin 
 		d = Dict(ti=>median(v[t.==ti]) for ti in unique(t))
 		(x,y) -> d[y]
 	end
+
 	_cmajority_(v::T, ::Void) where T<:AbstractVector = _majority_(v, nothing) 
 	_cmajority_(v::T, t::S) where T<:AbstractVector where S<:AbstractArray = begin
 		#(x,y) -> Dict(k=>_majority_(v[t.==k], nothing) for k in unique(t))[y]
@@ -196,11 +209,11 @@ filterg(x::T where T<:Union{AbstractArray, CellData}, f::Function, g::Function, 
 	end
 
 	# Create dictionary for each processed variable Dict(column=>(isreplaceable, filter function))
-	modeldata = Dict{Int, Tuple{Function,Any}}()
+	modeldata = Dict{Int, Tuple{Function,Function}}()
 	for (idx, v) in dopts
 		fmask = .!g.(_variable_(x,idx))					# Mask for samples that are not to be replaced 	
 		fvariable = _variable_(x, idx)[fmask]				# Variable values for the mask	
-		flabels = (labels isa Void) ? nothing : labels[fmask]		# Labels for the mask
+		flabels = labels[fmask]						# Labels for the mask
 		
 		if v=="mean" 
 			w = (g, _mean_(fvariable, flabels)) 
@@ -231,8 +244,6 @@ end
 
 # Execution
 filterg(x::T where T<:CellData, model::Model) = datacell(filterg(strip(x), model))
-
-filterg(x::Tuple{T} where T<:AbstractArray, model::Model) = (filterg(x[1], model),)
 
 filterg(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, model::Model) = (filterg(x[1], x[2], model),x[2])
 

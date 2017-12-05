@@ -52,8 +52,6 @@ cslice(x::T where T<:CellData, label_list::U where U<:Vector{<:DataElement}, idx
 
 cslice(x::T where T<:AbstractArray, label_list::U where U<:Vector{<:DataElement}, idx::Int=1) = datasubset(x)
 
-cslice(x::Tuple{T} where T<:AbstractArray, label_list::U where U<:Vector{<:DataElement}, idx::Int=1) = datasubset(x[1])
-
 cslice(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractVector, label_list::U where U<:Vector{<:DataElement}, idx::Int=1) = 
 begin
 	@assert !any(isna.(x[2]))

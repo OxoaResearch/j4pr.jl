@@ -68,7 +68,11 @@ ohenc(opts::T where T<:Dict) = FunctionCell(ohenc, (opts,), ModelProperties(), "
 Trains a one-hot encoder (e.g. stores all distinct values for a subset or all variables).
 """
 # Training
-ohenc(x::T where T<:Union{AbstractArray, CellData}, opts) = begin
+ohenc(x::T where T<:CellData, opts) = ohenc(strip(x), opts)
+
+ohenc(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, opts) = ohenc(x[1], opts)
+
+ohenc(x::T where T<:AbstractArray, opts) = begin
 	
 	# Get dictionary or construct a proper one from original;
 	# Inputs: encoding option and total number of variables 
@@ -133,8 +137,6 @@ end
 
 # Execution
 ohenc(x::T where T<:CellData, model::Model) = datacell(ohenc(strip(x), model))
-
-ohenc(x::Tuple{T} where T<:AbstractArray, model::Model) = (ohenc(x[1], model),)
 
 ohenc(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, model::Model) = (ohenc(x[1], model),x[2])
 

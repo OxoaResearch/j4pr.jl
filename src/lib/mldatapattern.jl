@@ -34,7 +34,7 @@ Returns a lazy subset from a `DataCell`. Check out documentation from `MLDataPat
 """
 #datasubset{T<:CellDataVectors}(x::T, idx) = Cell(view(getx!(x),idx))
 #datasubset(x::T where T<:CellData, idx; obsdim=LearnBase.ObsDim.Constant{2}()) = DataCell(datasubset(strip(x), idx; obsdim=obsdim))
-datasubset(x::T where T<:CellData, idx::Int) = DataCell(datasubset(strip(x),idx:idx)...)
+datasubset(x::T where T<:CellData, idx::Int) = DataCell(datasubset(strip(x),idx:idx))
 datasubset(x::T where T<:CellData, idx::Int, ::LearnBase.ObsDim.Undefined) = DataCell(datasubset(strip(x),idx:idx))
 datasubset(x::T where T<:CellData, idx, ::LearnBase.ObsDim.Undefined) = DataCell(datasubset(strip(x), idx))
 
@@ -83,14 +83,6 @@ LearnBase.gettarget(f, x::T where T<:CellDataLL) = f(gety!(x))
 targets(x::T where T<:CellDataU, args...) = nothing
 targets(f::Function, x::T where T<:CellDataU, args...) = nothing
 targets(f::Function, x::T where T<:CellData, args...) = targets(f, gety!(x), args...)
-
 targets(f::Function, obsdim::LearnBase.ObsDimension=LearnBase.ObsDim.Constant{2}()) = 
 	FunctionCell((x)->targets(f, x, obsdim),(), "Target generator ($(string(f)))")
 
-
-	
-# Get targets (nothing for unlabeled data cells and arrays)
-@inline _targets_(f::Function, x::T where T<:AbstractArray) = nothing
-@inline _targets_(f::Function, x::T where T<:CellDataU) = targets(x) #nothing
-@inline _targets_(f::Function, x::T where T<:CellDataL) = targets(f,x)
-@inline _targets_(f::Function, x::T where T<:CellDataLL) = targets(f,x)	

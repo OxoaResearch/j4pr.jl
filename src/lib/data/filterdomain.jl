@@ -61,8 +61,6 @@ Processes `data` according to the domains specified in `opts`.
 """
 filterdomain!(x::T where T<:CellData, opts::U where U<:Dict) = filterdomain!(strip(x),opts)
 
-filterdomain!(x::Tuple{T} where T<:AbstractArray, opts::U where U<:Dict) = filterdomain!(x[1],opts)
-
 filterdomain!(x::Tuple{T,S} where T<:AbstractArray where S<:AbstractArray, opts::U where U<:Dict) = filterdomain!(x[1],opts)
 
 filterdomain!(x::T where T<:AbstractArray, opts::U where U<:Dict) = begin

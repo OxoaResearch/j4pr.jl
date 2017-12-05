@@ -53,7 +53,7 @@ nvars(x::T where T<:CellData) = nvars(getx!(x))
 """
 Return a Tuple containing the data and targets from a `DataCell` 
 """
-strip(x::T where T<:CellDataU) = (getx!(x),)
+strip(x::T where T<:CellDataU) = getx!(x)
 strip(x::T where T<:CellData) = (getx!(x), gety!(x))
 
 

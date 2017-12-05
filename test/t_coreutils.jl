@@ -31,7 +31,7 @@ function t_coreutils()
 	Test.@test j4pr.nvars(D) == 1
 
 	Test.@test j4pr.strip(D) == (Xv,y)
-	Test.@test j4pr.strip(Du) == (Xv,)
+	Test.@test j4pr.strip(Du) == Xv
 	Test.@test j4pr.size(nothing) == 0
 	Test.@test j4pr.size(nothing,rand(Int)) == 0
 	Test.@test j4pr.size(D) ==j4pr.size(Xv)
