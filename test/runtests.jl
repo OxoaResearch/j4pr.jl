@@ -84,7 +84,7 @@ include("t_combiners.jl")
 include("t_randomsubspace.jl")
 include("t_adaboost.jl")
 include("t_stump.jl")
-#include("t_networklearner.jl")
+include("t_networklearner.jl")
 Test.@testset "[j4pr: /src/lib/sup]" begin
 	Test.@testset "lindisc.jl (Linear discriminant classifier)" begin t_lindisc(); end
 	Test.@testset "quaddisc.jl (Quadratic discriminant classifier)" begin t_quaddisc(); end
@@ -94,7 +94,7 @@ Test.@testset "[j4pr: /src/lib/sup]" begin
 	Test.@testset "randomsubspace.jl (Random subspace ensemble)" begin t_randomsubspace(); end
 	Test.@testset "adaboost.jl (AdaBoost ensemble)" begin t_adaboost(); end
 	Test.@testset "stump.jl (Decision stump classifier and regressor)" begin t_stump(); end
-	#Test.@testset "networklearner.jl (Network Learning)" begin t_networklearner(); end
+	Test.@testset "networklearner.jl (Network Learning)" begin t_networklearner(); end
 end
 
 if v"0.6" <= VERSION < v"0.7-"
