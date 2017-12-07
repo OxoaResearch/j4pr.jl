@@ -1,7 +1,9 @@
-0.1.2 / TBD 
+0.1.2 / 2017-12-07 
 ==================
   * Wrapped NetworkLearning.jl
-  * Bugfixes
+  * Improved performance for data processing
+  * Improved test coverage
+  * Code cleanups, bugfixes
 
 0.1.1 / 2017-10-27 
 ==================

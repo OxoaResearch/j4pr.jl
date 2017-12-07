@@ -76,7 +76,7 @@
 			- Arc-x4 --> j4pr.jl					[Unknown version]	
 		- Gradient Boosting --> ?					[Unknown version]
 		- Random subspace --> j4pr.jl					[OK][v.0.1.0]
-		- Network classifiers --> NetworkLearning.jl			[IN PROGRESS][v.0.1.2]
+		- Network classifiers --> NetworkLearning.jl			[OK][v.0.1.2]
 		- Rotation Forest --> j4pr.jl					[Unknown version]	
 
 	* Evaluation & Optimization 

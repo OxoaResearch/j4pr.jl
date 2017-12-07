@@ -9,11 +9,11 @@ abstract type AbstractCell{T,S,U} end
 
 
 
-##############################################################################################################################
-# Operators [AbstractCells] 
-##############################################################################################################################
+#############################
+# Operators [AbstractCells] # 
+#############################
 
-# Simple math operators (quite outdated but may still be useful)
+# Unary operators for field access 
 +(ac::T where T<:AbstractCell) = ac.x
 -(ac::T where T<:AbstractCell) = ac.y
 ~(ac::T where T<:AbstractCell) = dump(ac)

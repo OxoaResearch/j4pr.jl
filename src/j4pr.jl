@@ -30,30 +30,30 @@ module j4pr
     	# Dependencies														     #
     	##############################################################################################################################
 	
-	# Imports
+	# Imports section
 	import Base: Test, convert, promote_rule, show, +, -, *, |>, ~, vcat, hcat, getindex, setindex!, size, endof, ndims, 
 		     isnan, deleteat!, values, start, next, done, length, eltype, strip, interrupt
 	import StatsBase: sample
 	import MLDataPattern: nobs, getobs, datasubset, targets, gettargets 
-	import UnicodePlots, LossFunctions, Distances, MultivariateStats, Clustering, DecisionTree
+	import UnicodePlots, LossFunctions, Distances, MultivariateStats, Clustering, DecisionTree, NetworkLearning
 
+	# Using section
+	using StaticArrays
+	using DataStructures: SortedDict
+	using StatsBase: countmap, fit, Histogram
+	using Reexport, StaticArrays, DataArrays, Compat, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, MLKernels
+
+	# If Julia > 0.7, skip some packages
 	if v"0.6" <= VERSION < v"0.7-"
 		import LIBSVM
 		using RDatasets, Images, ImageInTerminal
 	end
 
-	# No method extension
-	using StaticArrays
-	using DataStructures: SortedDict
-	using StatsBase: countmap, fit, Histogram
-	using Reexport, StaticArrays, DataArrays, Compat, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, MLKernels
-	using NetworkLearning
-
 
     	##############################################################################################################################
     	# Global variables and logging configuration										     #
 	##############################################################################################################################
-	global const j4pr_version = "0.1.2-alpha"                      				# The current version of j4pr
+	global const j4pr_version = "0.1.2"                      				# The current version of j4pr
 
 	oinfoglobal = j4pr_version*Dates.format(Dates.now(), " dd-mm-YYYY")			# Define information string
 		
@@ -225,8 +225,6 @@ module j4pr
 	# [exp] Experimental stuff
 		include("exp/plotting.jl")							# Plots for labeled/unlabeled datasets (UnicodePlots.jl)
 												# limited and biased view on the library's performance)	
-	# [tool] Tools not related to j4pr. Include manually.
-		# "tool/REPL.jl"								# Apply REPL colorscheme and prompt
 
     	##############################################################################################################################
     	# Post-loading steps 													     #		

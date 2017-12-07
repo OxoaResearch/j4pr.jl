@@ -58,15 +58,12 @@ const CellData{T<:AbstractArray, S} = DataCell{T, S, Void}
 
 # Vertical datacell concatenation (e.g. data concatenation) and auxiliary methods
 dcat(x::T where T<:PTuple{<:Void}) = nothing
-dcat(x::T where T<:Array{<:Void}) = nothing
 dcat(::Void) = nothing 
 dcat(::Void,::Void) = nothing
 dcat(x,::Void) = dcat(x)
 dcat(::Void,x) = dcat(x)
-dcat(x::AbstractVector) = getobs(x)
-dcat(x::AbstractMatrix) = getobs(x)
-dcat(x::Matrix) = x 
-dcat(x::Vector) = x
+dcat(x::AbstractArray) = getobs(x)
+dcat(x::Array) = x 
 dcat(x::AbstractVector, y::AbstractVector) = vcat(mat(x, ObsDim.Constant{2}()), mat(y,ObsDim.Constant{2}()))
 dcat(x::AbstractMatrix, y::AbstractVector) = vcat(dcat(x), mat(y, ObsDim.Constant{2}()))
 dcat(x::AbstractVector, y::AbstractMatrix) = vcat(mat(x, ObsDim.Constant{2}()), dcat(y))
@@ -81,19 +78,14 @@ end
 
 # Horizontal datacell concatenation (e.g. observation concatenation) and auxiliary methods
 ocat(x::T where T<:PTuple{<:Void}) = nothing
-ocat(x::T where T<:Array{<:Void}) = nothing
 ocat(::Void) = nothing 
 ocat(::Void,::Void) = nothing
 ocat(x,::Void) = ocat(x)
 ocat(::Void,x) = ocat(x)
-ocat(x::AbstractVector) = getobs(x)
-ocat(x::AbstractMatrix) = getobs(x)
-ocat(x::Vector) = x
-ocat(x::Matrix) = x
+ocat(x::AbstractArray) = getobs(x)
+ocat(x::Array) = x
 ocat(x::AbstractVector, y::AbstractVector) = vcat(ocat(x), ocat(y))
-ocat(x::AbstractMatrix, y::AbstractVector) = hcat(ocat(x), mat(y, ObsDim.Constant{2}()))
-ocat(x::AbstractVector, y::AbstractMatrix) = hcat(mat(x, ObsDim.Constant{2}()), ocat(y))
-ocat(x::AbstractMatrix, y::AbstractMatrix) = hcat(ocat(x), ocat(y))
+ocat(x::AbstractArray, y::AbstractArray) = hcat(ocat(x), ocat(y))
 ocat(x,y,z...) = ocat(ocat(x,y),z...)
 ocat(x) = ocat(x...)
 hcat(c::T...) where T<:CellData = datacell(ocat(getx!.(c)), ocat(gety!.(c)))
