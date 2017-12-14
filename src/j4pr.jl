@@ -35,13 +35,12 @@ module j4pr
 		     isnan, deleteat!, values, start, next, done, length, eltype, strip, interrupt
 	import StatsBase: sample
 	import MLDataPattern: nobs, getobs, datasubset, targets, gettargets 
-	import UnicodePlots, LossFunctions, Distances, MultivariateStats, Clustering, DecisionTree, NetworkLearning
+	import UnicodePlots, LossFunctions, Distances, MultivariateStats, Clustering, DecisionTree, NetworkLearning, MLKernels
 
 	# Using section
-	using StaticArrays
 	using DataStructures: SortedDict
 	using StatsBase: countmap, fit, Histogram
-	using Reexport, StaticArrays, DataArrays, Compat, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding, MLKernels
+	using Reexport, StaticArrays, DataArrays, Compat, LearnBase, MLLabelUtils, MLLabelUtils.LabelEncoding
 
 	# If Julia > 0.7, skip some packages
 	if v"0.6" <= VERSION < v"0.7-"
@@ -53,7 +52,7 @@ module j4pr
     	##############################################################################################################################
     	# Global variables and logging configuration										     #
 	##############################################################################################################################
-	global const j4pr_version = "0.1.2"                      				# The current version of j4pr
+	global const j4pr_version = "0.1.3-alpha"                      				# The current version of j4pr
 
 	oinfoglobal = j4pr_version*Dates.format(Dates.now(), " dd-mm-YYYY")			# Define information string
 		
