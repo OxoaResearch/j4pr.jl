@@ -1,5 +1,8 @@
 # j4pr Feature Roadmap 
 
+## System 
+	* Keep compatibility with Julia 1.0					[Ongoing]
+
 ## Data Processing
 	* Unsupervised
 		- Filter (data-based)						[OK][v.0.1.0]
@@ -79,14 +82,18 @@
 		- Network classifiers --> NetworkLearning.jl			[OK][v.0.1.2]
 		- Rotation Forest --> j4pr.jl					[Unknown version]	
 
+	* Other
+		- Random Kitchen sinks						[Unknown version]
+		- Metric Learning						[Unknown version]
+
 	* Evaluation & Optimization 
-		- cross-validation --> MLBase.jl?				[TODO][v.0.1.4?] 
+		- cross-validation --> MLBase.jl?				[TODO][v.0.1.3] 
 		- loss-functions --> MLLabelUtils.jl, LossFunctions.jl		[OK][v.0.1.0]
 		- ROC Analysis --> ROCAnalysis.jl+j4pr.jl			[OK][v.0.1.1]
-		- Hyperparameter optimization --> MLBase.jl?			[TODO][v.0.1.4?]
+		- Hyperparameter optimization --> MLBase.jl?			[Unknown version]
 
 	* Feature Selection
-		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.4?]
+		- forward, backward, nested ,etc. --> j4pr.jl			[TO DO][v.0.1.3]
 
 ## Regression
 	* Basic Regression:
@@ -102,12 +109,7 @@
 
 
 ## Data manipulation and I/O (video/audio/text/...)
-	* Data I/O:
-		- JuliaDB							[Unknown version]
-		- For dataframes --> DataFramesIO.jl				[Unknown version]
-		- Data loading --> [view the list](https://github.com/svaksha/Julia.jl/blob/master/IO.md) [Unknown version]
-	
-	* Analysis algorithms:
+	* Data Analysis:
 		- Video data + analysis (libav, ffmpeg)-->VideoIO.jl		[NOT NEEDED] 
 	 	- Image analysis --> Images.jl and other			[DONE] 
 	 	- Text Analysis --> TextAnalysis.jl				[NOT NEEDED] 
@@ -116,7 +118,7 @@
 
 
 ## Feature creation
-	* Word vectors : Word2Vec.jl, AdaGram.jl				[Unknown version (need to modify source code, wrapping not possible now)] 
+	* Word vectors : Word2Vec.jl, AdaGram.jl				[Unknown version]
 	* Deep learning: Mocha.jl, Knet.jl					[Unknown version] 
 
 
@@ -146,3 +148,5 @@
 [OnlineAI](https://github.com/tbreloff/OnlineAI.jl)
 
 [I/O](https://github.com/svaksha/Julia.jl/blob/master/IO.md)
+
+[Data loading] (https://github.com/svaksha/Julia.jl/blob/master/IO.md)
